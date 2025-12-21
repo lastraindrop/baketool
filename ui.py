@@ -1,146 +1,286 @@
 import bpy
 
 from bpy import (
-props,
-context,
-types
+    props,
+    context,
+    types
 )
 
+# --- HELPER FUNCTIONS ---
+
+def draw_header(layout, text, icon='NONE'):
+    """绘制带有背景的小标题，用于区分板块"""
+    row = layout.row(align=True)
+    row.alignment = 'LEFT'
+    row.label(text=text, icon=icon)
+
 def draw_file_path(layout, setting, path_prop, location):
-    row = layout.row()
-    row.prop(setting, path_prop, icon='FILE_FOLDER')
-    row.operator("bake.set_save_local", text='', icon='RADIOBUT_ON').save_location = location
+    row = layout.row(align=True)
+    row.prop(setting, path_prop, text="", icon='FILE_FOLDER')
+    # 使用图标按钮来切换保存位置模式
+    op = row.operator("bake.set_save_local", text='', icon='HOME')
+    op.save_location = location
 
 def draw_template_list_ops(layout, basic_name):
+    """绘制列表右侧的操作按钮"""
+    col = layout.column(align=True)
     
-    icons={
-    'ADD':'ADD',
-    'DELETE':'REMOVE',
-    'UP':'TRIA_DOWN',
-    'DOWN':'TRIA_UP',
-    'CLEAR':'BRUSH_DATA'
+    icons = {
+        'ADD': 'ADD',
+        'DELETE': 'REMOVE',
+        'UP': 'TRIA_UP',
+        'DOWN': 'TRIA_DOWN',
+        'CLEAR': 'TRASH'
     }
     
-    for item in ['ADD','DELETE','UP','DOWN','CLEAR']:
-        ops=layout.operator("bake.generic_channel_op",text='',icon=icons[item])
-        ops.operation=item
-        ops.target=basic_name
-    '''layout.operator(f"bake.add_{basic_name}", text='',icon='ADD')
-    layout.operator(f"bake.delect_{basic_name}", text='',icon='REMOVE')
-    layout.operator(f"bake.up_{basic_name}", text='',icon='TRIA_DOWN')
-    layout.operator(f"bake.down_{basic_name}", text='',icon='TRIA_UP')
-    layout.operator(f"bake.clear_{basic_name}", text='',icon='BRUSH_DATA')'''
-# 通用图像格式选项绘制函数
+    for item in ['ADD', 'DELETE', 'UP', 'DOWN', 'CLEAR']:
+        ops = col.operator("bake.generic_channel_op", text='', icon=icons[item])
+        ops.operation = item
+        ops.target = basic_name
+
 def draw_image_format_options(layout, setting, prefix=""):
-    """
-    绘制图像格式相关的所有选项：格式、质量、EXR 编码、颜色深度和颜色模式。
-    
-    Args:
-        layout (bpy.types.UILayout): Blender 的布局对象
-        setting (bpy.types.PropertyGroup): 包含属性的设置对象
-        prefix (str): 属性名前缀，如 "node_bake_" 或 "objectmap_"，默认为空
-    """
+    """根据所选格式动态绘制图像格式选项"""
     format_prop = f"{prefix}save_format"
     quality_prop = f"{prefix}quality"
     exr_prop = f"{prefix}exr_code"
+    tiff_prop = f"{prefix}tiff_codec"
     depth_prop = f"{prefix}color_depth"
     mode_prop = f"{prefix}color_mode"
     space_prop = f"{prefix}color_space"
     
-    # 绘制文件格式
-    row = layout.row()
-    row.prop(setting, format_prop)
+    fmt = getattr(setting, format_prop)
     
-    # 根据格式绘制 quality 或 exr_code
-    format_value = getattr(setting, format_prop)
-    if format_value != 'EXR':
-        row.prop(setting, quality_prop, slider=True)
-    else:
-        row.prop(setting, exr_prop)
+    # 第一行：格式和主要参数
+    row = layout.row(align=True)
+    row.prop(setting, format_prop, text="")
     
-    # 绘制颜色深度
-    if format_value in {'PNG', 'EXR'}:
-        row = layout.row()
-        row.label(text="Color Depth")
-        if format_value == 'PNG':
-            row.prop_enum(setting, depth_prop, '8')
-            row.prop_enum(setting, depth_prop, '16')
-        elif format_value == 'EXR':
-            row.prop_enum(setting, depth_prop, '16')
-            row.prop_enum(setting, depth_prop, '32')
+    if fmt in {'JPEG', 'WEBP', 'JPEG2000'}:
+        row.prop(setting, quality_prop, text="Quality", slider=True)
+    elif fmt in {'OPEN_EXR', 'OPEN_EXR_MULTILAYER'}:
+        row.prop(setting, exr_prop, text="")
+    elif fmt == 'TIFF':
+        row.prop(setting, tiff_prop, text="")
     
-    # 绘制颜色模式
-    if hasattr(setting, mode_prop):
-        row = layout.row()
-        row.label(text="Color Mode")
-        if format_value in {'BMP', 'JPG', 'HDR'}:
-            row.prop_enum(setting, mode_prop, 'BW')
-            row.prop_enum(setting, mode_prop, 'RGB')
-        else:
-            row.prop_enum(setting, mode_prop, 'BW')
-            row.prop_enum(setting, mode_prop, 'RGB')
-            row.prop_enum(setting, mode_prop, 'RGBA')
+    # 第二行：色深、颜色模式
+    row = layout.row(align=True)
+    
+    # 色深支持验证
+    if fmt in {'PNG', 'TIFF', 'DPX', 'JPEG2000'}:
+        row.prop(setting, depth_prop, text="")
+    elif fmt in {'OPEN_EXR', 'OPEN_EXR_MULTILAYER'}:
+        # EXR 仅支持 16/32
+        row.prop(setting, depth_prop, text="")
+    
+    # 颜色模式支持
+    if fmt not in {'HDR'}: # HDR 通常固定
+        row.prop(setting, mode_prop, text="")
         
-    # 绘制颜色模式
+    # 第三行：色彩空间
     if hasattr(setting, space_prop):
-        row = layout.row()
-        row.label(text="Color Space")
-        row.enabled=format_value not in {'HDR', 'EXR'}
-        row.prop(setting, space_prop)
+        row = layout.row(align=True)
+        sub = row.row(align=True)
+        # HDR/EXR 通常使用 Linear
+        sub.enabled = fmt not in {'HDR', 'OPEN_EXR', 'OPEN_EXR_MULTILAYER'}
+        sub.prop(setting, space_prop, text="Color Space")
 
-def draw_results(scene,layout,bake_jobs):
-    # 显示烘焙结果列表
-    layout.label(text="Baked Image Results:")
+def draw_active_channel_properties(layout, channel):
+    """绘制当前选中通道的详细属性"""
+    if not channel:
+        layout.label(text="No channel selected.", icon='INFO')
+        return
+
+    box = layout.box()
+    row = box.row()
+    row.label(text=f"{channel.name} Settings", icon='PREFERENCES')
+    
+    # 通用属性
+    col = box.column(align=True)
+    split = col.split(factor=0.3)
+    split.label(text="Naming:")
+    row = split.row(align=True)
+    row.prop(channel, "prefix", text="Prefix")
+    row.prop(channel, "suffix", text="Suffix")
+    
+    bake_jobs = bpy.context.scene.BakeJobs
+    if bake_jobs.jobs and bake_jobs.job_index >= 0:
+        current_job_setting = bake_jobs.jobs[bake_jobs.job_index].setting
+        if current_job_setting.colorspace_setting:
+            col.separator()
+            col.prop(channel, "custom_cs", text="Color Space", icon='COLOR')
+
+    # 特定属性
+    box.separator()
+    if channel.id == 'rough':
+        box.prop(channel, "rough_inv", icon='ARROW_LEFTRIGHT')
+    elif channel.id == 'normal':
+        col = box.column(align=True)
+        draw_header(col, "Normal Map", 'NORMALS_FACE')
+        col.prop(channel, "normal_type", text="Standard")
+        if channel.normal_type == 'CUSTOM':
+            row = col.row(align=True)
+            row.prop(channel, "normal_X", text="X")
+            row.prop(channel, "normal_Y", text="Y")
+            row.prop(channel, "normal_Z", text="Z")
+        col.prop(channel, "normal_obj", text="Object Space")
+    elif channel.id in {'diff', 'gloss', 'tranb'}:
+        col = box.column(align=True)
+        draw_header(col, "Light Paths", 'LIGHT_SUN')
+        row = col.row(align=True)
+        row.prop(channel, f"{channel.id}_dir", text="Direct", toggle=True)
+        row.prop(channel, f"{channel.id}_ind", text="Indirect", toggle=True)
+        row.prop(channel, f"{channel.id}_col", text="Color", toggle=True)
+    elif channel.id == 'combine':
+        col = box.column(align=True)
+        draw_header(col, "Passes", 'RENDERLAYERS')
+        row = col.row(align=True)
+        row.prop(channel, "com_dir", text="Direct", toggle=True)
+        row.prop(channel, "com_ind", text="Indirect", toggle=True)
+        col.separator()
+        grid = col.grid_flow(columns=2, align=True)
+        grid.prop(channel, "com_diff", text="Diffuse")
+        grid.prop(channel, "com_gloss", text="Glossy")
+        grid.prop(channel, "com_tran", text="Transmission")
+        grid.prop(channel, "com_emi", text="Emission")
+    elif channel.id == 'bevel':
+        col = box.column(align=True)
+        col.prop(channel, "bevel_sample", text="Samples")
+        col.prop(channel, "bevel_rad", text="Radius")
+    elif channel.id == 'ao':
+        col = box.column(align=True)
+        col.prop(channel, "ao_sample", text="Samples")
+        col.prop(channel, "ao_dis", text="Distance")
+        row = col.row(align=True)
+        row.prop(channel, "ao_inside", toggle=True)
+        row.prop(channel, "ao_local", toggle=True)
+    elif channel.id == 'wireframe':
+        col = box.column(align=True)
+        col.prop(channel, "wireframe_dis", text="Thickness")
+        col.prop(channel, "wireframe_use_pix", text="Pixel Size")
+    elif channel.id == 'bevnor':
+        col = box.column(align=True)
+        col.prop(channel, "bevnor_sample", text="Samples")
+        col.prop(channel, "bevnor_rad", text="Radius")
+    elif channel.id == 'position':
+        box.prop(channel, "position_invg", text="Invert Green", toggle=True)
+    elif channel.id == 'slope':
+        col = box.column(align=True)
+        col.prop(channel, "slope_directions", text="Axis")
+        col.prop(channel, "slope_invert", text="Invert", toggle=True)
+    elif channel.id == 'thickness':
+        col = box.column(align=True)
+        col.prop(channel, "thickness_distance", text="Distance")
+        col.prop(channel, "thickness_contrast", text="Contrast")
+    elif channel.id in ('ID_mat', 'ID_ele', 'ID_UVI', 'ID_seam'):
+        box.prop(channel, "ID_num", text="Color Count")
+
+def draw_results(scene, layout, bake_jobs):
+    # 结果列表
+    layout.label(text="Baked Results", icon='IMAGE_DATA')
+    
     row = layout.row()
     row.template_list(
         "BAKETOOL_UL_BakedImageResults", "",
         scene, "baked_image_results",
-        scene, "baked_image_results_index"
+        scene, "baked_image_results_index",
+        rows=5
     )
-
-    # 操作按钮
+    
+    # 侧边操作栏
     col = row.column(align=True)
     col.operator("baketool.delete_result", text="", icon="TRASH")
     col.operator("baketool.delete_all_results", text="", icon="X")
+    col.separator()
     col.operator("baketool.export_result", text="", icon="EXPORT")
     col.operator("baketool.export_all_results", text="", icon="FILE_FOLDER")
 
-    # 导出设置区域
-    layout.label(text="Export Settings:")
+    # 导出设置
     box = layout.box()
-    box.prop(bake_jobs, "bake_result_save_path", text="Save Path")
-    box.prop(bake_jobs, "bake_result_save_format", text="Format")
-    box.prop(bake_jobs, "bake_result_color_depth", text="Color Depth")
-    box.prop(bake_jobs, "bake_result_color_mode", text="Color Mode")
-    box.prop(bake_jobs, "bake_result_color_space", text="Color Space")
-    box.prop(bake_jobs, "bake_result_quality", text="Quality")
-    if bake_jobs.bake_result_save_format == 'OPEN_EXR':
-        box.prop(bake_jobs, "bake_result_exr_code", text="EXR Compression")
-    box.prop(bake_jobs, "bake_result_use_denoise", text="Use Denoise")
+    draw_header(box, "Export Configuration", 'OUTPUT')
+    
+    col = box.column(align=True)
+    col.prop(bake_jobs, "bake_result_save_path", text="")
+    
+    draw_image_format_options(col, bake_jobs, prefix="bake_result_")
+    
+    row = col.row(align=True)
+    row.prop(bake_jobs, "bake_result_use_denoise", text="Denoise", toggle=True, icon='BRUSH_BLUR')
     if bake_jobs.bake_result_use_denoise:
-        box.prop(bake_jobs, "bake_result_denoise_method", text="Denoise Method")
+        row.prop(bake_jobs, "bake_result_denoise_method", text="")
 
-    # 显示选中结果的详细信息
+    # 详细信息
     if scene.baked_image_results_index >= 0 and scene.baked_image_results:
         result = scene.baked_image_results[scene.baked_image_results_index]
         box = layout.box()
-        box.label(text="Selected Result Details:")
-        box.prop(result, "image", text="Image")
-        box.prop(result, "object_name", text="Object")
-        box.prop(result, "channel_type", text="Channel")
-        box.prop(result, "color_depth", text="Color Depth")
-        box.prop(result, "color_space", text="Color Space")
-        box.prop(result, "filepath", text="Filepath")
+        draw_header(box, "Details", 'INFO')
+        col = box.column(align=True)
+        col.label(text=f"Image: {result.image.name if result.image else 'None'}", icon='IMAGE_DATA')
+        col.label(text=f"Object: {result.object_name}", icon='OBJECT_DATA')
+        col.label(text=f"Type: {result.channel_type}", icon='SHADING_TEXTURE')
 
-class BAKE_PT_nodepanel(bpy.types.Panel):
+# --- UI LISTS ---
+
+class UI_UL_ObjectList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        obj = item.bakeobject
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            if obj:
+                layout.label(text=obj.name, icon='OBJECT_DATA')
+            else:
+                layout.label(text="Missing Object", icon='ERROR')
+        elif self.layout_type == 'GRID':
+            layout.alignment = 'CENTER'
+            layout.label(text="", icon='OBJECT_DATA')
+
+class BAKETOOL_UL_ChannelList(bpy.types.UIList):
+    """UIList for dynamic bake channels. Simplified icons to avoid errors."""
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # 使用统一的安全图标，避免 'BRUSH_ROUGHEN' 等图标在不同 Blender 版本中缺失导致的崩溃
+        # Use safe icons: TEXTURE when enabled, SHADING_SOLID when disabled
+        
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            row = layout.row(align=True)
+            row.prop(item, "enabled", text="")
+            row.label(text=item.name, icon='TEXTURE' if item.enabled else 'SHADING_SOLID')
+        elif self.layout_type == 'GRID':
+            layout.alignment = 'CENTER'
+            layout.prop(item, "enabled", text="", icon='TEXTURE' if item.enabled else 'SHADING_SOLID')
+
+class LIST_UL_JobsList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        custom_icon = 'PREFERENCES'
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            layout.label(text=item.name if item.name else f"Job {index}", icon=custom_icon)
+        elif self.layout_type in {'GRID'}:
+            layout.alignment = 'CENTER'
+            layout.label(text="", icon=custom_icon)
+
+class LIST_UL_CustomBakeChannelList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        custom_icon = 'NODE_COMPOSITING'
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            layout.label(text=item.name if item.name else f"Channel {index}", icon=custom_icon)
+        elif self.layout_type in {'GRID'}:
+            layout.alignment = 'CENTER'
+            layout.label(text="", icon=custom_icon)
+
+class BAKETOOL_UL_BakedImageResults(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            row = layout.row(align=True)
+            row.prop(item, "image", text="", emboss=False, icon='IMAGE_DATA')
+            row.label(text=item.channel_type)
+        elif self.layout_type == 'GRID':
+            layout.alignment = 'CENTER'
+            layout.label(text=item.image.name if item.image else "No Image")
+
+# --- PANELS ---
+
+class BAKE_PT_NodePanel(bpy.types.Panel):
     bl_label = "Node Bake"
-    bl_idname = "BAKE_PT_nodepanel"
+    bl_idname = "BAKE_PT_NodePanel"
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
     bl_category = 'Baking'
-    
-    # 绘制节点烘焙面板的 UI。
-    # Draw the UI for the node baking panel.
     
     @classmethod
     def poll(cls, context):
@@ -150,623 +290,393 @@ class BAKE_PT_nodepanel(bpy.types.Panel):
         layout = self.layout
         setting = context.scene.BakeJobs
         
-        layout.label(text="Shader nodes are not supported currently", icon='INFO')
+        layout.label(text="Bake selected nodes to image", icon='NODE_SEL')
         layout.separator()
         
-        # 分辨率和采样分组
+        # 基础设置
         box = layout.box()
-        box.label(text="Bake Settings", icon='RENDER_STILL')
-        grid = box.grid_flow(columns=2, align=True)
-        grid.prop(setting, "node_bake_res_x", text="X", icon='MESH_PLANE')
-        grid.prop(setting, "node_bake_res_y", text="Y", icon='MESH_PLANE')
-        grid.prop(setting, "node_bake_sample", text="Samples", icon='RENDER_RESULT')
-        grid.prop(setting, "node_bake_margin", text="Margin", icon='OUTLINER_OB_EMPTY')
+        draw_header(box, "Resolution & Quality", 'PREFERENCES')
         
-        # 其他选项
-        box.prop(setting, "node_bake_delect_node", icon='NODETREE')
-        box.prop(setting, "node_bake_float32", expand=True, icon='IMAGE_RGB')
+        row = box.row(align=True)
+        row.prop(setting, "node_bake_res_x", text="X")
+        row.prop(setting, "node_bake_res_y", text="Y")
         
-        row = box.row()
-        row.enabled = not setting.node_bake_float32 or (setting.node_bake_save_outside and setting.node_bake_reload)
-        row.prop(setting, "node_bake_color_space", icon='COLOR')
+        row = box.row(align=True)
+        row.prop(setting, "node_bake_sample", text="Samples")
+        row.prop(setting, "node_bake_margin", text="Margin")
         
-        # 保存设置分组
+        row = box.row(align=True)
+        row.prop(setting, "node_bake_float32", text="32-Bit Float", toggle=True)
+        row.prop(setting, "node_bake_delete_node", text="Del Node", toggle=True)
+        
+        # 端口选择
         box = layout.box()
-        box.label(text="Save Options", icon='FILE_TICK')
-        box.prop(setting, "node_bake_save_outside", text="Save Externally", icon='FILE_TICK')
-        if setting.node_bake_save_outside:
-            draw_file_path(box, setting, "node_bake_save_path", 2)
-            draw_image_format_options(box, setting, prefix="node_bake_")
-            box.prop(setting, "node_bake_reload", icon='FILE_REFRESH')
-        
-        layout.prop(setting, "node_bake_auto_find_socket", icon='NODE')
+        draw_header(box, "Output Socket", 'NODE_OUTPUT_MATERIAL')
+        row = box.row(align=True)
+        row.prop(setting, "node_bake_auto_find_socket", text="Auto Detect", toggle=True)
         if not setting.node_bake_auto_find_socket:
-            layout.prop(setting, "node_bake_socket_index", icon='NODE')
+            row.prop(setting, "node_bake_socket_index", text="Index")
+
+        # 保存设置
+        box = layout.box()
+        draw_header(box, "Save Options", 'FILE_TICK')
+        box.prop(setting, "node_bake_save_outside", text="Save to Disk", icon='DISK_DRIVE')
         
-        # 操作按钮
+        if setting.node_bake_save_outside:
+            col = box.column(align=True)
+            draw_file_path(col, setting, "node_bake_save_path", 2)
+            draw_image_format_options(col, setting, prefix="node_bake_")
+            col.prop(setting, "node_bake_reload", text="Reload Image", toggle=True, icon='FILE_REFRESH')
+        
         layout.separator()
-        row = layout.row(align=True)
-        row.scale_y = 2.0
-        row.operator("bake.selected_node_bake", text="Bake Selected Node", icon='RENDER_STILL')
-        
+        row = layout.row()
+        row.scale_y = 1.5
+        row.operator("bake.selected_node_bake", text="Bake Node", icon='RENDER_STILL')
        
-class BAKE_PT_bakepanel(bpy.types.Panel):
+class BAKE_PT_BakePanel(bpy.types.Panel):
     bl_label = "Baking Tool"
-    bl_idname = "BAKE_PT_bakepanel"
+    bl_idname = "BAKE_PT_BakePanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'Baking'
 
-    # 绘制主烘焙工具面板的 UI。
-    # Draw the UI for the main baking tool panel.
-    # 通道定义字典，支持 BSDF（分版本）、BASIC 和 MULTIRES 类型
-    CHANNELS = {
-        "BSDF": {
-            "pre_4_0": [  # Blender 4.0 之前的通道
-                {"name": "color", "extra": []},
-                {"name": "subface", "extra": []},
-                {"name": "subface_col", "extra": []},
-                {"name": "subface_ani", "extra": []},
-                {"name": "metal", "extra": []},
-                {"name": "specular", "extra": []},
-                {"name": "specular_tint", "extra": []},
-                {"name": "rough", "extra": ["rough_inv"]},
-                {"name": "anisotropic", "extra": []},
-                {"name": "anisotropic_rot", "extra": []},
-                {"name": "sheen", "extra": []},
-                {"name": "sheen_tint", "extra": []},
-                {"name": "clearcoat", "extra": []},
-                {"name": "clearcoat_rough", "extra": []},
-                {"name": "tran", "extra": []},
-                {"name": "tran_rou", "extra": []},
-                {"name": "emi", "extra": []},
-                {"name": "emi_str", "extra": []},
-                {"name": "alpha", "extra": []},
-                {"name": "normal", "extra": []},
-            ],
-            "post_4_0": [  # Blender 4.0 及之后的通道
-                {"name": "color", "extra": []},
-                {"name": "subface", "extra": []},
-                {"name": "subface_ani", "extra": []},
-                {"name": "metal", "extra": []},
-                {"name": "specular", "extra": []},
-                {"name": "specular_tint", "extra": []},
-                {"name": "rough", "extra": ["rough_inv"]},
-                {"name": "anisotropic", "extra": []},
-                {"name": "anisotropic_rot", "extra": []},
-                {"name": "sheen", "extra": []},
-                {"name": "sheen_tint", "extra": []},
-                {"name": "sheen_rough", "extra": []},
-                {"name": "clearcoat", "extra": []},
-                {"name": "clearcoat_rough", "extra": []},
-                {"name": "clearcoat_tint", "extra": []},  # 4.0 新增
-                {"name": "tran", "extra": []},
-                {"name": "emi", "extra": []},
-                {"name": "emi_str", "extra": []},
-                {"name": "alpha", "extra": []},
-                {"name": "normal", "extra": []},
-            ]
-        },
-        "BASIC": {
-            "channels": [
-                {"name": "diff", "extra": ["diff_dir", "diff_ind", "diff_col"]},
-                {"name": "rough", "extra": []},
-                {"name": "emi", "extra": []},
-                {"name": "gloss", "extra": ["gloss_dir", "gloss_ind", "gloss_col"]},
-                {"name": "tranb", "extra": ["tranb_dir", "tranb_ind", "tranb_col"]},
-                {"name": "combine", "extra": ["com_dir", "com_ind", "com_diff", "com_gloss", "com_tran", "com_emi"]},
-                {"name": "normal", "extra": []},
-            ]
-        },
-        "MULTIRES": {
-            "channels": [
-                {"name": "height", "extra": []},
-                {"name": "normal", "extra": []},
-            ]
-        },
-        "SPECIAL_MAPS": {  # 特殊贴图通道
-            "lighting": [
-                {"name": "shadow", "extra": []},
-                {"name": "env", "extra": []},
-            ],
-            "mesh": [
-                {"name": "bevel", "extra": ["bevel_sample", "bevel_rad"]},
-                {"name": "ao", "extra": ["ao_inside", "ao_local", "ao_dis", "ao_sample"]},
-                {"name": "UV", "extra": []},
-                {"name": "wireframe", "extra": ["wireframe_use_pix", "wireframe_dis"]},
-                {"name": "bevnor", "extra": ["bevnor_sample", "bevnor_rad"]},
-                {"name": "position", "extra": ["position_invg"]},
-                {"name": "slope", "extra": ["slope_directions", "slope_invert"]},
-                {"name": "thickness", "extra": ["thickness_distance", "thickness_contrast"]},
-                {"name": "select", "extra": []},
-            ],
-            "id": [
-                {"name": "ID_mat", "extra": []},
-                {"name": "ID_ele", "extra": []},
-                {"name": "ID_UVI", "extra": []},
-                {"name": "ID_seam", "extra": []},
-            ],
-            "other": [
-                {"name": "vertex", "extra": []},
-            ]
-        }
-    }
-    # 烘焙类型、方法和模式的映射表
-    BAKE_TYPE_MAPPING = {
-        "BASIC": {
-            "NO": {
-                "available_modes": ["SINGLE_OBJECT", "COMBINE_OBJECT", "SELECT_ACTIVE", "SPILT_MATERIAL"],
-                "description": "标准烘焙，支持单个物体、组合物体、选中到活动物体和按材质分割"
-            },
-            "VERTEXCOLOR": {
-                "available_modes": ["SINGLE_OBJECT", "COMBINE_OBJECT", "SELECT_ACTIVE", "SPILT_MATERIAL"],
-                "description": "将结果烘焙到顶点色，支持所有模式"
-            },
-            "AUTOATLAS": {
-                "available_modes": ["SINGLE_OBJECT", "SELECT_ACTIVE"],
-                "description": "制作合并贴图，仅支持单个物体和选中到活动物体"
-            }
-        },
-        "BSDF": {
-            "NO": {
-                "available_modes": ["SINGLE_OBJECT", "COMBINE_OBJECT", "SPILT_MATERIAL"],
-                "description": "BSDF 正常烘焙，支持单个物体、组合物体和按材质分割"
-            },
-            "VERTEXCOLOR": {
-                "available_modes": ["SINGLE_OBJECT", "COMBINE_OBJECT", "SPILT_MATERIAL"],
-                "description": "BSDF 顶点色烘焙，支持单个物体、组合物体和按材质分割"
-            },
-            "AUTOATLAS": {
-                "available_modes": [],
-                "description": "BSDF 不支持自动图集模式"
-            }
-        },
-        "MULTIRES": {
-            "NO": {
-                "available_modes": ["SINGLE_OBJECT", "COMBINE_OBJECT"],
-                "description": "多级精度烘焙，仅支持单个物体和组合物体"
-            },
-            "VERTEXCOLOR": {
-                "available_modes": [],
-                "description": "多级精度烘焙不支持顶点色模式"
-            },
-            "AUTOATLAS": {
-                "available_modes": [],
-                "description": "多级精度烘焙不支持自动图集模式"
-            }
-        }
-    }
-    
-    def draw_channel(self, layout, setting, channel_name, extra_props=None):
-        """绘制单个通道的 UI，包括开关、前缀、后缀和可选的额外属性 (Draw UI for a single channel, including toggle, prefix, suffix, and optional extra properties)"""
+    def draw_rgba_channel(self, layout, item, channel, setting, is_bw=False):
+        """绘制自定义通道的RGBA/BW设置"""
+        prefix = channel + "_"
+        
         row = layout.row(align=True)
-        row.prop(setting, channel_name, toggle=True)  # 通道开关 (Channel toggle)
-        row.prop(setting, f"{channel_name}_pre")  # 前缀 (Prefix)
-        row.prop(setting, f"{channel_name}_suf")  # 后缀 (Suffix)
-        if setting.colorspace_setting and not setting.float32:
-            row.prop(setting, f"{channel_name}_cs")  # 颜色空间 (Color space)
-        if extra_props and getattr(setting, channel_name):
-            col = layout.column(align=True)
-            for prop in extra_props:
-                col.prop(setting, prop)  # 额外属性 (Extra property)
-
-    def draw_rgba_channel(self, layout, item, channel, setting, bw=False):
-        """绘制单个 RGBA 通道的 UI，包括开关、反转和映射选择 (Draw UI for a single RGBA channel, including toggle, invert, and map selection)"""
-        row = layout.row()
-        if not bw: 
-            usemap_prop = f"{channel}_usemap"
-            row.prop(item, usemap_prop, text=f"{channel.upper()} Channel Use Map")  # 使用贴图开关 (Use map toggle)
-        split = row.split(factor=1, align=False)
-        split.enabled = bw or getattr(item, usemap_prop)
-        split.scale_x = 0.6
-        split.prop(item, f"{channel}_invert", text="Invert")  # 反转 (Invert)
-        split = row.split(factor=1, align=False)
-        split.enabled = bw or getattr(item, usemap_prop)
-        split.scale_x = 0.75
-        if setting.bake_type == 'BSDF' and bpy.app.version < (4, 0, 0):
-            split.prop(item, f"{channel}_map_BSDF3")  # BSDF 3.x 映射 (BSDF 3.x mapping)
-        elif setting.bake_type == 'BSDF' and bpy.app.version >= (4, 0, 0):
-            split.prop(item, f"{channel}_map_BSDF4")  # BSDF 4.x 映射 (BSDF 4.x mapping)
+        # 标签和启用开关
+        label = channel.upper() if not is_bw else "BW"
+        row.prop(item, prefix + "usemap", text=label, toggle=True)
+        
+        if getattr(item, prefix + "usemap"):
+            # 如果启用了贴图，显示贴图选择和选项
+            sub = row.row(align=True)
+            if setting.bake_type == 'BSDF':
+                if bpy.app.version < (4, 0, 0):
+                    sub.prop(item, prefix + "map_BSDF3", text="")
+                else:
+                    sub.prop(item, prefix + "map_BSDF4", text="")
+            else:
+                sub.prop(item, prefix + "map_basic", text="")
+            
+            sub.prop(item, prefix + "invert", text="", icon='ARROW_LEFTRIGHT')
+            sub.prop(item, prefix + "sepcol", text="", icon='COLOR')
+            
+            if getattr(item, prefix + "sepcol"):
+                sub.prop(item, prefix + "colchan", text="")
         else:
-            split.prop(item, f"{channel}_map_basic")  # 基本映射 (Basic mapping)
-        if bw or getattr(item, usemap_prop):
-            row = layout.row()
-            row.scale_x = 0.8
-            row.prop(item, f"{channel}_sepcol", text="Separate Colors")  # 分离颜色 (Separate colors)
-            if getattr(item, f"{channel}_sepcol"):
-                row.prop(item, f"{channel}_colchan", text="Channel")  # 颜色通道 (Color channel)
+            # 如果未启用贴图，显示数值滑块
+            if not is_bw:
+                row.prop(item, channel, text="")
 
     def draw_inputs(self, layout, jobs, setting):
-        """绘制输入设置面板，优化排版和图标 (Draw input settings panel, optimize layout and icons)"""
-        layout.prop(jobs, "open_inputs", icon="DISCLOSURE_TRI_DOWN" if jobs.open_inputs else "DISCLOSURE_TRI_RIGHT", text="Inputs")  # 输入面板开关 (Input panel toggle)
-        if not jobs.open_inputs:
-            return
-
+        # 标题栏带折叠图标
+        icon = "DISCLOSURE_TRI_DOWN" if jobs.open_inputs else "DISCLOSURE_TRI_RIGHT"
+        layout.prop(jobs, "open_inputs", text="Input Settings", icon=icon, emboss=False)
+        
+        if not jobs.open_inputs: return
+        
+        # 使用 Box 包裹内容
         box = layout.box()
-        box.label(text="Bake Inputs", icon='RENDER_STILL')  # 烘焙输入标题 (Bake inputs title)
-
-        # 分辨率和采样（网格布局）(Resolution and sampling [grid layout])
-        grid = box.grid_flow(columns=2, align=True)
-        grid.enabled = setting.special_bake_method != 'VERTEXCOLOR'  # VERTEXCOLOR 时禁用 (Disabled when VERTEXCOLOR)
-        grid.prop(setting, "res_x", text="Width", icon='MESH_PLANE')  # 宽度 (Width)
-        grid.prop(setting, "res_y", text="Height", icon='MESH_PLANE')  # 高度 (Height)
-        grid.prop(setting, "sample", text="Samples", icon='RENDER_RESULT')  # 采样数 (Samples)
-        grid.prop(setting, "margin", text="Margin", icon='OUTLINER_OB_EMPTY')  # 边缘距离 (Margin)
-
-        # 设备和烘焙类型 (Device and bake type)
+        
+        # 1. 基础参数 (分辨率/采样)
         col = box.column(align=True)
-        col.prop(setting, "device", icon='SYSTEM', text="Device")  # 设备选择 (Device selection)
-        col.prop(setting, "bake_type", icon='SHADING_TEXTURE', text="Bake Type")  # 烘焙类型 (Bake type)
-
-        # Special Setting（仅 BASIC 和 BSDF）(Special Setting [only BASIC and BSDF])
+        draw_header(col, "Dimensions & Quality", 'TEXTURE')
+        
+        row = col.row(align=True)
+        row.enabled = setting.special_bake_method != 'VERTEXCOLOR'
+        row.prop(setting, "res_x", text="X")
+        row.prop(setting, "res_y", text="Y")
+        
+        row = col.row(align=True)
+        row.prop(setting, "sample", text="Samples")
+        row.prop(setting, "margin", text="Margin")
+        
+        col.separator()
+        
+        # 2. 烘焙方式
+        draw_header(col, "Method", 'SHADING_RENDERED')
+        row = col.row(align=True)
+        row.prop(setting, "device", expand=True)
+        
+        col.prop(setting, "bake_type", text="Type")
+        
         if setting.bake_type in {"BASIC", "BSDF"}:
-            box.separator()  # 分隔符 (Separator)
-            col = box.column(align=True)
-            col.label(text="Special Settings", icon='MODIFIER')  # 特殊设置标题 (Special settings title)
-            row = col.row(align=True)
-            row.prop_enum(setting, "special_bake_method", "NO", text="None", icon='NONE')  # 无特殊方法 (No special method)
-            row.prop_enum(setting, "special_bake_method", "VERTEXCOLOR", text="Vertex Color", icon='VPAINT_HLT')  # 顶点色 (Vertex color)
-            row.prop_enum(setting, "special_bake_method", "AUTOATLAS", text="Auto Atlas", icon='UV')  # 自动图集 (Auto atlas)
+            col.prop(setting, "special_bake_method", text="Special")
+            
+        col.prop(setting, "bake_mode", text="Mode")
+        
+        col.separator()
 
-        # Baking Method（动态选项）(Baking Method [dynamic options])
-        available_modes = self.BAKE_TYPE_MAPPING.get(setting.bake_type, {}).get(setting.special_bake_method, {}).get("available_modes", [])
-        if available_modes:
-            box.separator()
-            col = box.column(align=True)
-            col.label(text="Baking Method", icon='OBJECT_DATA')  # 烘焙方法标题 (Baking method title)
+        # 3. 物体列表
+        draw_header(col, "Target Objects", 'OUTLINER_OB_MESH')
+        row = col.row()
+        row.template_list("UI_UL_list", "bake_objects_list", setting, "bake_objects", setting, "active_object_index", rows=3)
+        
+        # 物体列表操作
+        sub = row.column(align=True)
+        sub.operator("bake.record_objects", text="", icon='ADD').objecttype = 0
+        sub.operator("bake.record_objects", text="", icon='TRASH').objecttype = 0 # 需要在ops中实现清除逻辑，这里暂时复用
+        
+        # 4. 模式特定设置 (Selected to Active)
+        if setting.bake_mode == "SELECT_ACTIVE":
+            subbox = box.box()
+            draw_header(subbox, "Selected to Active", 'PIVOT_ACTIVE')
+            
+            col = subbox.column(align=True)
+            
             row = col.row(align=True)
-            for mode in available_modes:
-                row.prop_enum(setting, "bake_mode", mode, translate=True, icon='NONE')  # 动态烘焙模式 (Dynamic bake mode)
+            row.prop(setting, "active_object", text="Active")
+            row.operator("bake.record_objects", text="", icon='EYEDROPPER').objecttype = 1
+            
+            row = col.row(align=True)
+            row.prop(setting, "cage_object", text="Cage")
+            row.operator("bake.record_objects", text="", icon='EYEDROPPER').objecttype = 2
+            
+            row = col.row(align=True)
+            row.prop(setting, "extrusion", text="Extrusion")
+            row.prop(setting, "ray_distance", text="Ray Dist")
 
-        # Baking Objects (烘焙对象)
-        box.separator()
-        col = box.column(align=True)
-        col.label(text="Baking Objects", icon='OUTLINER_OB_MESH')  # 烘焙对象标题 (Baking objects title)
-        for obj in setting.bake_objects:
-            if obj.bakeobject:
-                col.label(text=obj.bakeobject.name, icon='OBJECT_DATA')  # 对象名称 (Object name)
-        row = col.row(align=True)
-        row.prop(setting, "bake_objects", text="")  # 对象列表 (Object list)
-        row.operator("bake.record_objects", text="Record", icon='ADD').objecttype = 0  # 记录对象 (Record objects)
-
-        # SELECT_ACTIVE 模式额外设置 (SELECT_ACTIVE mode extra settings)
-        if setting.bake_mode == "SELECT_ACTIVE" and setting.bake_type == "BASIC":
-            box.separator()
-            col = box.column(align=True)
-            col.label(text="Active Object Settings", icon='PIVOT_ACTIVE')  # 活动对象设置标题 (Active object settings title)
-            row = col.row(align=True)
-            row.prop(setting, "active_object", text="Active")  # 活动对象 (Active object)
-            row.operator("bake.record_objects", text="", icon='EYEDROPPER').objecttype = 1  # 记录活动对象 (Record active object)
-            row = col.row(align=True)
-            row.prop(setting, "cage_object", text="Cage")  # 罩体对象 (Cage object)
-            row.operator("bake.record_objects", text="", icon='EYEDROPPER').objecttype = 2  # 记录罩体对象 (Record cage object)
-            row = col.row(align=True)
-            row.prop(setting, "extrusion", text="Extrusion")  # 挤出距离 (Extrusion distance)
-            row.prop(setting, "ray_distance", text="Ray Distance")  # 光线距离 (Ray distance)
-
-        # AUTOATLAS 模式额外设置 (AUTOATLAS mode extra settings)
+        # 5. Atlas 设置
         if setting.special_bake_method == 'AUTOATLAS':
-            box.separator()
-            col = box.column(align=True)
-            col.label(text="Atlas Settings", icon='UV_DATA')  # 图集设置标题 (Atlas settings title)
-            col.prop(setting, "altas_pack_method", expand=True)  # 图集打包方法 (Atlas packing method)
-            col.prop(setting, "altas_margin", text="Margin")  # 图集边距 (Atlas margin)
+            subbox = box.box()
+            draw_header(subbox, "Atlas Settings", 'UV_DATA')
+            col = subbox.column(align=True)
+            col.prop(setting, "atlas_pack_method", text="Pack")
+            col.prop(setting, "atlas_margin", text="Margin")
 
-        # MULTIRES 模式额外设置 (MULTIRES mode extra settings)
+        # 6. Multires 设置
         if setting.bake_type == 'MULTIRES':
-            box.separator()
-            col = box.column(align=True)
-            col.label(text="Multires Settings", icon='MOD_MULTIRES')  # 多级精度设置标题 (Multires settings title)
-            col.prop(setting, "mutlires_divide", text="Subdivision")  # 细分级别 (Subdivision level)
-
-        # 动画烘焙选项 (Animation baking options)
+            subbox = box.box()
+            draw_header(subbox, "Multires", 'MOD_MULTIRES')
+            subbox.prop(setting, "multires_divide", text="Subdivision Level")
+        
+        # 7. 动画设置
         box.separator()
-        col = box.column(align=True)
-        row = col.row(align=True)
-        row.enabled = setting.special_bake_method != 'VERTEXCOLOR' and setting.bake_type != 'MULTIRES'  # 禁用条件 (Disable condition)
-        row.prop(setting, "bake_motion", icon='ANIM', text="Bake Animation")  # 动画烘焙开关 (Animation baking toggle)
+        row = box.row(align=True)
+        row.prop(setting, "bake_motion", text="Animation Bake", icon='TIME', toggle=True)
+        
         if setting.bake_motion:
-            col = box.column(align=True)
-            col.label(text="Animation Range", icon='TIME')  # 动画范围标题 (Animation range title)
-            row = col.row(align=True)
-            row.prop(setting, "bake_motion_startindex", text="Start Index")  # 开始索引 (Start index)
-            row.prop(setting, "bake_motion_digit", text="Digits")  # 位数 (Digits)
-            col.prop(setting, "bake_motion_use_custom", text="Custom Range", icon='PRESET')  # 自定义范围 (Custom range)
+            subbox = box.box()
+            col = subbox.column(align=True)
+            col.prop(setting, "bake_motion_use_custom", text="Custom Range", toggle=True)
+            
             if setting.bake_motion_use_custom:
                 row = col.row(align=True)
-                row.prop(setting, "bake_motion_start", text="Start Frame")  # 开始帧 (Start frame)
-                row.prop(setting, "bake_motion_last", text="End Frame")  # 结束帧 (End frame)
-
-        # 精度和颜色设置 (Precision and color settings)
-        box.separator()
-        col = box.column(align=True)
-        col.prop(setting, "float32", icon='IMAGE_RGB', text="32-bit Float")  # 32位浮点开关 (32-bit float toggle)
-        if setting.special_bake_method != 'VERTEXCOLOR':
-            row = col.row(align=True)
-            row.enabled = not setting.float32 or (setting.reload and setting.save_out or setting.bake_motion)  # 启用条件 (Enable condition)
-            row.prop(setting, "colorspace_setting", icon='COLOR', text="Color Space")  # 颜色空间 (Color space)
-            col.prop(setting, "use_alpha", icon='IMAGE_ALPHA', text="Use Alpha")  # 使用Alpha (Use Alpha)
-            col.prop(setting, "clearimage", icon='BRUSH_DATA', text="Clear Image")  # 清除图像 (Clear image)
-            if not setting.clearimage:
-                col.prop(setting, "colorbase", icon='COLOR', text="Base Color")  # 基底颜色 (Base color)
-
-    def draw_channels(self, layout, jobs, setting):
-        """绘制通道设置面板，优化排版和图标 (Draw channels settings panel, optimize layout and icons)"""
-        layout.prop(jobs, "open_channels", icon="DISCLOSURE_TRI_DOWN" if jobs.open_channels else "DISCLOSURE_TRI_RIGHT", text="Channels")  # 通道面板开关 (Channels panel toggle)
-        if not jobs.open_channels:
-            return
-
-        box = layout.box()
-        box.label(text="Bake Channels", icon='TEXTURE')  # 烘焙通道标题 (Bake channels title)
-
-        # 主通道 (Main channels)
-        if setting.bake_type == "BSDF":
-            channels = self.CHANNELS["BSDF"]["post_4_0" if bpy.app.version >= (4, 0, 0) else "pre_4_0"]  # BSDF通道版本 (BSDF channel version)
-        else:
-            channels = self.CHANNELS.get(setting.bake_type, {}).get("channels", [])  # 其他类型通道 (Other type channels)
-        col = box.column(align=True)
-        for channel in channels:
-            self.draw_channel(col, setting, channel["name"], channel.get("extra", []))  # 绘制主通道 (Draw main channel)
-
-        # 法线设置 (Normal settings)
-        if setting.normal:
-            box.separator()
-            col = box.column(align=True)
-            col.label(text="Normal Settings", icon='NORMALS_FACE')  # 法线设置标题 (Normal settings title)
-            col.prop(setting, "normal_type", text="Type")  # 法线类型 (Normal type)
-            if setting.normal_type == 'CUSTOM':
-                row = col.row(align=True)
-                row.prop(setting, "normal_X", text="X")  # X轴法线 (X-axis normal)
-                row.prop(setting, "normal_Y", text="Y")  # Y轴法线 (Y-axis normal)
-                row.prop(setting, "normal_Z", text="Z")  # Z轴法线 (Z-axis normal)
-            col.prop(setting, "normal_obj", text="Object")  # 法线对象 (Normal object)
-
-        # 特殊贴图 (Special maps)
-        box.separator()
-        col = box.column(align=True)
-        col.prop(setting, "use_special_map", icon='TEXTURE_DATA', text="Special Maps")  # 特殊贴图开关 (Special maps toggle)
-        if setting.use_special_map:
-            # Lighting Maps (光照贴图)
-            sub_box = box.box()
-            sub_box.label(text="Lighting Maps", icon='LIGHT')  # 光照贴图标题 (Lighting maps title)
-            col = sub_box.column(align=True)
-            for channel in self.CHANNELS["SPECIAL_MAPS"]["lighting"]:
-                self.draw_channel(col, setting, channel["name"], channel.get("extra", []))  # 绘制光照贴图 (Draw lighting map)
+                row.prop(setting, "bake_motion_start", text="Start")
+                row.prop(setting, "bake_motion_last", text="Count")
             
-            enabled=not (setting.bake_mode == 'SELECT_ACTIVE' and setting.bake_type == 'BASIC') and \
-                          setting.special_bake_method != 'VERTEXCOLOR' and \
-                          setting.bake_mode != 'SPILT_MATERIAL' and \
-                          not setting.bake_motion  # 启用条件 (Enable condition)
-            # Mesh Maps (网格贴图)
-            sub_box = box.box()
-            sub_box.label(text="Mesh Maps", icon='MESH_DATA')  # 网格贴图标题 (Mesh maps title)
-            col = sub_box.column(align=True)
-            col.enabled = enabled
-            for channel in self.CHANNELS["SPECIAL_MAPS"]["mesh"]:
-                self.draw_channel(col, setting, channel["name"], channel.get("extra", []))  # 绘制网格贴图 (Draw mesh map)
+            row = col.row(align=True)
+            row.prop(setting, "bake_motion_startindex", text="Start Index")
+            row.prop(setting, "bake_motion_digit", text="Digits")
 
-            # ID Maps (ID贴图)
-            sub_box = box.box()
-            sub_box.label(text="ID Maps", icon='TEXT')  # ID贴图标题 (ID maps title)
-            col = sub_box.column(align=True)
-            col.enabled = enabled
-            for channel in self.CHANNELS["SPECIAL_MAPS"]["id"]:
-                self.draw_channel(col, setting, channel["name"], channel.get("extra", []))  # 绘制ID贴图 (Draw ID map)
-            col = sub_box.column(align=True)
-            col.prop(setting,"ID_num",text='ID nums')
-
-            # Other Maps (其他贴图)
-            sub_box = box.box()
-            sub_box.label(text="Other Maps", icon='GROUP_VERTEX')  # 其他贴图标题 (Other maps title)
-            col = sub_box.column(align=True)
-            col.enabled = enabled
-            for channel in self.CHANNELS["SPECIAL_MAPS"]["other"]:
-                self.draw_channel(col, setting, channel["name"], channel.get("extra", []))  # 绘制其他贴图 (Draw other map)
-
-    def draw_saves(self, layout, jobs, setting):
-        """绘制保存设置面板，优化排版和图标 (Draw save settings panel, optimize layout and icons)"""
-        layout.prop(jobs, "open_saves", icon="DISCLOSURE_TRI_DOWN" if jobs.open_saves else "DISCLOSURE_TRI_RIGHT", text="Saves")  # 保存面板开关 (Saves panel toggle)
-        if not jobs.open_saves:
-            return
-
-        box = layout.box()
-        box.label(text="Save Options", icon='FILE_TICK')  # 保存选项标题 (Save options title)
-
+        # 8. 杂项设置 (颜色空间等)
         col = box.column(align=True)
-        col.prop(setting, "name_setting", icon='SORTALPHA', text="Naming")  # 命名设置 (Naming settings)
-        row = col.row(align=True)
-        row.enabled = setting.name_setting == "CUSTOM"  # 启用自定义命名 (Enable custom naming)
-        row.prop(setting, "custom_name", icon='FONT_DATA', text="Custom Name")  # 自定义名称 (Custom name)
-
-        if setting.special_bake_method != 'VERTEXCOLOR':
-            col.prop(setting, "use_fake_user", icon='FAKE_USER_ON', text="Use Fake User")  # 使用伪用户 (Use fake user)
-            col.prop(setting, "object_image_map", icon='IMAGE_DATA', text="Object Image Map")  # 对象图像贴图 (Object image map)
-            row = col.row(align=True)
-            row.enabled = not setting.bake_motion  # 非动画时启用 (Enabled when not baking motion)
-            row.prop(setting, "save_out", icon='EXPORT', text="Save Externally")  # 外部保存 (Save externally)
-            if setting.save_out or setting.bake_motion:
-                col.prop(setting, "use_denoise", icon='MODIFIER', text="Denoise")  # 使用降噪 (Use denoise)
-                if setting.use_denoise:
-                    col.prop(setting, "denoise_method", text="Method")  # 降噪方法 (Denoise method)
-                sub_col = col.column(align=True)
-                if setting.bake_type == 'BASIC':
-                    sub_col.label(text="Tip: Use PNG/EXR for transparency", icon='INFO')  # 提示：透明度用PNG/EXR (Tip: Use PNG/EXR for transparency)
-                if setting.float32:
-                    sub_col.label(text="Tip: Use 16/32-bit formats", icon='INFO')  # 提示：使用16/32位格式 (Tip: Use 16/32-bit formats)
-                draw_file_path(sub_col, setting, "save_path", 0)  # 保存路径 (Save path)
-                sub_col.prop(setting, "reload", icon='FILE_REFRESH', text="Reload")  # 重新加载 (Reload)
-                draw_image_format_options(box, setting)  # 图像格式选项 (Image format options)
-                col.prop(setting, "create_new_folder", icon='NEWFOLDER', text="Create New Folder")  # 创建新文件夹 (Create new folder)
-                if setting.create_new_folder:
-                    row = col.row(align=True)
-                    row.prop(setting, "new_folder_name_setting", text="Folder Naming")  # 文件夹命名 (Folder naming)
-                    split = row.split()
-                    split.enabled = setting.new_folder_name_setting == 'CUSTOM'  # 启用自定义文件夹名 (Enable custom folder name)
-                    split.prop(setting, "folder_name", icon='FILE_FOLDER', text="Name")  # 文件夹名称 (Folder name)
-
-    def draw_others(self, layout, jobs, setting):
-        """绘制其他设置面板，优化排版和图标 (Draw other settings panel, optimize layout and icons)"""
-        job = jobs.jobs[jobs.job_index]
-        layout.prop(jobs, "open_other", icon="DISCLOSURE_TRI_DOWN" if jobs.open_other else "DISCLOSURE_TRI_RIGHT", text="Others")  # 其他面板开关 (Others panel toggle)
-        if not jobs.open_other:
-            return
-
-        box = layout.box()
-        box.label(text="Other Options", icon='PREFERENCES')  # 其他选项标题 (Other options title)
-
-        col = box.column(align=True)
-        col.prop(setting, "save_and_quit", icon='QUIT', text="Save and Quit")  # 保存并退出 (Save and quit)
-        row = col.row(align=True)
-        row.enabled = setting.bake_type == 'BSDF' and not setting.bake_motion and setting.bake_mode != 'SPILT_MATERIAL'  # 启用条件 (Enable condition)
-        row.prop(setting, "bake_texture_apply", icon='TEXTURE', text="Apply Texture")  # 应用纹理 (Apply texture)
-        row = col.row(align=True)
-        row.enabled = setting.special_bake_method != 'VERTEXCOLOR' and not setting.bake_motion and setting.bake_type != 'MULTIRES'  # 启用条件 (Enable condition)
-        row.prop(setting, "use_custom_map", icon='TEXTURE_DATA', text="Custom Map")  # 自定义贴图 (Custom map)
-        if setting.use_custom_map and row.enabled:
-            draw_file_path(box, setting, "custom_file_path", 1)  # 自定义文件路径 (Custom file path)
-            col.prop(setting, "custom_new_folder", icon='NEWFOLDER', text="New Folder")  # 新文件夹 (New folder)
-            if setting.custom_new_folder:
-                row = col.row(align=True)
-                row.prop(setting, "custom_folder_name_setting", text="Folder Naming")  # 文件夹命名 (Folder naming)
-                split = row.split()
-                split.enabled = setting.custom_folder_name_setting == 'CUSTOM'  # 启用自定义文件夹名 (Enable custom folder name)
-                split.prop(setting, "custom_folder_name", icon='FILE_FOLDER', text="Name")  # 文件夹名称 (Folder name)
-            col.label(text="Custom Map Channels", icon='TEXTURE')  # 自定义贴图通道标题 (Custom map channels title)
-            col.template_list("LIST_UL_Custombakechannellist", "bake_channel_list", job, "Custombakechannels", job, "Custombakechannels_index")  # 通道列表 (Channel list)
-            row = col.row(align=True)
-            row = col.row(align=True)
-            row.label(text=f"Total: {len(job.Custombakechannels)}", icon='INFO')  # 通道总数 (Total channels)
-            row.label(text=f"Active: {job.Custombakechannels_index}", icon='PIVOT_ACTIVE')  # 活动通道 (Active channel)
-            row = col.row(align=True)
-            row.scale_x = 3
-            draw_template_list_ops(row, "job_custom_channel")  # 通道操作模板 (Channel operation template)
-            if len(job.Custombakechannels) > 0:
-                item = job.Custombakechannels[job.Custombakechannels_index]
-                col.separator()
-                col.label(text="Channel Details", icon='SHADING_TEXTURE')  # 通道详情标题 (Channel details title)
-                col.prop(item, "name", text="Name", icon='FONT_DATA')  # 通道名称 (Channel name)
-                draw_image_format_options(col, item)  # 图像格式选项 (Image format options)
-                col.prop(item, "bw", text="BW Map Only", icon='IMAGE_RGB')  # 仅黑白贴图 (BW map only)
-                if item.bw:
-                    self.draw_rgba_channel(col, item, 'bw', setting, True)  # 绘制黑白通道 (Draw BW channel)
-                else:
-                    for channel in ['r', 'g', 'b', 'a']:
-                        self.draw_rgba_channel(col, item, channel, setting)  # 绘制RGBA通道 (Draw RGBA channel)
-                col.prop(item, "prefix", text="Prefix", icon='SORTALPHA')  # 前缀 (Prefix)
-                col.prop(item, "suffix", text="Suffix", icon='SORTALPHA')  # 后缀 (Suffix)
-
         col.separator()
         row = col.row(align=True)
-        #row.operator("bake.save_bake_setting", text="Save Settings", icon='FILE_TICK')  # 保存设置 (Save settings)
-        #row.operator("bake.load_bake_setting", text="Load Settings", icon='FILE_REFRESH')  # 加载设置 (Load settings)
+        row.prop(setting, "float32", text="Float 32", toggle=True)
+        row.prop(setting, "use_alpha", text="Alpha", toggle=True)
+        
+        row = col.row(align=True)
+        row.prop(setting, "colorspace_setting", text="Custom ColorSpace", toggle=True)
+        row.prop(setting, "clearimage", text="Clear Image", toggle=True)
+        
+        if not setting.clearimage:
+            col.prop(setting, "colorbase", text="Base Color")
+
+
+    def draw_channels(self, layout, jobs, setting):
+        icon = "DISCLOSURE_TRI_DOWN" if jobs.open_channels else "DISCLOSURE_TRI_RIGHT"
+        layout.prop(jobs, "open_channels", text="Channel Settings", icon=icon, emboss=False)
+        
+        if not jobs.open_channels: return
+        
+        box = layout.box()
+        
+        # 通道列表和操作
+        row = box.row()
+        row.template_list("BAKETOOL_UL_ChannelList", "channels", setting, "channels", setting, "active_channel_index", rows=5)
+        
+        col = row.column(align=True)
+        col.operator("bake.reset_channels", text="", icon='FILE_REFRESH')
+        
+        # 选中通道的属性
+        if setting.channels and setting.active_channel_index >= 0 and setting.active_channel_index < len(setting.channels):
+            active_channel = setting.channels[setting.active_channel_index]
+            draw_active_channel_properties(box, active_channel)
+
+        box.separator()
+        box.prop(setting, "use_special_map", text="Enable Special Maps", icon='MOD_MASK', toggle=True)
+
+    def draw_saves(self, layout, jobs, setting):
+        icon = "DISCLOSURE_TRI_DOWN" if jobs.open_saves else "DISCLOSURE_TRI_RIGHT"
+        layout.prop(jobs, "open_saves", text="Save Settings", icon=icon, emboss=False)
+        
+        if not jobs.open_saves: return
+        
+        box = layout.box()
+        
+        # 命名规则
+        draw_header(box, "Naming Convention", 'SORTALPHA')
+        row = box.row(align=True)
+        row.prop(setting, "name_setting", text="")
+        if setting.name_setting == "CUSTOM":
+            row.prop(setting, "custom_name", text="")
+            
+        # 外部保存
+        if setting.special_bake_method != 'VERTEXCOLOR':
+            box.separator()
+            box.prop(setting, "save_out", text="Save to Disk", icon='DISK_DRIVE', toggle=True)
+            
+            if setting.save_out or setting.bake_motion:
+                subbox = box.box()
+                col = subbox.column(align=True)
+                
+                draw_file_path(col, setting, "save_path", 0)
+                col.separator()
+                draw_image_format_options(col, setting)
+                
+                col.separator()
+                col.prop(setting, "create_new_folder", text="Create Subfolder", toggle=True)
+                if setting.create_new_folder:
+                    row = col.row(align=True)
+                    row.prop(setting, "new_folder_name_setting", text="")
+                    if setting.new_folder_name_setting == 'CUSTOM':
+                        row.prop(setting, "folder_name", text="")
+    
+    def draw_others(self, layout, jobs, setting):
+        job = jobs.jobs[jobs.job_index]
+        icon = "DISCLOSURE_TRI_DOWN" if jobs.open_other else "DISCLOSURE_TRI_RIGHT"
+        layout.prop(jobs, "open_other", text="Advanced Settings", icon=icon, emboss=False)
+        
+        if not jobs.open_other: return
+        
+        box = layout.box()
+        col = box.column(align=True)
+        
+        # 行为设置
+        draw_header(col, "Post-Bake Actions", 'CHECKMARK')
+        col.prop(setting, "save_and_quit", text="Save & Quit Blender", toggle=True)
+        
+        row = col.row(align=True)
+        row.enabled = setting.bake_type == 'BSDF' and not setting.bake_motion and setting.bake_mode != 'SPLIT_MATERIAL'
+        row.prop(setting, "bake_texture_apply", text="Apply to Material", toggle=True)
+        
+        # 自定义通道 (Custom Maps)
+        col.separator()
+        row = col.row(align=True)
+        row.enabled = setting.special_bake_method != 'VERTEXCOLOR' and not setting.bake_motion and setting.bake_type != 'MULTIRES'
+        row.prop(setting, "use_custom_map", text="Custom Maps", icon='NODE_COMPOSITING', toggle=True)
+        
+        if setting.use_custom_map and row.enabled:
+            subbox = box.box()
+            col = subbox.column(align=True)
+            
+            # 自定义路径
+            draw_file_path(col, setting, "custom_file_path", 1)
+            
+            col.prop(setting, "custom_new_folder", text="Subfolder", toggle=True)
+            if setting.custom_new_folder:
+                row = col.row(align=True)
+                row.prop(setting, "custom_folder_name_setting", text="")
+                if setting.custom_folder_name_setting == 'CUSTOM':
+                    row.prop(setting, "custom_folder_name", text="")
+            
+            col.separator()
+            col.label(text="Channels", icon='TEXTURE')
+            
+            # 自定义通道列表
+            row = col.row()
+            row.template_list("LIST_UL_CustomBakeChannelList", "bake_channel_list", job, "Custombakechannels", job, "Custombakechannels_index", rows=4)
+            draw_template_list_ops(row, "job_custom_channel")
+            
+            # 自定义通道详情
+            if len(job.Custombakechannels) > 0 and job.Custombakechannels_index < len(job.Custombakechannels):
+                item = job.Custombakechannels[job.Custombakechannels_index]
+                
+                detail_box = subbox.box()
+                draw_header(detail_box, "Channel Details", 'EDITMODE_HLT')
+                
+                dcol = detail_box.column(align=True)
+                dcol.prop(item, "name", text="Name", icon='SORTALPHA')
+                dcol.separator()
+                draw_image_format_options(dcol, item)
+                
+                dcol.separator()
+                dcol.prop(item, "bw", text="Black & White Mode", toggle=True)
+                
+                dcol.separator()
+                if item.bw:
+                    self.draw_rgba_channel(dcol, item, 'bw', setting, True)
+                else:
+                    for channel_char in ['r', 'g', 'b', 'a']:
+                        self.draw_rgba_channel(dcol, item, channel_char, setting)
+                
+                dcol.separator()
+                row = dcol.row(align=True)
+                row.prop(item, "prefix", text="Prefix")
+                row.prop(item, "suffix", text="Suffix")
     
     def draw(self, context):
         layout = self.layout
         jobs = context.scene.BakeJobs
 
-        # Jobs 列表 (Jobs list)
+        # 顶部：Job 管理
         box = layout.box()
-        box.label(text="Jobs List", icon='RENDERLAYERS')  # 任务列表标题 (Jobs list title)
-        box.template_list("LIST_UL_Jobslist", "jobs_list", jobs, "jobs", jobs, "job_index")  # 任务列表 (Jobs list)
-        row = box.row(align=True)
-        row.scale_x = 3
-        draw_template_list_ops(row, "jobs_channel")  # 任务操作模板 (Jobs operation template)
-        if jobs.jobs:
-            row = box.row(align=True)
-            row.prop(jobs.jobs[jobs.job_index], "name", text="Job Name", icon='FONT_DATA')  # 任务名称 (Job name)
-        else:
-            layout.label(text="Add a job to continue", icon='INFO')  # 添加任务提示 (Add job prompt)
+        row = box.row()
+        row.template_list("LIST_UL_JobsList", "jobs_list", jobs, "jobs", jobs, "job_index", rows=3)
+        draw_template_list_ops(row, "jobs_channel")
+        
+        if not jobs.jobs:
+            box.label(text="Add a job to start", icon='INFO')
             return
-
+        
         job = jobs.jobs[jobs.job_index]
         setting = job.setting
+        
+        # Job 名称
+        row = box.row(align=True)
+        row.prop(job, "name", text="", icon='PREFERENCES')
 
-        # 绘制各部分 (Draw each section)
+        layout.separator()
+
+        # 各个板块
         self.draw_inputs(layout, jobs, setting)
         self.draw_channels(layout, jobs, setting)
         self.draw_saves(layout, jobs, setting)
         self.draw_others(layout, jobs, setting)
 
-
-        # 开始烘焙按钮 (Start baking button)
+        # 底部：开始按钮
         layout.separator()
-        row = layout.row(align=True)
+        row = layout.row()
         row.scale_y = 2.0
-        row.operator("bake.bake_operator", text="Start Baking", icon='RENDER_STILL')  # 开始烘焙 (Start baking)
-        
-# 主面板中的烘焙结果显示
+        # 使用大图标和醒目的文字
+        row.operator("bake.bake_operator", text="START BAKE", icon='RENDER_STILL')
+
 class BAKETOOL_PT_BakedResults(bpy.types.Panel):
     bl_label = "Baked Results"
     bl_idname = "BAKETOOL_PT_baked_results"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "BakeTool"
-    bl_parent_id = "BAKE_PT_bakepanel"
+    bl_category = "Baking"
+    bl_parent_id = "BAKE_PT_BakePanel"
+    bl_order = 2
 
     def draw(self, context):
+        draw_results(context.scene, self.layout, context.scene.BakeJobs)
 
-        draw_results(context.scene,self.layout,context.scene.BakeJobs)
-
-# 图像编辑器中的烘焙结果显示
 class BAKETOOL_PT_ImageEditorResults(bpy.types.Panel):
     bl_label = "Baked Results"
     bl_idname = "BAKETOOL_PT_image_editor_results"
     bl_space_type = 'IMAGE_EDITOR'
     bl_region_type = 'UI'
-    bl_category = "BakeTool"
+    bl_category = "Baking"
 
     def draw(self, context):
-        layout = self.layout
         scene = context.scene
-
-        draw_results(scene,layout,scene.BakeJobs)
-
-        # 在图像编辑器中显示预览
+        draw_results(scene, self.layout, scene.BakeJobs)
         if scene.baked_image_results_index >= 0 and scene.baked_image_results:
             result = scene.baked_image_results[scene.baked_image_results_index]
             if result.image and context.space_data.image != result.image:
-                context.space_data.image = result.image  # 设置图像编辑器显示选中的图像
-
-class LIST_UL_Jobslist(bpy.types.UIList):
-    #借用了sinestesia的模板
-    def draw_item(self, context, layout, data, item, icon, active_data,active_propname, index):
-        custom_icon = 'SHADING_TEXTURE'
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.label(text=item.name, icon = custom_icon)
-        elif self.layout_type in {'GRID'}:
-            layout.alignment = 'CENTER'
-            layout.label(text="", icon = custom_icon)
-
-class LIST_UL_Basicbakechannellist(bpy.types.UIList):
-    #借用了sinestesia的模板
-    def draw_item(self, context, layout, data, item, icon, active_data,active_propname, index):
-        custom_icon = 'SHADING_TEXTURE'
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.label(text=item.name, icon = custom_icon)
-        elif self.layout_type in {'GRID'}:
-            layout.alignment = 'CENTER'
-            layout.label(text="", icon = custom_icon)
-
-class LIST_UL_Custombakechannellist(bpy.types.UIList):
-    #借用了sinestesia的模板
-    def draw_item(self, context, layout, data, item, icon, active_data,active_propname, index):
-        custom_icon = 'SHADING_TEXTURE'
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.label(text=item.name, icon = custom_icon)
-        elif self.layout_type in {'GRID'}:
-            layout.alignment = 'CENTER'
-            layout.label(text="", icon = custom_icon)
-
-# 定义 UIList 来显示烘焙结果
-class BAKETOOL_UL_BakedImageResults(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            row = layout.row(align=True)
-            row.prop(item, "image", text="", emboss=False)  # 显示图像名称
-            row.prop(item, "object_name", text="", emboss=False)  # 显示对象名称
-            row.prop(item, "channel_type", text="", emboss=False)  # 显示通道类型
-            row.label(text=f"Depth: {item.color_depth}")  # 显示色深
-            row.label(text=f"Space: {item.color_space}")  # 显示色彩空间
-        elif self.layout_type == 'GRID':
-            layout.alignment = 'CENTER'
-            layout.label(text=item.image.name if item.image else "No Image")
+                context.space_data.image = result.image

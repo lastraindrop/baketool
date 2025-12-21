@@ -75,7 +75,7 @@ def create_node_links(tree, socket_pairs):
         links.append(link)
     return links
 
-def make_temnode(material):
+def make_temp_node(material):
     """
     Create a temporary image node in a material's node tree for baking purposes.
     This function generates a small temporary image (64x64) and attaches it to a new ShaderNodeTexImage
@@ -104,19 +104,19 @@ def make_temnode(material):
     material.node_tree.nodes.active = imagenodetem  # 设置为活动节点
     return [material, imagenodetem, imagetem]  # 返回包含所有相关对象的列表
 
-def clear_temnode(matinfo):
+def clear_temp_node(matinfo):
     """
     Remove a temporary image node and its associated image from a material.
-    This function cleans up the temporary resources created by make_temnode, ensuring no residual
+    This function cleans up the temporary resources created by make_temp_node, ensuring no residual
     data remains in memory after baking.
     Args:
-        matinfo (list): A list containing [material, image_node, image], typically returned by make_temnode.
+        matinfo (list): A list containing [material, image_node, image], typically returned by make_temp_node.
     Returns:
         None
     从材质中移除临时图像节点及其关联图像。
-    此函数清理由 make_temnode 创建的临时资源，确保烘焙后内存中没有残留数据。
+    此函数清理由 make_temp_node 创建的临时资源，确保烘焙后内存中没有残留数据。
     参数:
-        matinfo (list): 包含 [材质, 图像节点, 图像] 的列表，通常由 make_temnode 返回。
+        matinfo (list): 包含 [材质, 图像节点, 图像] 的列表，通常由 make_temp_node 返回。
     返回:
         None
     """
@@ -487,153 +487,6 @@ def get_output(nodes):
             output = node
             break  # 找到活动输出节点后退出循环
     return output  
-
-def get_imagemaps(setting, bake_type):
-    """
-    Generate a list of channel configuration dictionaries based on the bake type.
-    This function defines and returns a list of dictionaries representing texture channels (e.g., Normal, Base Color)
-    supported by a given bake type (BSDF, BASIC, MULTIRES, MESH). Each dictionary includes settings like enable state,
-    prefixes, and color modes, derived from the provided setting object.
-    Principle (原理):
-        - Uses predefined channel configuration templates for different bake types and Blender versions (3.x vs 4.x for BSDF).
-        - Dynamically constructs channel configurations using list comprehension, pulling attributes from the setting object.
-        - Supports customization through prefixes, suffixes, and custom color spaces.
-    Args:
-        setting: A settings object containing enable states, prefixes, suffixes, and other bake-related properties.
-        bake_type (str): The type of baking ('BSDF', 'BASIC', 'MULTIRES', 'MESH').
-    Returns:
-        list: A list of dictionaries, each representing a channel configuration with keys:
-            - 'type': Channel type (e.g., 'NORMAL', 'COLOR').
-            - 'enabled': Boolean indicating if the channel is active.
-            - 'prefix': Prefix for the channel name.
-            - 'suffix': Suffix for the channel name.
-            - 'node_name': Internal node name for BSDF baking.
-            - 'color_mode': Color mode ('RGB', 'RGBA', 'BW').
-            - 'default_cs': Default color space ('sRGB', 'Non-Color', etc.).
-            - 'custom_cs': Custom color space from settings.
-            - 'image': Placeholder for the image (initially None).
-    根据烘焙类型生成通道配置字典列表。
-    此函数定义并返回一个字典列表，表示给定烘焙类型（BSDF、BASIC、MULTIRES、MESH）支持的纹理通道（例如 Normal、Base Color）。每个字典包含启用状态、前缀、颜色模式等设置，从提供的设置对象中派生。
-    原理:
-        - 使用针对不同烘焙类型和 Blender 版本（BSDF 的 3.x 与 4.x）的预定义通道配置模板。
-        - 使用列表推导式动态构建通道配置，从设置对象中提取属性。
-        - 支持通过前缀、后缀和自定义颜色空间进行定制。
-    参数:
-        setting: 包含启用状态、前缀、后缀等烘焙相关属性的设置对象。
-        bake_type (str): 烘焙类型（'BSDF', 'BASIC', 'MULTIRES', 'MESH'）。
-    返回:
-        list: 包含通道配置的字典列表，每个字典的键包括：
-            - 'type': 通道类型（例如 'NORMAL', 'COLOR'）。
-            - 'enabled': 布尔值，表示通道是否启用。
-            - 'prefix': 通道名称的前缀。
-            - 'suffix': 通道名称的后缀。
-            - 'node_name': 用于 BSDF 烘焙的内部节点名称。
-            - 'color_mode': 颜色模式（'RGB', 'RGBA', 'BW'）。
-            - 'default_cs': 默认颜色空间（'sRGB', 'Non-Color' 等）。
-            - 'custom_cs': 来自设置的自定义颜色空间。
-            - 'image': 图像占位符（初始为 None）。
-    """
-    # 定义通道配置模板
-    channel_configs = {
-        'BSDF_3': [
-            ('NORMAL', 'Normal', 'RGB', 'Non-Color', 'normal'),
-            ('COLOR', 'Base Color', 'RGB', 'sRGB', 'color'),
-            ('SUBFACECOL', 'Subsurface Color', 'RGB', 'sRGB', 'subface_col'),
-            ('SUBFACE', 'Subsurface', 'BW', 'Non-Color', 'subface'),
-            ('SUBFACEANI', 'Subsurface Anisotropy', 'RGB', 'Non-Color', 'subface_ani'),
-            ('METAL', 'Metallic', 'BW', 'Non-Color', 'metal'),
-            ('SPECULAR', 'Specular', 'BW', 'Non-Color', 'specular'),
-            ('SPECULARTINT', 'Specular Tint', 'BW', 'Non-Color', 'specular_tint'),
-            ('ROUGH', 'Roughness', 'BW', 'Non-Color', 'rough'),
-            ('ANISOTROPIC', 'Anisotropic', 'BW', 'Non-Color', 'anisotropic'),
-            ('ANISOTROPICROT', 'Anisotropic Rotation', 'BW', 'Non-Color', 'anisotropic_rot'),
-            ('SHEEN', 'Sheen', 'BW', 'Non-Color', 'sheen'),
-            ('SHEENTINT', 'Sheen Tint', 'BW', 'Non-Color', 'sheen_tint'),
-            ('CLEARCOAT', 'Clearcoat', 'BW', 'Non-Color', 'clearcoat'),
-            ('CLEARCOATROU', 'Clearcoat Roughness', 'BW', 'Non-Color', 'clearcoat_rough'),
-            ('TRAN', 'Transmission', 'BW', 'Non-Color', 'tran'),
-            ('TRANROU', 'Transmission Roughness', 'BW', 'Non-Color', 'tran_rou'),
-            ('EMI', 'Emission', 'RGB', 'sRGB', 'emi'),
-            ('EMISTR', 'Emission Strength', 'BW', 'Non-Color', 'emi_str'),
-            ('ALPHA', 'Alpha', 'BW', 'Non-Color', 'alpha'),
-        ],
-        'BSDF_4': [
-            ('NORMAL', 'Normal', 'RGB', 'Non-Color', 'normal'),
-            ('COLOR', 'Base Color', 'RGB', 'sRGB', 'color'),
-            ('SUBFACE', 'Subsurface Weight', 'BW', 'Non-Color', 'subface'),
-            ('SUBFACEANI', 'Subsurface Anisotropy', 'RGB', 'Non-Color', 'subface_ani'),
-            ('METAL', 'Metallic', 'BW', 'Non-Color', 'metal'),
-            ('SPECULAR', 'Specular IOR Level', 'BW', 'Non-Color', 'specular'),
-            ('SPECULARTINT', 'Specular Tint', 'RGB', 'sRGB', 'specular_tint'),
-            ('ROUGH', 'Roughness', 'BW', 'Non-Color', 'rough'),
-            ('ANISOTROPIC', 'Anisotropic', 'BW', 'Non-Color', 'anisotropic'),
-            ('ANISOTROPICROT', 'Anisotropic Rotation', 'BW', 'Non-Color', 'anisotropic_rot'),
-            ('SHEEN', 'Sheen Weight', 'BW', 'Non-Color', 'sheen'),
-            ('SHEENTINT', 'Sheen Tint', 'RGB', 'sRGB', 'sheen_tint'),
-            ('SHEENROUGH', 'Sheen Roughness', 'RGB', 'sRGB', 'sheen_rough'),
-            ('CLEARCOAT', 'Coat Weight', 'BW', 'Non-Color', 'clearcoat'),
-            ('CLEARCOATROUGH', 'Coat Roughness', 'BW', 'Non-Color', 'clearcoat_rough'),
-            ('CLEARCOATTINT', 'Coat Tint', 'RGB', 'sRGB', 'clearcoat_tint'),
-            ('TRAN', 'Transmission Weight', 'BW', 'Non-Color', 'tran'),
-            ('EMI', 'Emission Color', 'RGB', 'sRGB', 'emi'),
-            ('EMISTR', 'Emission Strength', 'BW', 'Non-Color', 'emi_str'),
-            ('ALPHA', 'Alpha', 'BW', 'Non-Color', 'alpha'),
-        ],
-        'BASIC': [
-            ('NORMAL', 'NORMAL', 'RGB', 'Non-Color', 'normal'),
-            ('DIFF', 'DIFFUSE', 'RGBA', 'sRGB', 'diff'),
-            ('ROUGH', 'ROUGHNESS', 'BW', 'Non-Color', 'rough'),
-            ('TRANB', 'TRANSMISSION', 'RGBA', 'Non-Color', 'tranb'),
-            ('EMI', 'EMIT', 'RGB', 'sRGB', 'emi'),
-            ('GLO', 'GLOSSY', 'RGBA', 'sRGB', 'gloss'),
-            ('COM', 'COMBINED', 'RGBA', 'sRGB', 'combine'),
-        ],
-        'MULTIRES': [
-            ('NORMAL', 'NORMALS', 'RGB', 'Non-Color', 'normal'),
-            ('HEIGHT', 'DISPLACEMENT', 'RGB', 'Non-Color', 'height'),
-        ],
-        'MESH': [
-            ('SHADOW', '', 'RGB', 'sRGB', 'shadow'),
-            ('ENVIRONMENT', '', 'RGB', 'sRGB', 'env'),
-            ('VERTEX', '', 'RGB', 'sRGB', 'vertex'),
-            ('BEVEL', '', 'BW', 'Non-Color', 'bevel'),
-            ('AO', '', 'BW', 'Non-Color', 'ao'),
-            ('UV', '', 'RGB', 'Non-Color', 'UV'),
-            ('WIREFRAME', '', 'BW', 'Non-Color', 'wireframe'),
-            ('BEVNOR', '', 'RGB', 'Non-Color', 'bevnor'),
-            ('POSITION', '', 'RGB', 'Non-Color', 'position'),
-            ('SLOPE', '', 'RGB', 'Non-Color', 'slope'),
-            ('THICKNESS', '', 'BW', 'Non-Color', 'thickness'),
-            ('IDMAT', '', 'RGB', 'Non-Color', 'ID_mat'),
-            ('SELECT', '', 'BW', 'Non-Color', 'select'),
-            ('IDELE', '', 'RGB', 'Non-Color', 'ID_ele'),
-            ('IDUVI', '', 'RGB', 'Non-Color', 'ID_UVI'),
-            ('IDSEAM', '', 'RGB', 'Non-Color', 'ID_seam'),
-        ]
-    }
-    # 根据烘焙类型选择配置
-    if bake_type == 'BSDF':
-        config_key = 'BSDF_3' if bpy.app.version < (4, 0, 0) else 'BSDF_4'  # 根据 Blender 版本选择 BSDF 配置
-    elif bake_type in channel_configs:
-        config_key = bake_type
-    else:
-        return []  # 如果类型无效，返回空列表
-    # 使用列表推导式生成通道配置
-    selected_maps = [
-        {
-            'type': type_name,
-            'enabled': getattr(setting, attr),  # 从设置对象获取通道启用状态
-            'prefix': getattr(setting, f'{attr}_pre'),  # 获取前缀
-            'suffix': getattr(setting, f'{attr}_suf'),  # 获取后缀
-            'node_name': node_name,
-            'color_mode': color_mode,
-            'default_cs': default_cs,
-            'custom_cs': getattr(setting, f'{attr}_cs'),  # 获取自定义颜色空间
-            'image': None
-        }
-        for type_name, node_name, color_mode, default_cs, attr in channel_configs[config_key]
-    ]
-    return selected_maps
 
 def create_matinfo(material, spematerial=None):
     """

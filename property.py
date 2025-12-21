@@ -19,13 +19,83 @@ def update_debug_mode(self, context):
 class BakeObject(bpy.types.PropertyGroup):
     bakeobject:props.PointerProperty(name="object", type=bpy.types.Object)
     
-class Custombakechannels(bpy.types.PropertyGroup):
+class BakeChannel(bpy.types.PropertyGroup):
+    """A PropertyGroup to hold all settings for a single, generic bake channel."""
+    # --- Identification ---
+    name: props.StringProperty(name="Channel Name", description="UI display name for the channel")
+    id: props.StringProperty(name="Channel ID", description="Internal ID used for logic")
+    
+    # --- Common Settings ---
+    enabled: props.BoolProperty(name="Enabled", description="Enable this channel for baking", default=False)
+    prefix: props.StringProperty(name="Prefix", description="Filename prefix")
+    suffix: props.StringProperty(name="Suffix", description="Filename suffix")
+    custom_cs: props.EnumProperty(items=color_space, name="Color Space", description="Color space for the baked image")
+    
+    # --- Channel-Specific Settings (a union of all possible specific settings) ---
+    
+    # BSDF specific
+    rough_inv: props.BoolProperty(name="Invert", description="Invert Roughness map")
+
+    # Normal specific
+    normal_type: props.EnumProperty(items=normal_type, name="Normal Mode", default='OPENGL')
+    normal_X: props.EnumProperty(items=normal_channel, name="X", default='POS_X')
+    normal_Y: props.EnumProperty(items=normal_channel, name="Y", default='POS_Y')
+    normal_Z: props.EnumProperty(items=normal_channel, name="Z", default='POS_Z')
+    normal_obj: props.BoolProperty(name="Object Space", description="Bake in object space instead of tangent space")
+
+    # BASIC bake specific
+    diff_dir: props.BoolProperty(name="Direct", default=False)
+    diff_ind: props.BoolProperty(name="Indirect", default=False)
+    diff_col: props.BoolProperty(name="Color", default=True)
+
+    gloss_dir: props.BoolProperty(name="Direct", default=False)
+    gloss_ind: props.BoolProperty(name="Indirect", default=False)
+    gloss_col: props.BoolProperty(name="Color", default=True)
+
+    tranb_dir: props.BoolProperty(name="Direct", default=False)
+    tranb_ind: props.BoolProperty(name="Indirect", default=False)
+    tranb_col: props.BoolProperty(name="Color", default=True)
+
+    com_dir: props.BoolProperty(name="Direct", default=True)
+    com_ind: props.BoolProperty(name="Indirect", default=True)
+    com_diff: props.BoolProperty(name="Diffuse", default=True)
+    com_gloss: props.BoolProperty(name="Gloss", default=True)
+    com_tran: props.BoolProperty(name="Transmission", default=True)
+    com_emi: props.BoolProperty(name="Emission", default=True)
+    
+    # MESH specific (e.g., Bevel, AO)
+    bevel_sample: props.IntProperty(name='Samples', default=8, min=2, max=16)
+    bevel_rad: props.FloatProperty(name='Radius', default=0.1, min=0, max=1000)
+    
+    ao_inside: props.BoolProperty(name='Inside', default=False)
+    ao_local: props.BoolProperty(name='Only Local', default=False)
+    ao_dis: props.FloatProperty(name='Distance', default=1, min=0, max=1000)
+    ao_sample: props.IntProperty(name='Samples', default=16, min=1, max=128)
+
+    wireframe_use_pix: props.BoolProperty(name='Use Pixel Size', default=False)
+    wireframe_dis: props.FloatProperty(name='Thickness', default=0.01, min=0, max=100)
+
+    bevnor_sample: props.IntProperty(name='Samples', default=8, min=2, max=16)
+    bevnor_rad: props.FloatProperty(name='Radius', default=0.1, min=0, max=1000)
+
+    position_invg: props.BoolProperty(name='Invert G', default=True)
+    
+    slope_directions: props.EnumProperty(items=directions, name='Direction', default="Z")
+    slope_invert: props.BoolProperty(name='Invert', default=False)
+
+    thickness_distance: props.FloatProperty(name='Distance', default=0.5)
+    thickness_contrast: props.FloatProperty(name='Contrast', default=0.5)
+
+    ID_num: props.IntProperty(name='ID Map Count', default=5, min=2, max=20)
+
+class CustomBakeChannel(bpy.types.PropertyGroup):
     save_format:props.EnumProperty(items=basic_format, name='Format', description='Format Used For Saving Image',default="PNG")
     color_depth:props.EnumProperty(items=color_depth, name='Color Depth', description='Color Depth')
     color_mode:props.EnumProperty(items=color_mode, name='Color Mode', description='Color Mode')
     color_space:props.EnumProperty(items=color_space, name='Color Space', description='Color Space')
     quality:props.IntProperty(name='Quality', description='Quality Of Saved Image',default=85,min=0,max=100)
     exr_code:props.EnumProperty(items=exr_code,name='EXR Compression', description='EXR Compression Method',default='ZIP')
+    tiff_codec:props.EnumProperty(items=tiff_codec,name='TIFF Compression', description='TIFF Compression Method',default='DEFLATE')
     #RGB通道的基本属性//Basic properties of RGB channels
     r:props.FloatProperty(name='Red', description='Red value for the channel', default=0.0, min=0, max=1)
     g:props.FloatProperty(name='Green', description='Green value for the channel', default=0.0, min=0, max=1)
@@ -70,11 +140,14 @@ class Custombakechannels(bpy.types.PropertyGroup):
     #前后缀属性//Prefix or Suffix
     prefix:props.StringProperty(description='Prefix')
     suffix:props.StringProperty(description='Suffix')
+    # Added name property for UI list display
+    name:props.StringProperty(name='Name', description='Custom Channel Name', default="Custom Channel")
     
-def update_debug_mode(self, context):
-    """根据 debug_mode 更新日志级别"""
-    logger.setLevel(logging.DEBUG if self.debug_mode else logging.INFO)
-    logger.info(f"Debug mode {'enabled' if self.debug_mode else 'disabled'}")
+def update_channels(self, context):
+    """When bake settings change, reset and populate the channels collection."""
+    # This operator will be defined in ops.py
+    bpy.ops.bake.reset_channels('EXEC_DEFAULT')
+
 class BakeJobSetting(bpy.types.PropertyGroup):
     #调试时使用//DEBUG
     debug_mode: bpy.props.BoolProperty(name="Debug Mode",description="Enable debug logging and display detailed information in the UI",default=False,update=lambda self, context: update_debug_mode(self, context))
@@ -91,17 +164,17 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     sample:props.IntProperty(name='Sampling', description='Bake Map Sample Count', default=1, min=1,max=32)
     margin:props.IntProperty(name='Margin', description='Bake Map Margin', default=8, min=0, max=64)
     device:props.EnumProperty(name='Device',items=device, description='Use Gpu or Cpu For Bake', default="GPU")
-    bake_type:props.EnumProperty(items=bake_type,description='How To Use Bake (Suggest Bsdf If Direct Output Using Bsdf)',name='Bake Type',default="BSDF")
+    bake_type:props.EnumProperty(items=bake_type,description='How To Use Bake (Suggest Bsdf If Direct Output Using Bsdf)',name='Bake Type',default="BSDF", update=update_channels)
     bake_mode:props.EnumProperty(items=bake_mode,description='Bake Mode In Use',name='Bake Mode',default="SINGLE_OBJECT")
     special_bake_method:props.EnumProperty(items=special_bake,description='Special Settings (Due To Mutual Exclusion, Written As An Enum Property)',name='Special Settings',default="NO")
     #多级精度烘焙的设定//Settings for multi-resolution baking
-    mutlires_divide:props.IntProperty(name='Multiresolution Subdivision', description='Multiresolution Subdivision Original Data', default=0, min=0,max=32)
+    multires_divide:props.IntProperty(name='Multiresolution Subdivision', description='Multiresolution Subdivision Original Data', default=0, min=0,max=32)
     #活动项烘焙的设定//Settings for active item baking
     extrusion:props.FloatProperty(name='Extrude', description='Cage Extrude Distance',min=0,max=1)
     ray_distance:props.FloatProperty(name='Project Distance',description='Distance For Light Project',min=0,max=1)
     #这些是为 Atlas 烘焙准备的//These are for Atlas baking
-    altas_pack_method:props.EnumProperty(items=altas_pack,description='Method Used For Packing Maps',name='Packing Method',default="ISLAND")
-    altas_margin:props.FloatProperty(description='Packing Margin For Maps',name='Margin',default=0.003,min=0,precision=3)
+    atlas_pack_method:props.EnumProperty(items=atlas_pack,description='Method Used For Packing Maps',name='Packing Method',default="ISLAND")
+    atlas_margin:props.FloatProperty(description='Packing Margin For Maps',name='Margin',default=0.003,min=0,precision=3)
     #这些是为动画烘焙准备的//These are for animation baking
     bake_motion:props.BoolProperty(description='Whether To Use Animation Bake',default=False,name='Animation Bake')
     bake_motion_use_custom:props.BoolProperty(description='Whether To Use Custom Frame Range',default=False,name='Custom Frames')
@@ -124,6 +197,7 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     color_depth:props.EnumProperty(items=color_depth, name='Color Depth', description='Color Depth')
     quality:props.IntProperty(name='Quality', description='Quality Of Saved Image',default=85,min=0,max=100)
     exr_code:props.EnumProperty(items=exr_code,name='EXR Compression', description='EXR Compression Method',default='ZIP')
+    tiff_codec:props.EnumProperty(items=tiff_codec,name='TIFF Compression', description='TIFF Compression Method',default='DEFLATE')
     create_new_folder:props.BoolProperty(description='Whether To Create New Folder',default=False,name='New Folder')
     new_folder_name_setting:props.EnumProperty(items=basic_name,description='How To Naming New Folder Filename',name='New Folder Name',default="MAT")
     folder_name:props.StringProperty(description='New Folder Custom Name',name='Folder Custom Naming')
@@ -138,225 +212,16 @@ class BakeJobSetting(bpy.types.PropertyGroup):
             ('GLB', 'GLB', 'Export as GLB format', 2),
             ('USD', 'USD', 'Export as USD format', 3)],
         default='FBX')
-    #这些是为 BSDF 通道准备的//These are for BSDF channels
-    color:props.BoolProperty(description='',default=True,name="Base Color")
-    color_pre:props.StringProperty(description='',name="Prefix")
-    color_suf:props.StringProperty(description='',name="Suffix",default="_color")
-    color_cs:props.EnumProperty(items=color_space,description='',default="SRGB",name="Color Space")
-    subface:props.BoolProperty(description='',default=False,name="SSS")
-    subface_pre:props.StringProperty(description='',name="Prefix")
-    subface_suf:props.StringProperty(description='',name="Suffix",default="_subface")
-    subface_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    #3.0 专用通道//Channels exclusive to version 3.0
-    subface_col:props.BoolProperty(description='',default=False,name="SSS Base Color")
-    subface_col_pre:props.StringProperty(description='',name="Prefix")
-    subface_col_suf:props.StringProperty(description='',name="Suffix",default="_subfacecol")
-    subface_col_cs:props.EnumProperty(items=color_space,description='',default="SRGB",name="Color Space")
-    subface_ani:props.BoolProperty(description='',default=False,name="SSS Anisotropy")
-    subface_ani_pre:props.StringProperty(description='',name="Prefix")
-    subface_ani_suf:props.StringProperty(description='',name="Suffix",default="_subfaceani")
-    subface_ani_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    metal:props.BoolProperty(description='',default=False,name="Metalness")
-    metal_pre:props.StringProperty(description='',name="Prefix")
-    metal_suf:props.StringProperty(description='',name="Suffix",default="_metal")
-    metal_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    specular:props.BoolProperty(description='',default=False,name="Specular")
-    specular_pre:props.StringProperty(description='',name="Prefix")
-    specular_suf:props.StringProperty(description='',name="Suffix",default="_spe")
-    specular_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    specular_tint:props.BoolProperty(description='',default=False,name="Specular Tint")
-    specular_tint_pre:props.StringProperty(description='',name="Prefix")
-    specular_tint_suf:props.StringProperty(description='',name="Suffix",default="_spet")
-    specular_tint_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    rough:props.BoolProperty(description='',default=True,name="Roughness")
-    rough_pre:props.StringProperty(description='',name="Prefix")
-    rough_suf:props.StringProperty(description='',name="Suffix",default="_rough")
-    rough_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    rough_inv:props.BoolProperty(description='',name="Invert")
-    anisotropic:props.BoolProperty(description='',default=False,name="Anisotropy")
-    anisotropic_pre:props.StringProperty(description='',name="Prefix")
-    anisotropic_suf:props.StringProperty(description='',name="Suffix",default="_aniso")
-    anisotropic_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    anisotropic_rot:props.BoolProperty(description='',default=False,name="Anisotropy Rotating")
-    anisotropic_rot_pre:props.StringProperty(description='',name="Prefix")
-    anisotropic_rot_suf:props.StringProperty(description='',name="Suffix",default="_anisorot")
-    anisotropic_rot_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    sheen:props.BoolProperty(description='',default=False,name="Sheen")
-    sheen_pre:props.StringProperty(description='',name="Prefix")
-    sheen_suf:props.StringProperty(description='',name="Suffix",default="_sheen")
-    sheen_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    sheen_tint:props.BoolProperty(description='',default=False,name="Sheen Tint")
-    sheen_tint_pre:props.StringProperty(description='',name="Prefix")
-    sheen_tint_suf:props.StringProperty(description='',name="Suffix",default="_sheentint")
-    sheen_tint_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    #4.0 专用通道//Channels exclusive to version 4.0 
-    sheen_rough:props.BoolProperty(description='',default=False,name="Sheen Roughness")
-    sheen_rough_pre:props.StringProperty(description='',name="Prefix")
-    sheen_rough_suf:props.StringProperty(description='',name="Suffix",default="_sheenrough")
-    sheen_rough_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    clearcoat:props.BoolProperty(description='',default=False,name="Clearcoat")
-    clearcoat_pre:props.StringProperty(description='',name="Prefix")
-    clearcoat_suf:props.StringProperty(description='',name="Suffix",default="_cc")
-    clearcoat_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    clearcoat_rough:props.BoolProperty(description='',default=False,name="Clearcoat Roughness")
-    clearcoat_rough_pre:props.StringProperty(description='',name="Prefix")
-    clearcoat_rough_suf:props.StringProperty(description='',name="Suffix",default="_ccr")
-    clearcoat_rough_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    #4.0 专用通道//Channels exclusive to version 4.0 2
-    clearcoat_tint:props.BoolProperty(description='',default=False,name="Clearcoat Tint")
-    clearcoat_tint_pre:props.StringProperty(description='',name="Prefix")
-    clearcoat_tint_suf:props.StringProperty(description='',name="Suffix",default="_cct")
-    clearcoat_tint_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    tran:props.BoolProperty(description='',default=False,name="Transmission")
-    tran_pre:props.StringProperty(description='',name="Prefix")
-    tran_suf:props.StringProperty(description='',name="Suffix",default="_tran")
-    tran_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    #3.0 专用通道//Channels exclusive to version 3.0 2
-    tran_rou:props.BoolProperty(description='',default=False,name="Transmission Roughness")
-    tran_rou_pre:props.StringProperty(description='',name="Prefix")
-    tran_rou_suf:props.StringProperty(description='',name="Suffix",default="_tranr")
-    tran_rou_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    emi:props.BoolProperty(description='',default=False,name="Emission")
-    emi_pre:props.StringProperty(description='',name="Prefix")
-    emi_suf:props.StringProperty(description='',name="Suffix",default="_emi")
-    emi_cs:props.EnumProperty(items=color_space,description='',default="SRGB",name="Color Space")
-    emi_str:props.BoolProperty(description='',default=False,name="Emission Strength")
-    emi_str_pre:props.StringProperty(description='',name="Prefix")
-    emi_str_suf:props.StringProperty(description='',name="Suffix",default="_emistr")
-    emi_str_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    alpha:props.BoolProperty(description='',default=False,name="Alpha")
-    alpha_pre:props.StringProperty(description='',name="Prefix")
-    alpha_suf:props.StringProperty(description='',name="Suffix",default="_alpha")
-    alpha_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    normal:props.BoolProperty(description='',default=True,name="Normal")
-    normal_pre:props.StringProperty(description='',name="Prefix")
-    normal_suf:props.StringProperty(description='',name="Suffix",default="_nor")
-    normal_type:props.EnumProperty(items=normal_type,description='',default="OPENGL",name="Normal channel Mode")
-    normal_X:props.EnumProperty(items=normal_channel,description='',default="POS_X",name="X")
-    normal_Y:props.EnumProperty(items=normal_channel,description='',default="POS_Y",name="Y")
-    normal_Z:props.EnumProperty(items=normal_channel,description='',default="POS_Z",name="Z")
-    normal_obj:props.BoolProperty(description='',default=False,name="Use Object Normal")
-    normal_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    #这些是为多级精度通道准备的（不记录重复）//These are for multi-resolution channels (no duplicates recorded)
-    height:props.BoolProperty(description='',default=False,name="Height")
-    height_pre:props.StringProperty(description='',name="Prefix")
-    height_suf:props.StringProperty(description='',name="Suffix",default="_height")
-    height_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    #这些是为基本通道准备的（不记录重复）//These are for basic channels (no duplicates recorded)
-    diff:props.BoolProperty(description='',default=True,name="Diffuse")
-    diff_pre:props.StringProperty(description='',name="Prefix")
-    diff_suf:props.StringProperty(description='',name="Suffix",default="_diff")
-    diff_dir:props.BoolProperty(description='',default=False,name="Direct Light")
-    diff_ind:props.BoolProperty(description='',default=False,name="Indirect Light")
-    diff_col:props.BoolProperty(description='',default=True,name="Base Color")
-    diff_cs:props.EnumProperty(items=color_space,description='',default="SRGB",name="Color Space")
-    gloss:props.BoolProperty(description='',default=False,name="Gloss")
-    gloss_pre:props.StringProperty(description='',name="Prefix")
-    gloss_suf:props.StringProperty(description='',name="Suffix",default="_gloss")
-    gloss_dir:props.BoolProperty(description='',default=False,name="Direct Light")
-    gloss_ind:props.BoolProperty(description='',default=False,name="Indirect Light")
-    gloss_col:props.BoolProperty(description='',default=True,name="Base Color")
-    gloss_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    tranb:props.BoolProperty(description='',default=False,name="Transmission")
-    tranb_pre:props.StringProperty(description='',name="Prefix")
-    tranb_suf:props.StringProperty(description='',name="Suffix",default="_tran")
-    tranb_cs:props.EnumProperty(items=color_space,description='',default="NONCOL",name="Color Space")
-    tranb_dir:props.BoolProperty(description='',default=False,name="Direct Light")
-    tranb_ind:props.BoolProperty(description='',default=False,name="Indirect Light")
-    tranb_col:props.BoolProperty(description='',default=True,name="Base Color")
-    combine:props.BoolProperty(description='',default=False,name="Combine")
-    combine_pre:props.StringProperty(description='',name="Prefix")
-    combine_suf:props.StringProperty(description='',name="Suffix",default="_com")
-    combine_cs:props.EnumProperty(items=color_space,description='',default="SRGB",name="Color Space")
-    com_dir:props.BoolProperty(description='',default=True,name="Direct Light")
-    com_ind:props.BoolProperty(description='',default=True,name="Indirect Light")
-    com_diff:props.BoolProperty(description='',default=True,name="Diffuse")
-    com_gloss:props.BoolProperty(description='',default=True,name="Gloss")
-    com_tran:props.BoolProperty(description='',default=True,name="Transmission")
-    com_emi:props.BoolProperty(description='',default=True,name="Emission")
-    #以下为网格通道信息//The following is mesh channel information
-    shadow:bpy.props.BoolProperty(description='',default=False,name='Shadow')
-    shadow_pre:bpy.props.StringProperty(description='',name='Prefix')
-    shadow_suf:bpy.props.StringProperty(description='',name='Suffix',default="_sha")
-    shadow_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
-    env:bpy.props.BoolProperty(description='',default=False,name='Environment')
-    env_pre:bpy.props.StringProperty(description='',name='Prefix')
-    env_suf:bpy.props.StringProperty(description='',name='Suffix',default="_env")
-    env_cs:bpy.props.EnumProperty(items=color_space,description='',default='SRGB',name='Color Space')
-    vertex:bpy.props.BoolProperty(description='',default=False,name='Vertex Color')
-    vertex_pre:bpy.props.StringProperty(description='',name='Prefix')
-    vertex_suf:bpy.props.StringProperty(description='',name='Suffix',default="_vertex")
-    vertex_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
-    bevel:bpy.props.BoolProperty(description='',default=False,name='Bevel')
-    bevel_pre:bpy.props.StringProperty(description='',name='Prefix')
-    bevel_suf:bpy.props.StringProperty(description='',name='Suffix',default="_bv")
-    bevel_sample:bpy.props.IntProperty(name='Sample', description='', default=8, min=2,max=16)
-    bevel_rad:bpy.props.FloatProperty(name='Radius', description='', default=0.1, min=0, max=100)
-    bevel_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
-    ao:bpy.props.BoolProperty(description='',default=False,name='Ambient Occlusion')
-    ao_pre:bpy.props.StringProperty(description='',name='Prefix')
-    ao_suf:bpy.props.StringProperty(description='',name='Suffix',default="_ao")
-    ao_inside:bpy.props.BoolProperty(description='',default=False,name='Inside')
-    ao_local:bpy.props.BoolProperty(description='',default=False,name='Self Only')
-    ao_dis:bpy.props.FloatProperty(name='Distance', description='', default=1, min=0, max=1000)
-    ao_sample:bpy.props.IntProperty(name='Sample', description='', default=16, min=1,max=128)
-    ao_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
-    UV:bpy.props.BoolProperty(description='',default=False,name='UV')
-    UV_pre:bpy.props.StringProperty(description='',name='Prefix')
-    UV_suf:bpy.props.StringProperty(description='',name='Suffix',default="_UV")
-    UV_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
-    wireframe:bpy.props.BoolProperty(description='',default=False,name='Wireframe')
-    wireframe_pre:bpy.props.StringProperty(description='',name='Prefix')
-    wireframe_suf:bpy.props.StringProperty(description='',name='Suffix',default="_wf")
-    wireframe_use_pix:bpy.props.BoolProperty(description='',default=False,name='Use Pixel')
-    wireframe_dis:bpy.props.FloatProperty(name='Thickness', description='', default=0.01, min=0, max=100)
-    wireframe_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
-    bevnor:bpy.props.BoolProperty(description='',default=False,name='Bevel Normal')
-    bevnor_pre:bpy.props.StringProperty(description='',name='Prefix')
-    bevnor_suf:bpy.props.StringProperty(description='',name='Suffix',default="_bn")
-    bevnor_sample:bpy.props.IntProperty(name='Sample', description='', default=8, min=2,max=16)
-    bevnor_rad:bpy.props.FloatProperty(name='Radius', description='', default=0.1, min=0, max=1000)
-    bevnor_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
-    position:bpy.props.BoolProperty(description='',default=False,name='Position')
-    position_pre:bpy.props.StringProperty(description='',name='Prefix')
-    position_suf:bpy.props.StringProperty(description='',name='Suffix',default="_pos")
-    position_invg:bpy.props.BoolProperty(description='',default=True,name='Invert G')
-    position_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
-    slope:bpy.props.BoolProperty(description='',default=False,name='Slope')
-    slope_pre:bpy.props.StringProperty(description='',name='Prefix')
-    slope_suf:bpy.props.StringProperty(description='',name='Suffix',default="_slope")
-    slope_directions:bpy.props.EnumProperty(items=directions,description='',name='Direction',default="Z")
-    slope_invert:bpy.props.BoolProperty(description='',default=False,name='Invert')
-    slope_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
-    thickness:bpy.props.BoolProperty(description='',default=False,name='Thickness')
-    thickness_pre:bpy.props.StringProperty(description='',name='Prefix')
-    thickness_suf:bpy.props.StringProperty(description='',name='Suffix',default="_thick")
-    thickness_distance:bpy.props.FloatProperty(description='',default=0.5,name='Thickness')
-    thickness_contrast:bpy.props.FloatProperty(description='',default=0.5,name='Contrast')
-    thickness_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Spacer')
-    ID_mat:bpy.props.BoolProperty(description='',default=False,name='Material ID')
-    ID_mat_pre:bpy.props.StringProperty(description='',name='Prefix')
-    ID_mat_suf:bpy.props.StringProperty(description='',name='Suffix',default="_idmat")
-    ID_mat_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
-    ID_ele:bpy.props.BoolProperty(description='',default=False,name='Element ID')
-    ID_ele_pre:bpy.props.StringProperty(description='',name='Prefix')
-    ID_ele_suf:bpy.props.StringProperty(description='',name='Suffix',default="_idele")
-    ID_ele_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
-    ID_UVI:bpy.props.BoolProperty(description='',default=False,name='UV ID')
-    ID_UVI_pre:bpy.props.StringProperty(description='',name='Prefix')
-    ID_UVI_suf:bpy.props.StringProperty(description='',name='Suffix',default="_idUVI")
-    ID_UVI_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
-    ID_seam:bpy.props.BoolProperty(description='',default=False,name='Seam ID')
-    ID_seam_pre:bpy.props.StringProperty(description='',name='Prefix')
-    ID_seam_suf:bpy.props.StringProperty(description='',name='Suffix',default="_idseam")
-    ID_seam_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
-    select:bpy.props.BoolProperty(description='',default=False,name='Select')
-    select_pre:bpy.props.StringProperty(description='',name='Prefix')
-    select_suf:bpy.props.StringProperty(description='',name='Suffix',default="_select")
-    select_cs:bpy.props.EnumProperty(items=color_space,description='',default='NONCOL',name='Color Space')
+
+    # DYNAMIC CHANNELS
+    channels: props.CollectionProperty(type=BakeChannel)
+    active_channel_index: props.IntProperty(name="Active Channel Index")
+
+    active_object_index: props.IntProperty(name="Active Object Index", default=0)
+
     #特殊的通道设定
-    ID_num:bpy.props.IntProperty(description='',default=5,min=2,max=20,name='ID Maps Nums')
-    use_special_map:bpy.props.BoolProperty(description='',default=False,name='Special Map')
+    use_special_map:bpy.props.BoolProperty(description='',default=False,name='Special Map', update=update_channels)
+    
     #这些是为自定义通道的设定（具体设定在每个通道中特定）//These are settings for custom channels (specific settings are defined in each channel)
     use_custom_map:props.BoolProperty(description='Whether Use Custom Map',default=False,name='Use Custom Map')
     custom_file_path:props.StringProperty(description='Where Save Custom Map',subtype='DIR_PATH',name='Save Path')
@@ -365,62 +230,10 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     custom_folder_name:props.StringProperty(description='Custom Map Custom Name',name='Name')
     
 class BakeJob(bpy.types.PropertyGroup):
+    name: props.StringProperty(name="Job Name", default="New Job")
     setting:props.PointerProperty(type=BakeJobSetting)
-    Custombakechannels:props.CollectionProperty(type=Custombakechannels)
+    Custombakechannels:props.CollectionProperty(type=CustomBakeChannel)
     Custombakechannels_index:props.IntProperty(name='Index', description='Custom channel Index',default=0,min=0)
-    
-class BakeJobSpecific(bpy.types.PropertyGroup):
-    #物体设置//Object settings
-    bake_objects:props.CollectionProperty(type=BakeObject, name='Objects', description='Baking Objects')
-    active_object:props.PointerProperty(type=bpy.types.Object, name='Active', description='Active Object')
-    cage_object:props.PointerProperty(type=bpy.types.Object, name='Cage', description='Cage For Active Bake')
-    #烘焙的基础设定//Basic bake settings
-    res_x:props.IntProperty(name='X', description='Bake Map X Resolution', default=1024, min=32,max=65536)
-    res_y:props.IntProperty(name='Y', description='Bake Map Y Resolution', default=1024, min=32,max=65536)
-    sample:props.IntProperty(name='Sampling', description='Bake Map Sample Count', default=1, min=1,max=32)
-    margin:props.IntProperty(name='Margin', description='Bake Map Margin', default=8, min=0, max=64)
-    device:props.EnumProperty(name='Device',items=device, description='Use Gpu or Cpu For Bake', default="GPU")
-    bake_type:props.EnumProperty(items=bake_type,description='How To Use Bake (Suggest Bsdf If Direct Output Using Bsdf)',name='Bake Type',default="BSDF")
-    bake_mode:props.EnumProperty(items=bake_mode,description='Bake Mode In Use',name='Bake Mode',default="SINGLE_OBJECT")
-    special_bake_method:props.EnumProperty(items=special_bake,description='Special Settings (Due To Mutual Exclusion, Written As An Enum Property)',name='Special Settings',default="NO")
-    #多级精度烘焙的设定//Settings for multi-resolution baking
-    mutlires_divide:props.IntProperty(name='Multiresolution Subdivision', description='Multiresolution Subdivision Original Data', default=0, min=0,max=32)
-    #活动项烘焙的设定//Settings for active item baking
-    extrusion:props.FloatProperty(name='Extrude', description='Cage Extrude Distance',min=0,max=1)
-    ray_distance:props.FloatProperty(name='Project Distance',description='Distance For Light Project',min=0,max=1)
-    #这些是为 Atlas 烘焙准备的//These are for Atlas baking
-    altas_pack_method:props.EnumProperty(items=altas_pack,description='Method Used For Packing Maps',name='Packing Method',default="ISLAND")
-    altas_margin:props.FloatProperty(description='Packing Margin For Maps',name='Margin',default=0.003,precision=3)
-    #这些是为动画烘焙准备的//These are for animation baking
-    bake_motion:props.BoolProperty(description='Whether To Use Animation Bake',default=False,name='Animation Bake')
-    bake_motion_use_custom:props.BoolProperty(description='Whether To Use Custom Frame Range',default=False,name='Custom Frames')
-    bake_motion_start:props.IntProperty(name='Start', description='Bake Start Frame', default=1, min=0)
-    bake_motion_last:props.IntProperty(name='Duration', description='Bake Duration Frames', default=250, min=1,max=10000)
-    bake_motion_startindex:props.IntProperty(name='Start Index', description='Start Frame Index', default=0, min=0)
-    bake_motion_digit:props.IntProperty(name='Frame Digits', description='Frame Digit Number', default=4, min=1,max=8)
-    #这些是为输入准备的//These are for input use
-    float32:props.BoolProperty(description='Whether To Use 32 Bit Precision Quality',default=False,name='32 Bit Precision')
-    colorspace_setting:props.BoolProperty(description='Custom Color Space',default=False,name='Color Space')
-    clearimage:props.BoolProperty(description='Clear Images Before Bake',default=True,name='Clear Image')
-    colorbase:props.FloatVectorProperty(name='Color Base', description='Color Base', default=(0.0,0.0,0.0,0.0), step=3, precision=3, subtype='COLOR', size=4,min=0,max=1)
-    use_alpha:props.BoolProperty(description='Use Alpha Channels',default=True,name='Use Alpha')
-    #这些是为保存准备的//These are for saving
-    save_out:props.BoolProperty(description='Whether To Save External File',default=False,name='External Save')
-    save_out_switch:props.BoolProperty(description='Whether To Specify A Specific Channel For External File Saving',default=False,name='Specify Saving')
-    save_path:props.StringProperty(description='Save Path For Baked Files',subtype='DIR_PATH',name='Save Path')
-    use_fake_user:props.BoolProperty(description='Whether To Use Fake Users',default=True,name='Fake User')
-    reload:props.BoolProperty(description='Reload Baked Images As Saved External Images',default=False,name='Reload Image')
-    save_format:props.EnumProperty(items=basic_format,description='Format Used For Saving Image',name='Format',default="PNG")
-    color_depth:props.EnumProperty(items=color_depth, name='Color Depth', description='Color Depth')
-    quality:props.IntProperty(name='Quality', description='Quality Of Saved Image',default=85,min=0,max=100)
-    exr_code:props.EnumProperty(items=exr_code,name='EXR Compression', description='EXR Compression Method',default='ZIP')
-    create_new_folder:props.BoolProperty(description='Whether To Create New Folder',default=False,name='New Folder')
-    new_folder_name_setting:props.EnumProperty(items=basic_name,description='How To Naming New Folder Filename',name='New Folder Name',default="MAT")
-    folder_name:props.StringProperty(description='New Folder Custom Name',name='Folder Custom Naming')
-    name_setting:props.EnumProperty(items=basic_name,description='How To Use Base Naming',name='Base Name',default="MAT")
-    custom_name:props.StringProperty(description='Custom Name',name='Custom Name')
-    use_denoise:props.BoolProperty(description='Image Denoising',default=False,name='Denoise')
-    denoise_method:props.EnumProperty(items=denoise_method,description='Preprocessing Method Used For Denoising',name='Denoise Preprocessing',default="FAST")
     
 class BakeJobs(bpy.types.PropertyGroup):
     #节点烘焙//Node baking
@@ -438,8 +251,9 @@ class BakeJobs(bpy.types.PropertyGroup):
     node_bake_color_space:props.EnumProperty(items=color_space, name='Color Space', description='Color Space',default='SRGB')
     node_bake_quality:props.IntProperty(name='Quality', description='Save Quality',default=100,min=0,max=100)
     node_bake_exr_code:props.EnumProperty(items=exr_code,name='Compression', description='EXR Compression',default='ZIP')
+    node_bake_tiff_codec:props.EnumProperty(items=tiff_codec,name='TIFF Compression', description='TIFF Compression Method',default='DEFLATE')
     node_bake_reload:props.BoolProperty(description='Whether Reload Image',default=False,name='Reload Image')
-    node_bake_delect_node:props.BoolProperty(description='Delect Image Node After Baking',default=False,name='Delect Node')
+    node_bake_delete_node:props.BoolProperty(description='Delect Image Node After Baking',default=False,name='Delect Node')
     node_bake_auto_find_socket:props.BoolProperty(description='Auto Find Output Socket',default=False,name='Auto Socket')
     #物体烘焙，保存//Object baking and saving
     bake_result_save_path:props.StringProperty(description='Map Save Path',subtype='DIR_PATH',name='Path')
@@ -449,6 +263,7 @@ class BakeJobs(bpy.types.PropertyGroup):
     bake_result_color_space:props.EnumProperty(items=color_space2, name='Color Space', description='Color Space',default='DEFAULT')
     bake_result_quality:props.IntProperty(name='Quality', description='Save Quality)',default=100,min=0,max=100)
     bake_result_exr_code:props.EnumProperty(items=exr_code,name='Compression', description='EXR Compression',default='ZIP')
+    bake_result_tiff_codec:props.EnumProperty(items=tiff_codec,name='TIFF Compression', description='TIFF Compression Method',default='DEFLATE')
     bake_result_use_denoise:props.BoolProperty(description='Image Denoise',default=False,name='Denoise')
     bake_result_denoise_method:props.EnumProperty(items=denoise_method,description='Denoise Method',name='Denoise Method',default="FAST")
     #展开设定//Expand settings
@@ -460,10 +275,6 @@ class BakeJobs(bpy.types.PropertyGroup):
     #工作设定//Jobs settings
     jobs:props.CollectionProperty(type=BakeJob)
     job_index:props.IntProperty(name='Job index', description='Index of index',default=0,min=0)
-    #暂时还没有用//No use yet
-    job_specific_index:props.IntProperty(name='Job index', description='Index of index',default=0,min=0)
-    job_type:props.EnumProperty(items=job_type,description='Jobs Type',name='Jobs Type',default="S")
-    jobs_specific:props.CollectionProperty(type=BakeJobSpecific)
     
 # 定义单个烘焙结果的属性类
 class BakedImageResult(bpy.types.PropertyGroup):
@@ -497,4 +308,3 @@ class BakedImageResult(bpy.types.PropertyGroup):
         description="Type of the baked channel (e.g., 'NORMAL', 'COLOR')",
         default=""
     )
-    

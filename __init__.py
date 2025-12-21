@@ -18,22 +18,9 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import bpy
-import bpy_extras
-import os
-import copy
-import random
-import mathutils
-import numpy
-import json
-import bmesh
 import logging
-from datetime import datetime
-from pathlib import Path
-from dataclasses import dataclass
-from typing import List, Optional, Callable, Dict
-from contextlib import contextmanager
 from bpy import (props, types)
-from bpy.props import PointerProperty, StringProperty, IntProperty, CollectionProperty, IntProperty
+from bpy.props import PointerProperty, StringProperty, IntProperty, CollectionProperty
 from . import translations
 from . import ui
 from . import ops
@@ -48,47 +35,65 @@ logger = logging.getLogger(__name__)
 
 
 bl_info = {
-    "name": "sinple bake tool",
-    "author": "最后的雨滴",
+    "name": "Simple Bake Tool",
+    "author": "lastraindrop",
     "version": (0, 9, 0),
-    "blender": (3, 3, 0),
+    "blender": (3, 6, 0),
     "location": "3D VIEW > N panel > Baking",
     "description": "Quite simple baking tool",
     "warning": "Testing",
     "doc_url": "",
     "category": "Bake",
 }
+
+# Define lists of classes for registration
+property_classes = [
+    property.BakeObject,
+    property.BakeChannel,
+    property.CustomBakeChannel,
+    property.BakeJobSetting,
+    property.BakeJob,
+    property.BakeJobs,
+    property.BakedImageResult,
+]
+
+operator_classes = [
+    ops.BAKETOOL_OT_ResetChannels,
+    ops.BAKETOOL_OT_BakeOperator,
+    ops.BAKETOOL_OT_BakeSelectedNode,
+    ops.BAKETOOL_OT_SetSaveLocal,
+    ops.BAKETOOL_OT_RecordObjects,
+    ops.BAKETOOL_OT_GenericChannelOperator,
+    ops.BAKETOOL_OT_DeleteResult,
+    ops.BAKETOOL_OT_DeleteAllResults,
+    ops.BAKETOOL_OT_ExportResult,
+    ops.BAKETOOL_OT_ExportAllResults,
+]
+
+ui_classes = [
+    ui.UI_UL_ObjectList,
+    ui.LIST_UL_CustomBakeChannelList,
+    ui.LIST_UL_JobsList,
+    ui.BAKETOOL_UL_ChannelList,
+    ui.BAKE_PT_BakePanel,
+    ui.BAKE_PT_NodePanel,
+    ui.BAKETOOL_UL_BakedImageResults,
+    ui.BAKETOOL_PT_BakedResults,
+    ui.BAKETOOL_PT_ImageEditorResults,
+]
+
+classes_to_register = property_classes + operator_classes + ui_classes
         
 addon_keymaps=[]
 
 def register():
-    bpy.utils.register_class(property.BakeObject)
-    bpy.utils.register_class(property.Custombakechannels)
-    bpy.utils.register_class(property.BakeJobSetting)
-    bpy.utils.register_class(property.BakeJob)
-    bpy.utils.register_class(property.BakeJobSpecific)
-    bpy.utils.register_class(property.BakeJobs)
+    for cls in classes_to_register:
+        bpy.utils.register_class(cls)
     
+    bpy.types.Object.bake_map_index = props.IntProperty(default=0, min=0, name='Texture set index')
 
-    bpy.utils.register_class(ops.Baketool_bake_operator)
-    bpy.utils.register_class(ops.selected_node_bake)
-    #bpy.utils.register_class(mix_to_BSDF)
+    bpy.types.Scene.BakeJobs = props.PointerProperty(type=property.BakeJobs)
     
-    bpy.utils.register_class(ui.LIST_UL_Custombakechannellist)
-    bpy.utils.register_class(ui.LIST_UL_Basicbakechannellist)
-    bpy.utils.register_class(ui.LIST_UL_Jobslist)
-    bpy.utils.register_class(ui.BAKE_PT_bakepanel)
-    bpy.utils.register_class(ui.BAKE_PT_nodepanel)
-    
-    bpy.utils.register_class(ops.set_save_local)
-    bpy.utils.register_class(ops.record_objects)
-    
-    bpy.types.Object.Bakemapindex = props.IntProperty(default=0,min=0,name='Texture set index')
-
-    bpy.types.Scene.BakeJobs = props.PointerProperty(type = property.BakeJobs)
-    
-    bpy.utils.register_class(property.BakedImageResult)
-    bpy.utils.register_class(ui.BAKETOOL_UL_BakedImageResults)
     bpy.types.Scene.baked_image_results = CollectionProperty(
         type=property.BakedImageResult,
         name="Baked Image Results",
@@ -99,67 +104,35 @@ def register():
         default=-1,
         description="Currently selected index in the baked image results list"
     )
-    bpy.utils.register_class(ui.BAKETOOL_PT_BakedResults)
-    bpy.utils.register_class(ui.BAKETOOL_PT_ImageEditorResults)
-    bpy.utils.register_class(ops.GenericChannelOperator)
-    bpy.utils.register_class(ops.BAKETOOL_OT_DeleteResult)
-    bpy.utils.register_class(ops.BAKETOOL_OT_DeleteAllResults)
-    bpy.utils.register_class(ops.BAKETOOL_OT_ExportResult)
-    bpy.utils.register_class(ops.BAKETOOL_OT_ExportAllResults)
     
-    #制作 keymap//Create keymap
+    # 制作 keymap // Create keymap
     wm = bpy.context.window_manager
     kc = wm.keyconfigs.addon
     if kc:
         km = kc.keymaps.new(name="Object Mode")
-        kmi = km.keymap_items.new('wm.call_panel', 'B', 'PRESS', ctrl=True,shift=True)
-        kmi.properties.name = 'BAKE_PT_bakepanel'
+        kmi = km.keymap_items.new('wm.call_panel', 'B', 'PRESS', ctrl=True, shift=True)
+        kmi.properties.name = 'BAKE_PT_BakePanel'
         addon_keymaps.append((km, kmi))
-    #制作翻译//Create translations
+    # 制作翻译 // Create translations
     bpy.app.translations.register("SBT_zh_CN", translations.trandict_CHN)
     
     
 def unregister():
-    bpy.utils.unregister_class(property.BakeObject)
+    for cls in reversed(classes_to_register):
+        bpy.utils.unregister_class(cls)
     
-    bpy.utils.unregister_class(property.ustombakechannels)
-    bpy.utils.unregister_class(property.BakeJobSetting)
-    bpy.utils.unregister_class(property.BakeJob)
-    bpy.utils.unregister_class(property.BakeJobSpecific)
-    bpy.utils.unregister_class(property.BakeJobs)
-    bpy.utils.unregister_class(property.GenericChannelOperator)
-    bpy.utils.unregister_class(property.Baketool_bake_operator)
-    bpy.utils.unregister_class(property.selected_node_bake)
-    #bpy.utils.unregister_class(mix_to_BSDF)
-    
-    bpy.utils.unregister_class(ui.LIST_UL_Custombakechannellist)
-    bpy.utils.unregister_class(ui.LIST_UL_Basicbakechannellist)
-    bpy.utils.unregister_class(ui.LIST_UL_Jobslist)
-    bpy.utils.unregister_class(ui.BAKE_PT_bakepanel)
-    bpy.utils.unregister_class(ui.BAKE_PT_nodepanel)
-    
-    bpy.utils.unregister_class(ops.set_save_local)
-    bpy.utils.unregister_class(ops.record_objects)
+    if hasattr(bpy.types.Object, 'bake_map_index'):
+        del bpy.types.Object.bake_map_index
     
     del bpy.types.Scene.BakeJobs
-    
-    bpy.utils.unregister_class(property.BakedImageResult)
-    bpy.utils.unregister_class(ui.BAKETOOL_UL_BakedImageResults)
     del bpy.types.Scene.baked_image_results
     del bpy.types.Scene.baked_image_results_index
-    
-    bpy.utils.unregister_class(ui.BAKETOOL_PT_BakedResults)
-    bpy.utils.unregister_class(ui.BAKETOOL_PT_ImageEditorResults)
-    bpy.utils.unregister_class(ops.BAKETOOL_OT_DeleteResult)
-    bpy.utils.unregister_class(ops.BAKETOOL_OT_DeleteAllResults)
-    bpy.utils.unregister_class(ops.BAKETOOL_OT_ExportResult)
-    bpy.utils.unregister_class(ops.BAKETOOL_OT_ExportAllResults)
-    
+
     for km, kmi in addon_keymaps:
         km.keymap_items.remove(kmi)
         
     addon_keymaps.clear()
-    #注销翻译//Unregister translations
+    # 注销翻译 // Unregister translations
     bpy.app.translations.unregister("SBT_zh_CN")
     
 if __name__ == "__main__":

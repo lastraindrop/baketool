@@ -237,11 +237,11 @@ CN_dict={
 "Single Object Bake":"单独物体烘焙",
 "Muti Objects Bake":"多物体烘焙",
 "Active Bake":"活动烘焙",
-"Spilt Material Bake":"分材质烘焙",
+"Split Material Bake":"分材质烘焙",
 "Bake single object":"为每个单独的物体烘焙一个材质",
 "Bake muti objects":"将所有的物体一起烘焙",
 "Bake selected to active":"将选定的物体烘焙至活动的物体",
-"Bake each spilt material":"将每个单独的材质进行烘焙",
+"Bake each split material":"将每个单独的材质进行烘焙",
 #类型2
 "No":"无",
 "Normal bake":"正常烘焙",
