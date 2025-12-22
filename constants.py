@@ -235,6 +235,97 @@ uv_setting=[
 ('NEW','new','Make new UV')
 ]
 
+FORMAT_SETTINGS = {
+    "BMP": {
+        "extensions": [".bmp"],
+        "depths": ['8'],
+        "modes": ['BW', 'RGB'],
+        "quality": False
+    },
+    "IRIS": {
+        "extensions": [".rgb", ".sgi"],
+        "depths": ['8'],
+        "modes": ['BW', 'RGB', 'RGBA'],
+        "quality": False
+    },
+    "PNG": {
+        "extensions": [".png"],
+        "depths": ['8', '16'],
+        "modes": ['BW', 'RGB', 'RGBA'],
+        "quality": False, # Uses compression instead
+        "compression": True
+    },
+    "JPEG": {
+        "extensions": [".jpg", ".jpeg"],
+        "depths": ['8'],
+        "modes": ['BW', 'RGB'],
+        "quality": True
+    },
+    "JPEG2000": {
+        "extensions": [".jp2", ".j2k"],
+        "depths": ['8', '12', '16'],
+        "modes": ['BW', 'RGB', 'RGBA'],
+        "quality": True # Uses quality
+    },
+    "TARGA": {
+        "extensions": [".tga"],
+        "depths": ['8'],
+        "modes": ['BW', 'RGB', 'RGBA'],
+        "quality": False
+    },
+    "TARGA_RAW": {
+        "extensions": [".tga"],
+        "depths": ['8'],
+        "modes": ['BW', 'RGB', 'RGBA'],
+        "quality": False
+    },
+    "CINEON": {
+        "extensions": [".cin"],
+        "depths": ['10'],
+        "modes": ['BW', 'RGB'],
+        "quality": False
+    },
+    "DPX": {
+        "extensions": [".dpx"],
+        "depths": ['8', '10', '12', '16'],
+        "modes": ['BW', 'RGB', 'RGBA'],
+        "quality": False
+    },
+    "OPEN_EXR_MULTILAYER": {
+        "extensions": [".exr"],
+        "depths": ['16', '32'],
+        "modes": ['RGBA'], # Usually implies full data
+        "quality": False,
+        "codec": True
+    },
+    "OPEN_EXR": {
+        "extensions": [".exr"],
+        "depths": ['16', '32'],
+        "modes": ['BW', 'RGB', 'RGBA'],
+        "quality": False,
+        "codec": True
+    },
+    "HDR": {
+        "extensions": [".hdr"],
+        "depths": ['32'],
+        "modes": ['BW', 'RGB'],
+        "quality": False
+    },
+    "TIFF": {
+        "extensions": [".tif", ".tiff"],
+        "depths": ['8', '16'],
+        "modes": ['BW', 'RGB', 'RGBA'],
+        "quality": False,
+        "tiff_codec": True
+    },
+    "WEBP": {
+        "extensions": [".webp"],
+        "depths": ['8'],
+        "modes": ['BW', 'RGB', 'RGBA'],
+        "quality": True
+    },
+}
+
 CHANNEL_BAKE_INFO = {
     # BSDF Channels
     'color': {'bake_pass': 'EMIT', 'node_socket': 'Base Color'},

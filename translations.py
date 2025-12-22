@@ -298,10 +298,10 @@ CN_dict={
 "Use Select Channel":"使用选择通道",
 #
 "Fast":"快速",
-"Accutate":"精确",
+"Accurate":"精确",
 "No Prefilter":"无预处理",
 "Fast Prefilter":"快速预处理",
-"Accutate Prefilter":"精确预处理",
+"Accurate Prefilter":"精确预处理",
 #
 "Object":"物体",
 "Material":"材质",

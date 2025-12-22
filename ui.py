@@ -1,4 +1,5 @@
 import bpy
+from .constants import FORMAT_SETTINGS
 
 from bpy import (
     props,
@@ -49,37 +50,35 @@ def draw_image_format_options(layout, setting, prefix=""):
     space_prop = f"{prefix}color_space"
     
     fmt = getattr(setting, format_prop)
+    fmt_settings = FORMAT_SETTINGS.get(fmt, {})
     
     # 第一行：格式和主要参数
     row = layout.row(align=True)
     row.prop(setting, format_prop, text="")
     
-    if fmt in {'JPEG', 'WEBP', 'JPEG2000'}:
+    if fmt_settings.get("quality"):
         row.prop(setting, quality_prop, text="Quality", slider=True)
-    elif fmt in {'OPEN_EXR', 'OPEN_EXR_MULTILAYER'}:
+    elif fmt_settings.get("codec"):
         row.prop(setting, exr_prop, text="")
-    elif fmt == 'TIFF':
+    elif fmt_settings.get("tiff_codec"):
         row.prop(setting, tiff_prop, text="")
     
     # 第二行：色深、颜色模式
     row = layout.row(align=True)
     
     # 色深支持验证
-    if fmt in {'PNG', 'TIFF', 'DPX', 'JPEG2000'}:
-        row.prop(setting, depth_prop, text="")
-    elif fmt in {'OPEN_EXR', 'OPEN_EXR_MULTILAYER'}:
-        # EXR 仅支持 16/32
+    if "depths" in fmt_settings and len(fmt_settings["depths"]) > 0:
         row.prop(setting, depth_prop, text="")
     
     # 颜色模式支持
-    if fmt not in {'HDR'}: # HDR 通常固定
+    if "modes" in fmt_settings and len(fmt_settings["modes"]) > 0:
         row.prop(setting, mode_prop, text="")
         
     # 第三行：色彩空间
     if hasattr(setting, space_prop):
         row = layout.row(align=True)
         sub = row.row(align=True)
-        # HDR/EXR 通常使用 Linear
+        # HDR/EXR 通常使用 Linear, 这里简单硬编码判断
         sub.enabled = fmt not in {'HDR', 'OPEN_EXR', 'OPEN_EXR_MULTILAYER'}
         sub.prop(setting, space_prop, text="Color Space")
 
@@ -341,7 +340,11 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
     bl_category = 'Baking'
 
     def draw_rgba_channel(self, layout, item, channel, setting, is_bw=False):
-        """绘制自定义通道的RGBA/BW设置"""
+        """
+        绘制自定义通道的RGBA/BW设置。
+        现在的实现利用了动态属性 *_source，无需判断 Blender 版本或 Bake Type。
+        """
+        # 构建属性名，例如 r_usemap, r_source, r_invert
         prefix = channel + "_"
         
         row = layout.row(align=True)
@@ -350,15 +353,12 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         row.prop(item, prefix + "usemap", text=label, toggle=True)
         
         if getattr(item, prefix + "usemap"):
-            # 如果启用了贴图，显示贴图选择和选项
+            # 如果启用了贴图
             sub = row.row(align=True)
-            if setting.bake_type == 'BSDF':
-                if bpy.app.version < (4, 0, 0):
-                    sub.prop(item, prefix + "map_BSDF3", text="")
-                else:
-                    sub.prop(item, prefix + "map_BSDF4", text="")
-            else:
-                sub.prop(item, prefix + "map_basic", text="")
+            
+            # === 核心变化：直接使用动态的 source 属性 ===
+            # get_channel_source_items 回调会自动提供正确的列表
+            sub.prop(item, prefix + "source", text="")
             
             sub.prop(item, prefix + "invert", text="", icon='ARROW_LEFTRIGHT')
             sub.prop(item, prefix + "sepcol", text="", icon='COLOR')
