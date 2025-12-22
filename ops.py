@@ -3,7 +3,10 @@ from bpy import props
 import mathutils
 import bmesh
 import os
-import numpy as np # optimizing custom bake
+try:
+    import numpy as np # optimizing custom bake
+except ImportError:
+    np = None
 from .utils import *
 from .constants import *
 
@@ -600,9 +603,7 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
         return "Bake" 
     
     def _bake_custom_channel(self, imagemap_dict, name, obj=None):
-        try:
-            import numpy as np
-        except ImportError:
+        if np is None:
             logger.error("Numpy is required for optimized custom baking.")
             return
 
@@ -702,11 +703,21 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
             out_img.pixels.foreach_set(res_arr.flatten())
             
             # 保存
-            save_image(out_img, self.setting.custom_file_path, self.setting.custom_new_folder, 
-                       folder_name, custom_channel_item.save_format, 
-                       custom_channel_item.color_depth, custom_channel_item.color_mode, 
-                       custom_channel_item.quality, False, 0, custom_channel_item.exr_code, 
-                       custom_channel_item.color_space, True, save=True)
+            custom_image_settings = {
+                'file_format': format_map[custom_channel_item.save_format],
+                'color_depth': custom_channel_item.color_depth,
+                'color_mode': custom_channel_item.color_mode,
+                'quality': custom_channel_item.quality,
+                'exr_codec': custom_channel_item.exr_code,
+                'tiff_codec': custom_channel_item.tiff_codec
+            }
+
+            with SceneSettingsContext('image', custom_image_settings):
+                save_image(out_img, self.setting.custom_file_path, self.setting.custom_new_folder, 
+                           folder_name, custom_channel_item.save_format, 
+                           custom_channel_item.color_depth, custom_channel_item.color_mode, 
+                           custom_channel_item.quality, False, 0, custom_channel_item.exr_code, 
+                           custom_channel_item.color_space, True, save=True)
                        
             self._write_result(None, out_img, channel_name=custom_channel_item.name)
         
@@ -831,9 +842,12 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
             for obj in objects: obj.select_set(True)
 
             if target == 'IMAGE_TEXTURES':
-                save_image(map_item['image'], setting.save_path, setting.create_new_folder, self.foldername, 
-                           setting.save_format, setting.color_depth, 'RGB', setting.quality, False, 0, 
-                           setting.exr_code, colorspace, setting.reload, 0, setting.use_denoise, setting.denoise_method, setting.save_out)
+                save_image(
+                    map_item['image'], setting.save_path, setting.create_new_folder, self.foldername,
+                    setting.save_format, setting.color_depth, 'RGB', setting.quality, False, 0,
+                    setting.exr_code, colorspace, setting.reload, 0, setting.use_denoise,
+                    setting.denoise_method, setting.save_out
+                )
                 self._write_result(map_item, map_item['image'])
         return imagemap_mesh
 
@@ -843,33 +857,105 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
         links = matinfo['material'].node_tree.links
         if channel.id == 'vertex':
             if matinfo['owner'].data.vertex_colors:
-                vernode = nodes.new('ShaderNodeVertexColor'); vernode.layer_name = matinfo['owner'].data.vertex_colors.active.name; matinfo['extra_nodes'].append(vernode); return vernode.outputs[0]
+                vernode = nodes.new('ShaderNodeVertexColor')
+                vernode.layer_name = matinfo['owner'].data.vertex_colors.active.name
+                matinfo['extra_nodes'].append(vernode)
+                return vernode.outputs[0]
         elif channel.id == 'bevel':
-            bevel = nodes.new('ShaderNodeBevel'); bevel.samples = channel.bevel_sample; bevel.inputs[0].default_value = channel.bevel_rad; vmc = nodes.new('ShaderNodeVectorMath'); vmc.operation = 'CROSS_PRODUCT'; vma = nodes.new('ShaderNodeVectorMath'); vma.operation = 'ABSOLUTE'; vml = nodes.new('ShaderNodeVectorMath'); vml.operation = 'LENGTH'; geo = nodes.new('ShaderNodeNewGeometry'); matinfo['extra_nodes'].extend([bevel, vmc, vma, vml, geo]); links.new(bevel.outputs[0], vmc.inputs[0]); links.new(geo.outputs[1], vmc.inputs[1]); links.new(vmc.outputs[0], vma.inputs[0]); links.new(vma.outputs[0], vml.inputs[0]); return vml.outputs[1]
+            bevel = nodes.new('ShaderNodeBevel')
+            bevel.samples = channel.bevel_sample
+            bevel.inputs[0].default_value = channel.bevel_rad
+            vmc = nodes.new('ShaderNodeVectorMath')
+            vmc.operation = 'CROSS_PRODUCT'
+            vma = nodes.new('ShaderNodeVectorMath')
+            vma.operation = 'ABSOLUTE'
+            vml = nodes.new('ShaderNodeVectorMath')
+            vml.operation = 'LENGTH'
+            geo = nodes.new('ShaderNodeNewGeometry')
+            matinfo['extra_nodes'].extend([bevel, vmc, vma, vml, geo])
+            links.new(bevel.outputs[0], vmc.inputs[0])
+            links.new(geo.outputs[1], vmc.inputs[1])
+            links.new(vmc.outputs[0], vma.inputs[0])
+            links.new(vma.outputs[0], vml.inputs[0])
+            return vml.outputs[1]
         elif channel.id == 'ao':
-            ao = nodes.new('ShaderNodeAmbientOcclusion'); ao.samples = channel.ao_sample; ao.inside = channel.ao_inside; ao.only_local = channel.ao_local; ao.inputs[1].default_value = channel.ao_dis; matinfo['extra_nodes'].append(ao); return ao.outputs[0]
+            ao = nodes.new('ShaderNodeAmbientOcclusion')
+            ao.samples = channel.ao_sample
+            ao.inside = channel.ao_inside
+            ao.only_local = channel.ao_local
+            ao.inputs[1].default_value = channel.ao_dis
+            matinfo['extra_nodes'].append(ao)
+            return ao.outputs[0]
         elif channel.id == 'uv':
-            tex = nodes.new('ShaderNodeTexCoord'); sep = nodes.new('ShaderNodeSeparateColor'); com = nodes.new('ShaderNodeCombineColor'); matinfo['extra_nodes'].extend([tex, sep, com]); links.new(tex.outputs[2], sep.inputs[0]); links.new(sep.outputs[1], com.inputs[1]); return com.outputs[0]
+            tex = nodes.new('ShaderNodeTexCoord')
+            sep = nodes.new('ShaderNodeSeparateColor')
+            com = nodes.new('ShaderNodeCombineColor')
+            matinfo['extra_nodes'].extend([tex, sep, com])
+            links.new(tex.outputs[2], sep.inputs[0])
+            links.new(sep.outputs[1], com.inputs[1])
+            return com.outputs[0]
         elif channel.id == 'wireframe':
-            wf = nodes.new('ShaderNodeWireframe'); wf.inputs[0].default_value = channel.wireframe_dis; wf.use_pixel_size = channel.wireframe_use_pix; matinfo['extra_nodes'].append(wf); return wf.outputs[0]
+            wf = nodes.new('ShaderNodeWireframe')
+            wf.inputs[0].default_value = channel.wireframe_dis
+            wf.use_pixel_size = channel.wireframe_use_pix
+            matinfo['extra_nodes'].append(wf)
+            return wf.outputs[0]
         elif channel.id == 'bevnor':
-            bevel = nodes.new('ShaderNodeBevel'); bevel.samples = channel.bevnor_sample; bevel.inputs[0].default_value = channel.bevnor_rad; bsdf = nodes.new('ShaderNodeBsdfPrincipled'); matinfo['extra_nodes'].extend([bevel, bsdf]); links.new(bevel.outputs[0], bsdf.inputs['Normal']); return bsdf.outputs[0]
+            bevel = nodes.new('ShaderNodeBevel')
+            bevel.samples = channel.bevnor_sample
+            bevel.inputs[0].default_value = channel.bevnor_rad
+            bsdf = nodes.new('ShaderNodeBsdfPrincipled')
+            matinfo['extra_nodes'].extend([bevel, bsdf])
+            links.new(bevel.outputs[0], bsdf.inputs['Normal'])
+            return bsdf.outputs[0]
         elif channel.id == 'position' or channel.id == 'slope':
-            tex = nodes.new('ShaderNodeTexCoord'); sep = nodes.new('ShaderNodeSeparateColor'); math1 = nodes.new('ShaderNodeMath'); math1.operation = 'ABSOLUTE'; matinfo['extra_nodes'].extend([tex, sep, math1]); links.new(tex.outputs[0 if channel.id == 'position' else 1], sep.inputs[0])
+            tex = nodes.new('ShaderNodeTexCoord')
+            sep = nodes.new('ShaderNodeSeparateColor')
+            math1 = nodes.new('ShaderNodeMath')
+            math1.operation = 'ABSOLUTE'
+            matinfo['extra_nodes'].extend([tex, sep, math1])
+            links.new(tex.outputs[0 if channel.id == 'position' else 1], sep.inputs[0])
             idx = {'X': 0, 'Y': 1, 'Z': 2}.get(channel.slope_directions if channel.id == 'slope' else 'Z', 2)
             links.new(sep.outputs[idx], math1.inputs[0])
             inv = channel.position_invg if channel.id == 'position' else channel.slope_invert
-            if inv: math2 = nodes.new('ShaderNodeMath'); math2.operation = 'SUBTRACT'; math2.inputs[0].default_value = 1.0; matinfo['extra_nodes'].append(math2); links.new(math1.outputs[0], math2.inputs[1]); return math2.outputs[0]
+            if inv:
+                math2 = nodes.new('ShaderNodeMath')
+                math2.operation = 'SUBTRACT'
+                math2.inputs[0].default_value = 1.0
+                matinfo['extra_nodes'].append(math2)
+                links.new(math1.outputs[0], math2.inputs[1])
+                return math2.outputs[0]
             return math1.outputs[0]
         elif channel.id == 'thickness':
-            ao = nodes.new('ShaderNodeAmbientOcclusion'); ao.samples = 32; ao.only_local = True; ao.inside = True; ao.inputs[1].default_value = channel.thickness_distance; inv = nodes.new('ShaderNodeInvert'); con = nodes.new('ShaderNodeBrightContrast'); con.inputs[2].default_value = channel.thickness_contrast; matinfo['extra_nodes'].extend([ao, inv, con]); links.new(ao.outputs[0], inv.inputs[1]); links.new(inv.outputs[0], con.inputs[0]); return con.outputs[0]
+            ao = nodes.new('ShaderNodeAmbientOcclusion')
+            ao.samples = 32
+            ao.only_local = True
+            ao.inside = True
+            ao.inputs[1].default_value = channel.thickness_distance
+            inv = nodes.new('ShaderNodeInvert')
+            con = nodes.new('ShaderNodeBrightContrast')
+            con.inputs[2].default_value = channel.thickness_contrast
+            matinfo['extra_nodes'].extend([ao, inv, con])
+            links.new(ao.outputs[0], inv.inputs[1])
+            links.new(inv.outputs[0], con.inputs[0])
+            return con.outputs[0]
         elif channel.id == 'idmat' or channel.id == 'select' or channel.id in ('idele', 'iduvi', 'idseam'):
-            colnode = nodes.new('ShaderNodeRGB'); matinfo['extra_nodes'].append(colnode)
+            colnode = nodes.new('ShaderNodeRGB')
+            matinfo['extra_nodes'].append(colnode)
             if channel.id == 'idmat':
                 idx = sum(len(o.material_slots) for o in self.objects[:self.objects.index(matinfo['owner'])]) + [m.material for m in matinfo['owner'].material_slots].index(matinfo['material'])
-                hue = idx / max(1, channel.ID_num); col = mathutils.Color((1.0, 0.0, 0.0)); col.h = hue; colnode.outputs[0].default_value = (col.r, col.g, col.b, 1.0)
-            elif channel.id == 'select': colnode.outputs[0].default_value = matinfo.get('select_color', (1.0, 1.0, 1.0, 1.0))
-            else: idx = matinfo.get(f"{channel.id}_index", 0); hue = idx / max(1, channel.ID_num); col = mathutils.Color((1.0, 0.0, 0.0)); col.h = hue; colnode.outputs[0].default_value = (col.r, col.g, col.b, 1.0)
+                hue = idx / max(1, channel.ID_num)
+                col = mathutils.Color((1.0, 0.0, 0.0))
+                col.h = hue
+                colnode.outputs[0].default_value = (col.r, col.g, col.b, 1.0)
+            elif channel.id == 'select':
+                colnode.outputs[0].default_value = matinfo.get('select_color', (1.0, 1.0, 1.0, 1.0))
+            else:
+                idx = matinfo.get(f"{channel.id}_index", 0)
+                hue = idx / max(1, channel.ID_num)
+                col = mathutils.Color((1.0, 0.0, 0.0))
+                col.h = hue
+                colnode.outputs[0].default_value = (col.r, col.g, col.b, 1.0)
             return colnode.outputs[0]
         return None
 

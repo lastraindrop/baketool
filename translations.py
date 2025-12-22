@@ -315,10 +315,10 @@ CN_dict={
 "16 Bits":"16位",
 "32 Bits":"32位",
 #
-"Cusotm":"自定义标准",
+"Custom":"自定义标准",
 "Use OPENGL Standard":"使用OPENGL标准",
 "Use DIRECTX Standard":"使用DIRECTX标准",
-"Use Cusotm Standard":"使用Cusotm标准",
+"Use Custom Standard":"使用Custom标准",
 #
 "RGB and Alpha Channel":"RGB和Alpha通道",
 "RGB Channel":"RGB通道",

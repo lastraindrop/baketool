@@ -219,6 +219,7 @@ def draw_results(scene, layout, bake_jobs):
 # --- UI LISTS ---
 
 class UI_UL_ObjectList(bpy.types.UIList):
+    bl_idname = "UI_UL_list"
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         obj = item.bakeobject
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
