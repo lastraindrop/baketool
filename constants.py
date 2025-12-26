@@ -42,292 +42,116 @@ basic_format=[
     ("TIFF", "TIFF", "Output image in TIFF format", 13),
     ("WEBP", "WebP", "Output image in WebP format", 14),
 ]
-#BSDF通道 3.0
-basic_channel_BSDF=[
-("COLOR","Base Color","Use Base Color channel"),
-("SUBFACECOL","SSS Base Color","Use SSS Base Color channel"),
-("SUBFACEANI","SSS Anisotropy","Use SSS Anisotropy channel"),
-("SUBFACE","SSS","Use SSS channel"),
-("METAL","Metalness","Use Metalness channel"),
-("SPECULAR","Specular","Use Specular channel"),
-("SPECULARTINT","Specular Tint","Use Specular Tint channel"),
-("ROUGH","Roughness","Use Roughness channel"),
-("ANISOTROPIC","Anisotropy","Use Anisotropy channel"),
-("ANISOTROPICROT","Anisotropy Rotating","Use Anisotropy Rotating channel"),
-("SHEEN","Sheen","Use Sheen channel"),
-("SHEENTINT","Sheen Tint","Use Sheen Tint channel"),
-("CLEARCOAT","Clearcoat","Use Clearcoat channel"),
-("CLEARCOATROU","Clearcoat Roughness","Use Clearcoat Roughness channel"),
-("TRAN","Transmission","Use Transmission channel"),
-("TRANROU","Transmission Roughness","Use Transmission Roughness channel"),
-("EMI","Emission","Use Emission channel"),
-("EMISTR","Emission Strength","Use Emission Strength channel"),
-("ALPHA","Alpha","Use Alpha channel"),
-("NORMAL","Normal","Use Normal channel")
-]
-#BSDF channel 4.0
-basic_channel_BSDF4=[
-("COLOR","Base Color","Use Base Color channel"),
-("SUBFACE","SSS","Use SSS channel"),
-("SUBFACEANI","SSS Anisotropy","Use SSS Anisotropy channel"),
-("METAL","Metalness","Use Metalness channel"),
-("SPECULAR","Specular","Use Specular channel"),
-("SPECULARTINT","Specular Tint","Use Specular Tint channel"),
-("ROUGH","Roughness","Use Roughness channel"),
-("ANISOTROPIC","Anisotropy","Use Anisotropy channel"),
-("ANISOTROPICROT","Anisotropy Rotating","Use Anisotropy Rotating channel"),
-("SHEEN","Sheen","Use Sheen channel"),
-("SHEENTINT","Sheen Tint","Use Sheen Tint channel"),
-("SHEENROUGH","Sheen Roughness","Use Sheen Roughness channel"),
-("CLEARCOAT","Clearcoat","Use Clearcoat channel"),
-("CLEARCOATROUGH","Clearcoat Roughness","Use Clearcoat Roughness channel"),
-("CLEARCOATTINT","Clearcoat Tint","Use Clearcoat Tint channel"),
-("TRAN","Transmission","Use Transmission channel"),
-("EMI","Emission","Use Emission channel"),
-("EMISTR","Emission Strength","Use Emission Strength channel"),
-("ALPHA","Alpha","Use Alpha channel"),
-("NORMAL","Normal","Use Normal channel")
-]
-#BASIC channel
-basic_channel_basic=[
-("DIFF","Diffuse","Use Diffuse channel"),
-("ROUGH","Roughness","Use Roughness channel"),
-("NORMAL","Normal","Use Normal channel"),
-("TRANB","Transmission","Use Transmission channel"),
-("EMI","Emission","Use Emission channel"),
-("GLO","Gloss","Use Gloss channel"),
-("COM","Combine Result","Use Combine Result channel")
-]
-#Mesh channel
-basic_channel_mesh=[
-("SHADOW","Shadow","Use Shadow channel"),
-("ENVIRONMENT","Environment","Use Environment channel"),
-("BEVEL","Bevel","Use Bevel channel"),
-("AO","Ambient Occlusion","Use Ambient Occlusion channel"),
-("UV","UV","Use UV channel"),
-("WIREFRAME","Wireframe","Use Wireframe channel"),
-("BEVNOR","Bevel Normal","Use Bevel Normal channel"),
-("POSITION","Position","Use Position channel"),
-("SLOPE","Slope","Use Slope channel"),
-("THICKNESS","Thickness","Use Thickness channel"),
-("IDMAT","Material ID","Use Material ID channel"),
-("SELECT","Select","Use Select channel"),
-("IDELE","Element ID","Use Element ID channel"),
-("IDUVI","UV ID","Use UV ID channel"),
-("IDSEAM","Seam ID","Use Seam ID channel")
-]
 
-basic_channel_BSDF_3=basic_channel_BSDF+basic_channel_mesh
-basic_channel_BSDF_4=basic_channel_BSDF4+basic_channel_mesh
-basic_channel_basic_c=basic_channel_basic+basic_channel_mesh
+# 通用颜色空间和设备定义
+device=[('GPU','GPU','Use GPU'),('CPU','CPU','Use CPU')]
+atlas_pack=[('REPACK','Smart Project','Use Smart UV Project repack UV'),('ISLAND','Pack Island','Pack UV island for current UV')]
+directions=[('X','X','X'),('Y','Y','Y'),('Z','Z','Z')]
+normal_type=[('OPENGL','OPENGL','Use OPENGL Standard'),('DIRECTX','DIRECTX','Use DIRECTX Standard'),('CUSTOM','Custom','Use Custom Standard')]
+normal_channel=[('POS_X','+X','+X'),('POS_Y','+Y','+Y'),('POS_Z','+Z','+Z'),('NEG_X','-X','-X'),('NEG_Y','-Y','-Y'),('NEG_Z','-Z','-Z')]
 
-denoise_method=[
-("NONE","No"," No Prefilter"),
-("FAST","Fast","Fast Prefilter"),
-("ACCURATE","Accurate","Accurate Prefilter")
-]
+color_depth=[('8','8','8 Bits'),('10','10','10 Bits'),('12','12','12 Bits'),('16','16','16 Bits'),('32','32','32 Bits')]
+color_mode=[('RGBA','RGBA','RGB and Alpha channel'),('RGB','RGB','RGB channel'),('BW','BW','BW channel')]
+color_space=[('NONCOL','non-color','Non-Color'),('SRGB','sRGB','sRGB'),('LINEAR','linear','Linear')]
+color_space2=color_space+[('DEFAULT','default','Default')]
 
-basic_name=[
-("OBJECT","Object","Use object as basic name",1),
-("MAT","Material","Use material as basic name",2),
-("OBJ_MAT","Object-Material","Use object and material as basic name",3),
-("CUSTOM","Custom","Use custom name as basic name",4)
-]
-tiff_codec=[
-    ('NONE', 'None', 'No compression'),
-    ('DEFLATE', 'Deflate', 'Deflate compression'),
-    ('LZW', 'LZW', 'LZW compression'),
-    ('PACKBITS', 'Packbits', 'Packbits compression'),
-]
+tiff_codec=[('NONE', 'None', 'No compression'),('DEFLATE', 'Deflate', 'Deflate compression'),('LZW', 'LZW', 'LZW compression'),('PACKBITS', 'Packbits', 'Packbits compression')]
+exr_code = [('NONE', 'None', 'No compression'),('PXR24', 'Pxr24', 'Lossy'),('ZIP', 'ZIP', 'Lossless'),('PIZ', 'PIZ', 'Lossless'),('RLE', 'RLE', 'Lossless'),('ZIPS', 'ZIPS', 'Lossless'),('B44', 'B44', 'Lossy'),('B44A', 'B44A', 'Lossy'),('DWAA', 'DWAA', 'Lossy'),('DWAB', 'DWAB', 'Lossy')]
+denoise_method=[("NONE","No","No Prefilter"),("FAST","Fast","Fast"),("ACCURATE","Accurate","Accurate")]
+basic_name=[("OBJECT","Object","Object"),("MAT","Material","Material"),("OBJ_MAT","Object-Material","Obj-Mat"),("CUSTOM","Custom","Custom")]
 
-color_depth=[
-    ('8','8','8 Bits'),
-    ('10','10','10 Bits'),
-    ('12','12','12 Bits'),
-    ('16','16','16 Bits'),
-    ('32','32','32 Bits')
-]
-normal_type=[
-('OPENGL','OPENGL','Use OPENGL Standard'),
-('DIRECTX','DIRECTX','Use DIRECTX Standard'),
-('CUSTOM','Custom','Use Custom Standard')
-]
-normal_channel=[
-('POS_X','+X','+X'),
-('POS_Y','+Y','+Y'),
-('POS_Z','+Z','+Z'),
-('NEG_X','-X','-X'),
-('NEG_Y','-Y','-Y'),
-('NEG_Z','-Z','-Z')
-]
-color_mode=[
-('RGBA','RGBA','RGB and Alpha channel'),
-('RGB','RGB','RGB channel'),
-('BW','BW','BW channel')
-]
-directions=[
-('X','X','X'),
-('Y','Y','Y'),
-('Z','Z','Z')
-]
-device=[
-('GPU','GPU','Use GPU'),
-('CPU','CPU','Use CPU')
-]
-atlas_pack=[
-('REPACK','Smart Project','Use Smart UV Project repack UV'),
-('ISLAND','Pack Island','Pack UV island for current UV')
-]
-exr_code = [
-('NONE', 'None', 'No compression'),
-('PXR24', 'Pxr24', 'Lossy compression'),
-('ZIP', 'ZIP', 'Almost no loss compression (lossless)'),
-('PIZ', 'PIZ', 'Lossless compression'),
-('RLE', 'RLE', 'Lossless compression'),
-('ZIPS', 'ZIPS', 'Lossless compression'),
-('B44', 'B44', 'Lossy compression'),
-('B44A', 'B44A', 'Lossy compression'),
-('DWAA', 'DWAA', 'Lossy compression, but reduce size'),
-('DWAB', 'DWAB', 'Lossy compression, but reduce size')
-]
-color_space=[
-('NONCOL','non-color','Same as linear but no Alpha'),
-('SRGB','sRGB','Color space settings more based on human perception, more applied to channels directly perceived by humans'),
-('LINEAR','linear','Color space settings based on the real physical world are more applicable to channels that cannot be directly perceived by the human eye')
-]
-color_space2=[
-('NONCOL','non-color','Same as linear but no Alpha'),
-('SRGB','sRGB','Color space settings more based on human perception, more applied to channels directly perceived by humans'),
-('LINEAR','linear','Color space settings based on the real physical world are more applicable to channels that cannot be directly perceived by the human eye'),
-('DEFAULT','default','Stay the same color space by default')
-]
-if bpy.app.version>=(4, 0, 0):
-    linear='Linear Rec.709'
-else:
-    linear='Linear'
+format_map={f[0]: f[0] for f in basic_format}
 
-color_space_map={
-'NONCOL':'Non-Color',
-'LINEAR':linear,
-'SRGB':'sRGB',
-'DEFAULT':'default',
-}
-format_map={
-    "BMP": "BMP",
-    "IRIS": "IRIS",
-    "PNG": "PNG",
-    "JPEG": "JPEG",
-    "JPEG2000": "JPEG2000",
-    "TARGA": "TARGA",
-    "TARGA_RAW": "TARGA_RAW",
-    "CINEON": "CINEON",
-    "DPX": "DPX",
-    "OPEN_EXR_MULTILAYER": "OPEN_EXR_MULTILAYER",
-    "OPEN_EXR": "OPEN_EXR",
-    "HDR": "HDR",
-    "TIFF": "TIFF",
-    "WEBP": "WEBP"
-}
-
-uv_setting=[
-('DEFAULT','default','Use default UV'),
-('GIVEN','given','Use given UV'),
-('NEW','new','Make new UV')
-]
-
+# 核心：根据 @image_type.txt 完善格式设置矩阵
+# [改进] 添加 extensions 字段以确保正确的文件后缀
 FORMAT_SETTINGS = {
     "BMP": {
-        "extensions": [".bmp"],
-        "depths": ['8'],
-        "modes": ['BW', 'RGB'],
-        "quality": False
+        "modes": {'BW', 'RGB'},
+        "depths": {'8'},
+        "quality": False,
+        "extensions": ['.bmp']
     },
     "IRIS": {
-        "extensions": [".rgb", ".sgi"],
-        "depths": ['8'],
-        "modes": ['BW', 'RGB', 'RGBA'],
-        "quality": False
+        "modes": {'BW', 'RGB', 'RGBA'},
+        "depths": {'8'},
+        "quality": False,
+        "extensions": ['.rgb']
     },
     "PNG": {
-        "extensions": [".png"],
-        "depths": ['8', '16'],
-        "modes": ['BW', 'RGB', 'RGBA'],
-        "quality": False, # Uses compression instead
-        "compression": True
+        "modes": {'BW', 'RGB', 'RGBA'},
+        "depths": {'8', '16'},
+        "compression": True,
+        "extensions": ['.png']
     },
     "JPEG": {
-        "extensions": [".jpg", ".jpeg"],
-        "depths": ['8'],
-        "modes": ['BW', 'RGB'],
-        "quality": True
+        "modes": {'BW', 'RGB'},
+        "depths": {'8'},
+        "quality": True,
+        "extensions": ['.jpg', '.jpeg']
     },
     "JPEG2000": {
-        "extensions": [".jp2", ".j2k"],
-        "depths": ['8', '12', '16'],
-        "modes": ['BW', 'RGB', 'RGBA'],
-        "quality": True # Uses quality
+        "modes": {'BW', 'RGB', 'RGBA'},
+        "depths": {'8', '12', '16'},
+        "quality": True,
+        "extensions": ['.jp2']
     },
     "TARGA": {
-        "extensions": [".tga"],
-        "depths": ['8'],
-        "modes": ['BW', 'RGB', 'RGBA'],
-        "quality": False
+        "modes": {'BW', 'RGB', 'RGBA'},
+        "depths": {'8'},
+        "quality": False,
+        "extensions": ['.tga']
     },
     "TARGA_RAW": {
-        "extensions": [".tga"],
-        "depths": ['8'],
-        "modes": ['BW', 'RGB', 'RGBA'],
-        "quality": False
+        "modes": {'BW', 'RGB', 'RGBA'},
+        "depths": {'8'},
+        "quality": False,
+        "extensions": ['.tga']
     },
     "CINEON": {
-        "extensions": [".cin"],
-        "depths": ['10'],
-        "modes": ['BW', 'RGB'],
-        "quality": False
+        "modes": {'BW', 'RGB'},
+        "depths": {'10'},
+        "quality": False,
+        "extensions": ['.cin']
     },
     "DPX": {
-        "extensions": [".dpx"],
-        "depths": ['8', '10', '12', '16'],
-        "modes": ['BW', 'RGB', 'RGBA'],
-        "quality": False
+        "modes": {'BW', 'RGB', 'RGBA'},
+        "depths": {'8', '10', '12', '16'},
+        "quality": False,
+        "extensions": ['.dpx']
     },
     "OPEN_EXR_MULTILAYER": {
-        "extensions": [".exr"],
-        "depths": ['16', '32'],
-        "modes": ['RGBA'], # Usually implies full data
-        "quality": False,
-        "codec": True
+        "modes": {'RGBA'},
+        "depths": {'16', '32'},
+        "codec": True,
+        "extensions": ['.exr']
     },
     "OPEN_EXR": {
-        "extensions": [".exr"],
-        "depths": ['16', '32'],
-        "modes": ['BW', 'RGB', 'RGBA'],
-        "quality": False,
-        "codec": True
+        "modes": {'BW', 'RGB', 'RGBA'},
+        "depths": {'16', '32'},
+        "codec": True,
+        "extensions": ['.exr']
     },
     "HDR": {
-        "extensions": [".hdr"],
-        "depths": ['32'],
-        "modes": ['BW', 'RGB'],
-        "quality": False
+        "modes": {'BW', 'RGB'},
+        "depths": {'32'},
+        "quality": False,
+        "extensions": ['.hdr']
     },
     "TIFF": {
-        "extensions": [".tif", ".tiff"],
-        "depths": ['8', '16'],
-        "modes": ['BW', 'RGB', 'RGBA'],
-        "quality": False,
-        "tiff_codec": True
+        "modes": {'BW', 'RGB', 'RGBA'},
+        "depths": {'8', '16'},
+        "tiff_codec": True,
+        "extensions": ['.tif', '.tiff']
     },
     "WEBP": {
-        "extensions": [".webp"],
-        "depths": ['8'],
-        "modes": ['BW', 'RGB', 'RGBA'],
-        "quality": True
+        "modes": {'BW', 'RGB', 'RGBA'},
+        "depths": {'8'},
+        "quality": True,
+        "extensions": ['.webp']
     },
 }
 
 CHANNEL_BAKE_INFO = {
-    # BSDF Channels
     'color': {'bake_pass': 'EMIT', 'node_socket': 'Base Color'},
     'subface': {'bake_pass': 'EMIT', 'node_socket': 'Subsurface Weight'},
     'subface_col': {'bake_pass': 'EMIT', 'node_socket': 'Subsurface Color'},
@@ -345,23 +169,16 @@ CHANNEL_BAKE_INFO = {
     'clearcoat_rough': {'bake_pass': 'EMIT', 'node_socket': 'Coat Roughness'},
     'clearcoat_tint': {'bake_pass': 'EMIT', 'node_socket': 'Coat Tint'},
     'tran': {'bake_pass': 'EMIT', 'node_socket': 'Transmission Weight'},
-    'tran_rou': {'bake_pass': 'EMIT', 'node_socket': 'Transmission Roughness'}, # 3.x only
+    'tran_rou': {'bake_pass': 'EMIT', 'node_socket': 'Transmission Roughness'},
     'emi': {'bake_pass': 'EMIT', 'node_socket': 'Emission Color'},
     'emi_str': {'bake_pass': 'EMIT', 'node_socket': 'Emission Strength'},
     'alpha': {'bake_pass': 'EMIT', 'node_socket': 'Alpha'},
     'normal': {'bake_pass': 'NORMAL', 'node_socket': 'Normal'},
-
-    # Basic Channels
     'diff': {'bake_pass': 'DIFFUSE'},
     'gloss': {'bake_pass': 'GLOSSY'},
     'tranb': {'bake_pass': 'TRANSMISSION'},
     'combine': {'bake_pass': 'COMBINED'},
-    # 'rough', 'emi', 'normal' are shared
-
-    # Multires Channels
     'height': {'bake_pass': 'DISPLACEMENT'},
-    
-    # Mesh Channels (most are EMIT)
     'shadow': {'bake_pass': 'SHADOW'},
     'env': {'bake_pass': 'ENVIRONMENT'},
     'vertex': {'bake_pass': 'EMIT'},
@@ -380,9 +197,6 @@ CHANNEL_BAKE_INFO = {
     'select': {'bake_pass': 'EMIT'},
 }
 
-
-# Definitions for dynamic channel properties
-# This dictionary is the new single source of truth for channel settings.
 CHANNEL_DEFINITIONS = {
     'BSDF_3': [
         {'id': 'color', 'name': 'Base Color', 'defaults': {'enabled': True, 'suffix': '_color', 'custom_cs': 'SRGB'}},
@@ -448,8 +262,7 @@ CHANNEL_DEFINITIONS = {
         {'id': 'bevel', 'name': 'Bevel', 'defaults': {'suffix': '_bv', 'custom_cs': 'NONCOL'}},
         {'id': 'ao', 'name': 'Ambient Occlusion', 'defaults': {'suffix': '_ao', 'custom_cs': 'NONCOL'}},
         {'id': 'UV', 'name': 'UV', 'defaults': {'suffix': '_UV', 'custom_cs': 'NONCOL'}},
-        {'id':
-         'wireframe', 'name': 'Wireframe', 'defaults': {'suffix': '_wf', 'custom_cs': 'NONCOL'}},
+        {'id': 'wireframe', 'name': 'Wireframe', 'defaults': {'suffix': '_wf', 'custom_cs': 'NONCOL'}},
         {'id': 'bevnor', 'name': 'Bevel Normal', 'defaults': {'suffix': '_bn', 'custom_cs': 'NONCOL'}},
         {'id': 'position', 'name': 'Position', 'defaults': {'suffix': '_pos', 'custom_cs': 'NONCOL'}},
         {'id': 'slope', 'name': 'Slope', 'defaults': {'suffix': '_slope', 'custom_cs': 'NONCOL'}},
