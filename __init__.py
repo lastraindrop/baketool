@@ -49,6 +49,7 @@ bl_info = {
 # Define lists of classes for registration
 property_classes = [
     property.BakeObject,
+    property.BakeChannelSource,
     property.BakeChannel,
     property.CustomBakeChannel,
     property.BakeJobSetting,

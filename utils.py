@@ -3,6 +3,7 @@ import bmesh
 import logging
 import random
 import math
+import colorsys
 from pathlib import Path
 from .constants import FORMAT_SETTINGS
 
@@ -10,123 +11,148 @@ logger = logging.getLogger(__name__)
 
 # --- [重构核心] 退火颜色优化算法 ---
 
-def generate_optimized_colors(count, start_color=(1,0,0,1), use_annealing=True):
+def generate_optimized_colors(count, start_color=(1,0,0,1), iterations=20, manual_start=True):
     """
-    使用简化的退火/互斥算法生成 count 个差异最大的颜色。
-    start_color: 用户指定的第一个颜色。
+    使用黄金角(Golden Ratio)初始化 + 排斥力优化生成颜色。
+    manual_start: 是否锁定第一个颜色为 start_color。
     """
     if count <= 0: return []
     
-    # 初始化颜色池，第一个颜色固定为用户指定色
-    colors = [list(start_color[:3])] 
+    colors = []
+    golden_ratio = 0.618033988749895
     
-    if count == 1: return [tuple(colors[0]) + (1.0,)]
+    # 1. 初始化阶段 (Initialization)
+    # 确定起始色相 (Start Hue) 和 起始索引 (Start Index)
+    current_hue = 0.0
+    start_idx = 0
+    
+    if manual_start:
+        # 手动模式：锁定第一个颜色
+        base_rgb = start_color[:3]
+        colors.append(list(base_rgb))
+        # 将 RGB 转为 HSV 以获取起始色相
+        h, s, v = colorsys.rgb_to_hsv(*base_rgb)
+        current_hue = h + golden_ratio # 从下一个黄金角开始
+        start_idx = 1
+    else:
+        # 自动模式：随机一个起始色相，或者固定为0
+        current_hue = random.random()
+        start_idx = 0
 
-    if not use_annealing:
-        # 如果不使用优化，使用高对比度色相环步进
-        for i in range(1, count):
-            random.seed(i)
-            colors.append([random.random() for _ in range(3)])
-        return [tuple(c) + (1.0,) for c in colors]
+    # 使用黄金角生成剩余颜色的初始猜测 (优于随机)
+    # 固定高饱和度和明度 (S=0.9, V=0.95) 以确保鲜艳
+    for _ in range(start_idx, count):
+        current_hue = (current_hue + golden_ratio) % 1.0
+        r, g, b = colorsys.hsv_to_rgb(current_hue, 0.9, 0.95)
+        colors.append([r, g, b])
 
-    # 模拟退火/迭代排斥逻辑
-    # 1. 预填充随机种子点
-    for i in range(1, count):
-        random.seed(i * 13)
-        colors.append([random.random() for _ in range(3)])
-
-    # 2. 迭代优化 ( repulsion )
-    # 模拟电荷排斥：点在 RGB 立方体内移动，远离邻居
-    iterations = 20
+    # 2. 优化阶段 (Annealing / Repulsion)
+    # 即使不迭代，黄金角分布也比随机好得多，但加上排斥力会更好
     learning_rate = 0.1
+    
+    # 如果是手动模式，优化时跳过索引0（锁定它）
+    optimize_start_idx = 1 if manual_start else 0
     
     for step in range(iterations):
         temp_rate = learning_rate * (1.0 - step / iterations)
-        for i in range(1, count): # 跳过第一个（起始色固定）
+        
+        for i in range(optimize_start_idx, count):
             force = [0.0, 0.0, 0.0]
             curr = colors[i]
             
-            # 计算来自所有其他点的排斥力
+            # 计算斥力
             for j in range(count):
                 if i == j: continue
                 other = colors[j]
                 diff = [curr[k] - other[k] for k in range(3)]
                 dist_sq = sum(d*d for d in diff) + 0.001
                 
-                # 反比力模型 (1/r^2)
-                f_mag = 1.0 / dist_sq
+                f_mag = 0.5 / dist_sq # 调整系数
                 for k in range(3):
                     force[k] += (diff[k] / math.sqrt(dist_sq)) * f_mag
             
-            # 更新位置并限制在 [0, 1] 范围内
+            # 更新并限制在 RGB 立方体内
             for k in range(3):
                 colors[i][k] = max(0.0, min(1.0, colors[i][k] + force[k] * temp_rate))
 
     return [tuple(c) + (1.0,) for c in colors]
 
-def setup_mesh_attribute(obj, id_type='ELEMENT', start_color=(1,0,0,1), use_annealing=True):
+def setup_mesh_attribute(obj, id_type='ELEMENT', start_color=(1,0,0,1), iterations=20, manual_start=True):
     if obj.type != 'MESH': return None
+    # 归一化类型名称：ops.py 传递的是 'ELE'，这里标准化为 'ELEMENT'
+    if id_type == 'ELE': id_type = 'ELEMENT'
+    
     bm = bmesh.new(); bm.from_mesh(obj.data)
     attr_name = f"BT_ATTR_{id_type}"
     layer = bm.loops.layers.color.get(attr_name) or bm.loops.layers.color.new(attr_name)
 
-    # 1. 预分析数量
-    target_ids = [] # 存储孤岛或索引
-    if id_type == 'ELEMENT':
-        faces = set(bm.faces)
-        while faces:
-            seed = faces.pop(); queue = [seed]; island = {seed}
-            while queue:
-                f = queue.pop(0)
-                for e in f.edges:
-                    for lf in e.link_faces:
-                        if lf in faces: faces.remove(lf); queue.append(lf); island.add(lf)
-            target_ids.append(island)
-    elif id_type == 'MAT':
-        mat_indices = {f.material_index for f in bm.faces}
-        target_ids = sorted(list(mat_indices))
-    elif id_type == 'SEAM':
-        target_ids = ['NON_SEAM', 'SEAM']
-    elif id_type == 'UVI':
-        uv_lay = bm.loops.layers.uv.active
-        if uv_lay:
-            faces = set(bm.faces)
-            while faces:
-                seed = faces.pop(); queue = [seed]; island = {seed}
-                while queue:
-                    curr = queue.pop(0)
-                    for edge in curr.edges:
-                        for other_f in edge.link_faces:
-                            if other_f in faces:
-                                is_uv_connected = False
-                                for l1 in curr.loops:
-                                    if l1.edge == edge:
-                                        for l2 in other_f.loops:
-                                            if l2.edge == edge:
-                                                if (l1[uv_lay].uv - l2[uv_lay].uv).length < 0.0001:
-                                                    is_uv_connected = True; break
-                                if is_uv_connected: faces.remove(other_f); queue.append(other_f); island.add(other_f)
-                target_ids.append(island)
+    # 1. 预分析数量 - 统一转换为寻找"孤岛" (Faces集合)
+    target_ids = [] 
 
-    # 2. 生成最优颜色列表
-    optimized_palette = generate_optimized_colors(len(target_ids), start_color, use_annealing)
+    if id_type == 'MAT':
+        # 材质ID：按材质索引归类
+        mat_map = {}
+        for f in bm.faces:
+            if f.material_index not in mat_map: mat_map[f.material_index] = []
+            mat_map[f.material_index].append(f)
+        target_ids = list(mat_map.values())
+        
+    elif id_type in ('ELEMENT', 'SEAM', 'UVI'):
+        faces_to_process = set(bm.faces)
+        uv_lay = bm.loops.layers.uv.active if id_type == 'UVI' else None
+        
+        while faces_to_process:
+            seed = faces_to_process.pop()
+            queue = [seed]
+            island = {seed}
+            
+            while queue:
+                curr = queue.pop(0)
+                for edge in curr.edges:
+                    # SEAM 模式核心修复：如果边是缝合边，则视为边界，不进行跨越
+                    if id_type == 'SEAM' and edge.seam:
+                        continue
+                        
+                    for other_f in edge.link_faces:
+                        if other_f in faces_to_process:
+                            should_join = False
+                            
+                            if id_type == 'ELEMENT':
+                                should_join = True # 只要物理相连即为同一元素
+                            elif id_type == 'SEAM':
+                                should_join = True # 只要不是缝合边(上面已过滤)即相连
+                            elif id_type == 'UVI' and uv_lay:
+                                # UV 连通性检查 (简化版)
+                                v1, v2 = edge.verts
+                                uv_c1 = next((l[uv_lay].uv for l in curr.loops if l.vert == v1), None)
+                                uv_c2 = next((l[uv_lay].uv for l in curr.loops if l.vert == v2), None)
+                                uv_o1 = next((l[uv_lay].uv for l in other_f.loops if l.vert == v1), None)
+                                uv_o2 = next((l[uv_lay].uv for l in other_f.loops if l.vert == v2), None)
+                                
+                                if uv_c1 and uv_c2 and uv_o1 and uv_o2:
+                                    if (uv_c1 - uv_o1).length < 0.001 and (uv_c2 - uv_o2).length < 0.001:
+                                        should_join = True
+
+                            if should_join:
+                                faces_to_process.remove(other_f)
+                                queue.append(other_f)
+                                island.add(other_f)
+            target_ids.append(island)
+
+    # 1.5 关键排序：按孤岛包含的面数从大到小排序
+    # 这确保了最大的主体（通常是用户关注的）获得 Start Color
+    # 次级排序用 id(face) 保证绝对确定性
+    target_ids.sort(key=lambda island: len(island), reverse=True)
+
+    # 2. 生成最优颜色列表 (传入 manual_start, 移除 use_annealing)
+    optimized_palette = generate_optimized_colors(len(target_ids), start_color, iterations, manual_start)
 
     # 3. 应用颜色
-    if id_type in ('ELEMENT', 'UVI'):
-        for i, island in enumerate(target_ids):
-            col = optimized_palette[i]
-            for f in island:
-                for lp in f.loops: lp[layer] = col
-    elif id_type == 'MAT':
-        # 建立 材质索引 -> 颜色 的映射
-        idx_to_col = {idx: optimized_palette[i] for i, idx in enumerate(target_ids)}
-        for f in bm.faces:
-            col = idx_to_col.get(f.material_index, (0,0,0,1))
-            for lp in f.loops: lp[layer] = col
-    elif id_type == 'SEAM':
-        for f in bm.faces:
-            for lp in f.loops:
-                lp[layer] = optimized_palette[1] if lp.edge.seam else optimized_palette[0]
+    for i, island in enumerate(target_ids):
+        col = optimized_palette[i]
+        for f in island:
+            for lp in f.loops: 
+                lp[layer] = col
 
     bm.to_mesh(obj.data); bm.free()
     obj.data.update(); obj.data.calc_loop_triangles()
