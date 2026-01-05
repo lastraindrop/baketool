@@ -1,7 +1,7 @@
 import bpy
 from bpy import props
 from .constants import *
-from .utils import logger
+from .utils import logger, reset_channels_logic
 import logging
 
 def get_channel_source_items(self, context):
@@ -25,40 +25,40 @@ def get_channel_source_items(self, context):
         return fallback
 
 def get_valid_depths(self, context):
-    fmt = "PNG" 
-    if hasattr(self, "save_format"): fmt = self.save_format
-    elif hasattr(self, "node_bake_save_format"): fmt = self.node_bake_save_format
-    elif hasattr(self, "bake_result_save_format"): fmt = self.bake_result_save_format
+    fmt = getattr(self, "save_format", "PNG")
     if fmt not in FORMAT_SETTINGS: return color_depth
     valid_depths_keys = FORMAT_SETTINGS[fmt].get("depths", [])
     if not valid_depths_keys: return color_depth
     return [item for item in color_depth if item[0] in valid_depths_keys]
 
 def get_valid_modes(self, context):
-    fmt = "PNG"
-    if hasattr(self, "save_format"): fmt = self.save_format
-    elif hasattr(self, "node_bake_save_format"): fmt = self.node_bake_save_format
-    elif hasattr(self, "bake_result_save_format"): fmt = self.bake_result_save_format
+    fmt = getattr(self, "save_format", "PNG")
     if fmt not in FORMAT_SETTINGS: return color_mode
     valid_modes = FORMAT_SETTINGS[fmt].get("modes", [])
     if not valid_modes: return color_mode
     return [item for item in color_mode if item[0] in valid_modes]
 
 def update_debug_mode(self, context):
-    if self.debug_mode:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG if self.debug_mode else logging.INFO)
 
 def update_channels(self, context):
-    if hasattr(bpy.ops.bake, "reset_channels"):
-        try: bpy.ops.bake.reset_channels('EXEC_DEFAULT')
-        except: pass
+    # 重构：直接调用逻辑函数，避免在 Update 中调用 Operator 的风险
+    # Refactor: Directly call logic function to avoid Operator risk in Update
+    reset_channels_logic(self)
+
+    if self.bake_type == 'BSDF' and self.bake_mode == 'SELECT_ACTIVE':
+        self.bake_mode = 'SINGLE_OBJECT'
+
+def get_bake_mode_items(self, context):
+    items = []
+    for item in bake_mode:
+        if self.bake_type == 'BSDF' and item[0] == 'SELECT_ACTIVE': continue
+        items.append(item)
+    return items
 
 class BakeObject(bpy.types.PropertyGroup):
     bakeobject: props.PointerProperty(name="object", type=bpy.types.Object)
 
-# --- [Refactored] New common settings for custom channel sources ---
 class BakeChannelSource(bpy.types.PropertyGroup):
     use_map: props.BoolProperty(name='Use Map', default=False)
     source: props.EnumProperty(items=get_channel_source_items, name='Source')
@@ -72,9 +72,11 @@ class BakeChannel(bpy.types.PropertyGroup):
     enabled: props.BoolProperty(name="Enabled", default=False)
     prefix: props.StringProperty(name="Prefix")
     suffix: props.StringProperty(name="Suffix")
-    custom_cs: props.EnumProperty(items=color_space, name="Color Space")
     
-    # Specific Channel Settings
+    override_defaults: props.BoolProperty(name="Override Color Settings", default=False)
+    custom_cs: props.EnumProperty(items=color_space, name="Color Space", default='SRGB')
+    custom_mode: props.EnumProperty(items=color_mode, name="Color Mode", default='RGB')
+    
     rough_inv: props.BoolProperty(name="Invert")
     
     normal_type: props.EnumProperty(items=normal_type, name="Normal Mode", default='OPENGL')
@@ -116,6 +118,10 @@ class BakeChannel(bpy.types.PropertyGroup):
     bevnor_sample: props.IntProperty(name='Samples', default=8)
     bevnor_rad: props.FloatProperty(name='Radius', default=0.1)
     
+    curvature_sample: props.IntProperty(name='Samples', default=6)
+    curvature_rad: props.FloatProperty(name='Radius', default=0.05)
+    curvature_contrast: props.FloatProperty(name='Contrast', default=1.0)
+    
     position_invg: props.BoolProperty(name='Invert G', default=True)
     slope_directions: props.EnumProperty(items=directions, name='Direction', default="Z")
     slope_invert: props.BoolProperty(name='Invert', default=False)
@@ -124,19 +130,20 @@ class BakeChannel(bpy.types.PropertyGroup):
     thickness_contrast: props.FloatProperty(name='Contrast', default=0.5)
     
     ID_num: props.IntProperty(name='ID Map Count', default=5)
+    
+    # PBR Conversion Settings
+    pbr_conv_threshold: props.FloatProperty(name='Dielectric Specular', default=0.04, min=0.0, max=1.0, description="Threshold for separating Dielectric from Metallic (F0)")
 
 class CustomBakeChannel(bpy.types.PropertyGroup):
     name: props.StringProperty(name='Name', default="Custom Channel")
     color_space: props.EnumProperty(items=color_space, name='Color Space', default='NONCOL')
     
-    # Values
     r: props.FloatProperty(name='Red', default=0.0, min=0, max=1)
     g: props.FloatProperty(name='Green', default=0.0, min=0, max=1)
     b: props.FloatProperty(name='Blue', default=0.0, min=0, max=1)
     a: props.FloatProperty(name='Alpha', default=1.0, min=0, max=1)
     bw: props.BoolProperty(name='bw', default=False)
     
-    # Source Settings (Refactored)
     r_settings: props.PointerProperty(type=BakeChannelSource)
     g_settings: props.PointerProperty(type=BakeChannelSource)
     b_settings: props.PointerProperty(type=BakeChannelSource)
@@ -159,18 +166,16 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     res_y: props.IntProperty(name='Y', default=1024, min=32)
     sample: props.IntProperty(name='Sampling', default=1, min=1)
     margin: props.IntProperty(name='Margin', default=8, min=0)
-    device: props.EnumProperty(name='Device', items=device, default="GPU")
+    device: props.EnumProperty(name='Device', items=device, default="GPU") 
     
     bake_type: props.EnumProperty(items=bake_type, name='Bake Type', default="BSDF", update=update_channels)
-    bake_mode: props.EnumProperty(items=bake_mode, name='Bake Mode', default="SINGLE_OBJECT")
-    special_bake_method: props.EnumProperty(items=special_bake, name='Special Settings', default="NO")
+    bake_mode: props.EnumProperty(items=get_bake_mode_items, name='Bake Mode')
+    special_bake_method: props.EnumProperty(items=special_bake, name='Special Settings', default="NO") 
     
-    multires_divide: props.IntProperty(name='Multires Level', default=0)
     extrusion: props.FloatProperty(name='Extrude', min=0)
-    ray_distance: props.FloatProperty(name='Ray Dist', min=0)
     
-    atlas_pack_method: props.EnumProperty(items=atlas_pack, name='Packing', default="ISLAND")
-    atlas_margin: props.FloatProperty(name='Margin', default=0.003, precision=3)
+    atlas_pack_method: props.EnumProperty(items=atlas_pack, name='Packing', default="ISLAND") 
+    atlas_margin: props.FloatProperty(name='Margin', default=0.003, precision=3) 
     
     bake_motion: props.BoolProperty(default=False, name='Animation')
     bake_motion_use_custom: props.BoolProperty(default=False, name='Custom Frames')
@@ -178,32 +183,33 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     bake_motion_last: props.IntProperty(name='Duration', default=250)
     bake_motion_startindex: props.IntProperty(name='Start Index', default=0)
     bake_motion_digit: props.IntProperty(name='Frame Digits', default=4)
+    bake_motion_separator: props.StringProperty(name='Separator', default='_')
     
     float32: props.BoolProperty(default=False, name='32 Bit')
-    colorspace_setting: props.BoolProperty(default=False, name='Color Space')
     clearimage: props.BoolProperty(default=True, name='Clear')
     colorbase: props.FloatVectorProperty(name='Color Base', default=(0,0,0,0), subtype='COLOR', size=4)
     use_alpha: props.BoolProperty(default=True, name='Use Alpha')
     
     save_out: props.BoolProperty(default=False, name='External Save')
     save_path: props.StringProperty(subtype='DIR_PATH', name='Save Path')
-    use_fake_user: props.BoolProperty(default=True, name='Fake User')
-    reload: props.BoolProperty(default=False, name='Reload Image')
+    
     save_format: props.EnumProperty(items=basic_format, name='Format', default="PNG")
     color_depth: props.EnumProperty(items=get_valid_depths, name='Color Depth')
+    
     color_mode: props.EnumProperty(items=get_valid_modes, name='Color Mode')
+    
     quality: props.IntProperty(name='Quality', default=85)
     exr_code: props.EnumProperty(items=exr_code, name='EXR Codec', default='ZIP')
     tiff_codec: props.EnumProperty(items=tiff_codec, name='TIFF Codec', default='DEFLATE')
     
     create_new_folder: props.BoolProperty(default=False, name='New Folder')
-    new_folder_name_setting: props.EnumProperty(items=basic_name, name='Folder Naming', default="MAT")
-    folder_name: props.StringProperty(name='Custom Folder Name')
+    new_folder_name_setting: props.EnumProperty(items=basic_name, name='Folder Naming', default="MAT") 
+    folder_name: props.StringProperty(name='Custom Folder Name') 
     name_setting: props.EnumProperty(items=basic_name, name='Base Name', default="MAT")
     custom_name: props.StringProperty(name='Custom Name')
     
-    use_denoise: props.BoolProperty(default=False, name='Denoise')
-    denoise_method: props.EnumProperty(items=denoise_method, name='Denoise Method', default="FAST")
+    use_denoise: props.BoolProperty(default=False, name='Denoise') 
+    denoise_method: props.EnumProperty(items=denoise_method, name='Denoise Method', default="FAST") 
     
     export_model: bpy.props.BoolProperty(name="Export Model", default=False)
     export_format: bpy.props.EnumProperty(items=[('FBX','FBX','',1),('GLB','GLB','',2),('USD','USD','',3)], default='FBX')
@@ -212,57 +218,54 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     active_channel_index: props.IntProperty(name="Active Channel Index")
     active_object_index: props.IntProperty(name="Active Object Index", default=0)
     
-    use_special_map: bpy.props.BoolProperty(default=False, name='Special Map', update=update_channels)
+    use_light_map: bpy.props.BoolProperty(default=False, name='Light Maps', update=update_channels)
+    use_mesh_map: bpy.props.BoolProperty(default=False, name='Mesh Maps', update=update_channels)
+    use_extension_map: bpy.props.BoolProperty(default=False, name='Extension Maps', update=update_channels)
+    
     use_custom_map: props.BoolProperty(default=False, name='Use Custom Map')
 
-    # [新增] ID 贴图优化设置
-    id_manual_start_color: props.BoolProperty(name='Manual Start Color', default=True, description="Manually specify the first color, otherwise calculate automatically")
-    id_start_color: props.FloatVectorProperty(name='ID Start Color', default=(1.0, 0.0, 0.0, 1.0), subtype='COLOR', size=4, description="First color used for ID generation")
-    id_iterations: props.IntProperty(name='Quality (Iterations)', default=50, min=1, max=1000, description="Higher values produce better color separation but take longer")
+    id_manual_start_color: props.BoolProperty(name='Manual Start Color', default=True)
+    id_start_color: props.FloatVectorProperty(name='ID Start Color', default=(1.0, 0.0, 0.0, 1.0), subtype='COLOR', size=4)
+    id_iterations: props.IntProperty(name='Quality (Iterations)', default=50, min=1, max=1000)
+    id_seed: props.IntProperty(name='Random Seed', default=0, min=0)
 
 class BakeJob(bpy.types.PropertyGroup):
     name: props.StringProperty(name="Job Name", default="New Job")
+    enabled: props.BoolProperty(name="Enabled", default=True)
     setting: props.PointerProperty(type=BakeJobSetting)
     Custombakechannels: props.CollectionProperty(type=CustomBakeChannel)
     Custombakechannels_index: props.IntProperty(name='Index', default=0)
+
+class BakeImageSettings(bpy.types.PropertyGroup):
+    save_format: props.EnumProperty(items=basic_format, default="PNG")
+    color_depth: props.EnumProperty(items=get_valid_depths)
+    color_mode: props.EnumProperty(items=get_valid_modes)
+    quality: props.IntProperty(name='Quality', default=100)
+    exr_code: props.EnumProperty(items=exr_code, default='ZIP')
+    tiff_codec: props.EnumProperty(items=tiff_codec, default='DEFLATE')
+
+class BakeNodeSettings(bpy.types.PropertyGroup):
+    res_x: props.IntProperty(name='X', default=1024)
+    res_y: props.IntProperty(name='Y', default=1024)
+    sample: props.IntProperty(name='Sample', default=1)
+    margin: props.IntProperty(name='Margin', default=4)
+    float32: props.BoolProperty(default=False, name='32 Bit')
+    save_outside: props.BoolProperty(default=False, name='Save External')
+    save_path: props.StringProperty(subtype='DIR_PATH', name='Path')
+    image_settings: props.PointerProperty(type=BakeImageSettings)
+
+class BakeResultSettings(bpy.types.PropertyGroup):
+    save_path: props.StringProperty(subtype='DIR_PATH')
+    use_denoise: props.BoolProperty(default=False) 
+    denoise_method: props.EnumProperty(items=denoise_method, default="FAST")
+    image_settings: props.PointerProperty(type=BakeImageSettings)
     
 class BakeJobs(bpy.types.PropertyGroup):
     jobs: props.CollectionProperty(type=BakeJob)
     job_index: props.IntProperty(name='Index', default=0)
-
-    # Node Bake Settings
-    node_bake_res_x: props.IntProperty(name='X', default=1024)
-    node_bake_res_y: props.IntProperty(name='Y', default=1024)
-    node_bake_sample: props.IntProperty(name='Sample', default=1)
-    node_bake_margin: props.IntProperty(name='Margin', default=4)
-    node_bake_float32: props.BoolProperty(default=False, name='32 Bit')
-    node_bake_socket_index: props.IntProperty(name='Socket', default=0)
-    node_bake_save_outside: props.BoolProperty(default=False, name='Save External')
-    node_bake_save_path: props.StringProperty(subtype='DIR_PATH', name='Path')
-    node_bake_save_format: props.EnumProperty(items=basic_format, default="PNG")
-    node_bake_color_depth: props.EnumProperty(items=get_valid_depths)
-    node_bake_color_mode: props.EnumProperty(items=get_valid_modes)
-    node_bake_color_space: props.EnumProperty(items=color_space, default='SRGB')
-    node_bake_quality: props.IntProperty(name='Quality', default=100)
-    node_bake_exr_code: props.EnumProperty(items=exr_code, default='ZIP')
-    node_bake_tiff_codec: props.EnumProperty(items=tiff_codec, default='DEFLATE')
-    node_bake_reload: props.BoolProperty(default=False)
-    node_bake_delete_node: props.BoolProperty(default=False)
-    node_bake_auto_find_socket: props.BoolProperty(default=False)
+    node_bake_settings: props.PointerProperty(type=BakeNodeSettings)
+    bake_result_settings: props.PointerProperty(type=BakeResultSettings)
     
-    # Bake Result Export Settings
-    bake_result_save_path: props.StringProperty(subtype='DIR_PATH')
-    bake_result_save_format: props.EnumProperty(items=basic_format, default="PNG")
-    bake_result_color_depth: props.EnumProperty(items=get_valid_depths)
-    bake_result_color_mode: props.EnumProperty(items=get_valid_modes)
-    bake_result_color_space: props.EnumProperty(items=color_space2, default='DEFAULT')
-    bake_result_quality: props.IntProperty(default=100)
-    bake_result_exr_code: props.EnumProperty(items=exr_code, default='ZIP')
-    bake_result_tiff_codec: props.EnumProperty(items=tiff_codec, default='DEFLATE')
-    bake_result_use_denoise: props.BoolProperty(default=False)
-    bake_result_denoise_method: props.EnumProperty(items=denoise_method, default="FAST")
-    
-    # UI States
     open_inputs: props.BoolProperty(default=False)
     open_channels: props.BoolProperty(default=False)
     open_saves: props.BoolProperty(default=False)

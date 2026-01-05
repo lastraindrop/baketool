@@ -52,6 +52,9 @@ property_classes = [
     property.BakeChannelSource,
     property.BakeChannel,
     property.CustomBakeChannel,
+    property.BakeImageSettings,
+    property.BakeNodeSettings,
+    property.BakeResultSettings,
     property.BakeJobSetting,
     property.BakeJob,
     property.BakeJobs,
@@ -63,12 +66,15 @@ operator_classes = [
     ops.BAKETOOL_OT_BakeOperator,
     ops.BAKETOOL_OT_BakeSelectedNode,
     ops.BAKETOOL_OT_SetSaveLocal,
-    ops.BAKETOOL_OT_RecordObjects,
+    ops.BAKETOOL_OT_ManageObjects,
     ops.BAKETOOL_OT_GenericChannelOperator,
     ops.BAKETOOL_OT_DeleteResult,
     ops.BAKETOOL_OT_DeleteAllResults,
     ops.BAKETOOL_OT_ExportResult,
     ops.BAKETOOL_OT_ExportAllResults,
+    ops.BAKETOOL_OT_SaveSetting,
+    ops.BAKETOOL_OT_LoadSetting,
+    ops.BAKETOOL_OT_ClearCrashLog,
 ]
 
 ui_classes = [
@@ -106,6 +112,12 @@ def register():
         description="Currently selected index in the baked image results list"
     )
     
+    # 进度与状态反馈 / Progress and Status
+    bpy.types.Scene.is_baking = props.BoolProperty(name="Is Baking", default=False)
+    bpy.types.Scene.bake_progress = props.FloatProperty(name="Progress", default=0.0, min=0.0, max=100.0, subtype='PERCENTAGE')
+    bpy.types.Scene.bake_status = props.StringProperty(name="Status", default="Idle")
+    bpy.types.Scene.bake_error_log = props.StringProperty(name="Error Log", default="")
+    
     # 制作 keymap // Create keymap
     wm = bpy.context.window_manager
     kc = wm.keyconfigs.addon
@@ -128,6 +140,11 @@ def unregister():
     del bpy.types.Scene.BakeJobs
     del bpy.types.Scene.baked_image_results
     del bpy.types.Scene.baked_image_results_index
+    
+    del bpy.types.Scene.is_baking
+    del bpy.types.Scene.bake_progress
+    del bpy.types.Scene.bake_status
+    del bpy.types.Scene.bake_error_log
 
     for km, kmi in addon_keymaps:
         km.keymap_items.remove(kmi)

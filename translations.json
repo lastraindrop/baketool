@@ -1,0 +1,579 @@
+{
+    "header": {
+        "author": "Simple Bake Tool Team",
+        "version": "1.0",
+        "description": "Translation file for Simple Bake Tool"
+    },
+    "data": {
+        "32 Bit": {
+            "zh_CN": "32位"
+        },
+        "Active": {
+            "zh_CN": "活动项"
+        },
+        "Active Channel Index": {
+            "zh_CN": "活动通道索引"
+        },
+        "Active Object Index": {
+            "zh_CN": "活动物体索引"
+        },
+        "Add": {
+            "zh_CN": "添加"
+        },
+        "Add job to start": {
+            "zh_CN": "添加任务以开始"
+        },
+        "Advanced Color Override": {
+            "zh_CN": "Advanced Color Override"
+        },
+        "Alpha": {
+            "zh_CN": "Alpha"
+        },
+        "Animation": {
+            "zh_CN": "动画"
+        },
+        "Apply Bake": {
+            "zh_CN": "应用烘焙"
+        },
+        "Auto-Apply is disabled for sequences": {
+            "zh_CN": "序列模式下自动应用已禁用"
+        },
+        "BW Mode": {
+            "zh_CN": "黑白模式"
+        },
+        "Bake": {
+            "zh_CN": "烘焙"
+        },
+        "Bake Errors:": {
+            "zh_CN": "烘焙错误:"
+        },
+        "Bake Image Sequence": {
+            "zh_CN": "烘焙序列帧"
+        },
+        "Bake Mode": {
+            "zh_CN": "烘焙模式"
+        },
+        "Bake Node": {
+            "zh_CN": "烘焙节点"
+        },
+        "Bake Type": {
+            "zh_CN": "烘焙类型"
+        },
+        "Baked Image Results": {
+            "zh_CN": "已烘焙图像结果"
+        },
+        "Baked Results": {
+            "zh_CN": "烘焙结果"
+        },
+        "Baking": {
+            "zh_CN": "烘焙中"
+        },
+        "Baking Tool": {
+            "zh_CN": "简易烘焙工具"
+        },
+        "Base Name": {
+            "zh_CN": "基础命名"
+        },
+        "Blue": {
+            "zh_CN": "蓝色"
+        },
+        "CS": {
+            "zh_CN": "色彩空间"
+        },
+        "Cage": {
+            "zh_CN": "罩体"
+        },
+        "Channel": {
+            "zh_CN": "通道"
+        },
+        "Channel ID": {
+            "zh_CN": "通道ID"
+        },
+        "Channel Name": {
+            "zh_CN": "通道名称"
+        },
+        "Channels": {
+            "zh_CN": "通道设定"
+        },
+        "Check this object's UV/Mesh complexity": {
+            "zh_CN": "Check this object's UV/Mesh complexity"
+        },
+        "Clear": {
+            "zh_CN": "清除"
+        },
+        "Clear Errors": {
+            "zh_CN": "清除错误"
+        },
+        "Clear the crash log and hide this warning": {
+            "zh_CN": "Clear the crash log and hide this warning"
+        },
+        "Col": {
+            "zh_CN": "颜色"
+        },
+        "Color": {
+            "zh_CN": "颜色"
+        },
+        "Color Base": {
+            "zh_CN": "底色"
+        },
+        "Color Depth": {
+            "zh_CN": "色深"
+        },
+        "Color Mode": {
+            "zh_CN": "色彩模式"
+        },
+        "Color Space": {
+            "zh_CN": "色彩空间"
+        },
+        "Contrast": {
+            "zh_CN": "对比度"
+        },
+        "Currently selected index in the baked image results list": {
+            "zh_CN": "当前选择的烘焙结果索引"
+        },
+        "Custom Channel": {
+            "zh_CN": "自定义通道"
+        },
+        "Custom Folder Name": {
+            "zh_CN": "自定义文件夹名"
+        },
+        "Custom Frames": {
+            "zh_CN": "自定义帧范围"
+        },
+        "Custom Maps": {
+            "zh_CN": "自定义贴图"
+        },
+        "Custom Name": {
+            "zh_CN": "自定义名称"
+        },
+        "Debug Mode": {
+            "zh_CN": "调试模式"
+        },
+        "Delete": {
+            "zh_CN": "删除"
+        },
+        "Delete All": {
+            "zh_CN": "删除所有"
+        },
+        "Denoise": {
+            "zh_CN": "降噪"
+        },
+        "Denoise Method": {
+            "zh_CN": "降噪方法"
+        },
+        "Depth": {
+            "zh_CN": "Depth"
+        },
+        "Detected Unexpected Exit (Crash)": {
+            "zh_CN": "Detected Unexpected Exit (Crash)"
+        },
+        "Device": {
+            "zh_CN": "设备"
+        },
+        "Dielectric Specular": {
+            "zh_CN": "Dielectric Specular"
+        },
+        "Diffuse": {
+            "zh_CN": "漫射"
+        },
+        "Dir": {
+            "zh_CN": "直接光"
+        },
+        "Direct": {
+            "zh_CN": "直接光"
+        },
+        "Direction": {
+            "zh_CN": "方向"
+        },
+        "Dismiss Warning": {
+            "zh_CN": "Dismiss Warning"
+        },
+        "Distance": {
+            "zh_CN": "距离"
+        },
+        "Down": {
+            "zh_CN": "下移"
+        },
+        "Duration": {
+            "zh_CN": "持续时间"
+        },
+        "EXR Codec": {
+            "zh_CN": "EXR 编码"
+        },
+        "Emission": {
+            "zh_CN": "自发光"
+        },
+        "Enable Custom Map Logic": {
+            "zh_CN": "启用自定义贴图逻辑"
+        },
+        "Enabled": {
+            "zh_CN": "启用"
+        },
+        "Error Log": {
+            "zh_CN": "错误日志"
+        },
+        "Export": {
+            "zh_CN": "导出"
+        },
+        "Export All": {
+            "zh_CN": "导出所有"
+        },
+        "Export Mesh": {
+            "zh_CN": "导出模型"
+        },
+        "Export Mode": {
+            "zh_CN": "Export Mode"
+        },
+        "Export Model": {
+            "zh_CN": "导出模型"
+        },
+        "Export Settings": {
+            "zh_CN": "导出设置"
+        },
+        "Extension (PBR Conv)": {
+            "zh_CN": "Extension (PBR Conv)"
+        },
+        "Extension Maps": {
+            "zh_CN": "Extension Maps"
+        },
+        "External Save": {
+            "zh_CN": "外部保存"
+        },
+        "Extrude": {
+            "zh_CN": "挤出"
+        },
+        "F0 Threshold": {
+            "zh_CN": "F0 Threshold"
+        },
+        "FBX": {
+            "zh_CN": "FBX"
+        },
+        "Fake User": {
+            "zh_CN": "伪用户"
+        },
+        "First color used for ID generation": {
+            "zh_CN": "用于 ID 生成的起始颜色"
+        },
+        "Folder Naming": {
+            "zh_CN": "文件夹命名"
+        },
+        "Format": {
+            "zh_CN": "格式"
+        },
+        "Frame Digits": {
+            "zh_CN": "帧位数"
+        },
+        "GLB": {
+            "zh_CN": "GLB"
+        },
+        "Gloss": {
+            "zh_CN": "光泽"
+        },
+        "Green": {
+            "zh_CN": "绿色"
+        },
+        "Higher values produce better color separation but take longer": {
+            "zh_CN": "较高的值产生更好的区分度但耗时更长"
+        },
+        "ID Map Count": {
+            "zh_CN": "ID图数量"
+        },
+        "ID Start Color": {
+            "zh_CN": "ID起始色"
+        },
+        "Idle": {
+            "zh_CN": "空闲"
+        },
+        "Ind": {
+            "zh_CN": "间接光"
+        },
+        "Index": {
+            "zh_CN": "索引"
+        },
+        "Index for baked image results": {
+            "zh_CN": "烘焙图像结果索引"
+        },
+        "Indirect": {
+            "zh_CN": "间接光"
+        },
+        "Inputs": {
+            "zh_CN": "输入设定"
+        },
+        "Inside": {
+            "zh_CN": "内部"
+        },
+        "Invert": {
+            "zh_CN": "反转"
+        },
+        "Invert G": {
+            "zh_CN": "反转 G"
+        },
+        "Is Baking": {
+            "zh_CN": "正在烘焙"
+        },
+        "Job Name": {
+            "zh_CN": "任务名称"
+        },
+        "Light Maps": {
+            "zh_CN": "Light Maps"
+        },
+        "List of baked image results with metadata": {
+            "zh_CN": "包含元数据的烘焙图像结果列表"
+        },
+        "Load Preset": {
+            "zh_CN": "加载预设"
+        },
+        "Load a full workspace configuration (replaces current jobs)": {
+            "zh_CN": "加载完整工作区配置（替换当前任务）"
+        },
+        "Local": {
+            "zh_CN": "本地"
+        },
+        "Manage Objects": {
+            "zh_CN": "Manage Objects"
+        },
+        "Manual Start Color": {
+            "zh_CN": "手动起始颜色"
+        },
+        "Manually specify the first color, otherwise calculate automatically": {
+            "zh_CN": "手动指定起始颜色，否则自动计算"
+        },
+        "Margin": {
+            "zh_CN": "边距"
+        },
+        "Mesh Maps": {
+            "zh_CN": "网格贴图"
+        },
+        "Mesh Maps + Animation might be redundant": {
+            "zh_CN": "网格贴图+动画可能冗余"
+        },
+        "Missing": {
+            "zh_CN": "缺失"
+        },
+        "Name": {
+            "zh_CN": "名称"
+        },
+        "Naming": {
+            "zh_CN": "命名:"
+        },
+        "Naming:": {
+            "zh_CN": "Naming:"
+        },
+        "New Folder": {
+            "zh_CN": "新建文件夹"
+        },
+        "New Job": {
+            "zh_CN": "新任务"
+        },
+        "Node Bake": {
+            "zh_CN": "节点烘焙"
+        },
+        "Normal Mode": {
+            "zh_CN": "法线模式"
+        },
+        "Object Mode": {
+            "zh_CN": "物体模式"
+        },
+        "Object Space": {
+            "zh_CN": "物体空间"
+        },
+        "Objects": {
+            "zh_CN": "物体列表"
+        },
+        "Only Local": {
+            "zh_CN": "仅本地"
+        },
+        "Op": {
+            "zh_CN": "操作"
+        },
+        "Override Color Settings": {
+            "zh_CN": "Override Color Settings"
+        },
+        "Packing": {
+            "zh_CN": "打包"
+        },
+        "Pad": {
+            "zh_CN": "补零位数"
+        },
+        "Path": {
+            "zh_CN": "路径"
+        },
+        "Pre": {
+            "zh_CN": "前缀"
+        },
+        "Prefix": {
+            "zh_CN": "前缀"
+        },
+        "Progress": {
+            "zh_CN": "进度"
+        },
+        "Quality": {
+            "zh_CN": "质量"
+        },
+        "Quality (Iterations)": {
+            "zh_CN": "质量(迭代次数)"
+        },
+        "Rad/Dist": {
+            "zh_CN": "半径/距离"
+        },
+        "Radius": {
+            "zh_CN": "半径"
+        },
+        "Random Seed": {
+            "zh_CN": "Random Seed"
+        },
+        "Record": {
+            "zh_CN": "记录"
+        },
+        "Red": {
+            "zh_CN": "红色"
+        },
+        "Reload Image": {
+            "zh_CN": "重载图像"
+        },
+        "Remove": {
+            "zh_CN": "Remove"
+        },
+        "Reset": {
+            "zh_CN": "重置"
+        },
+        "START BAKE": {
+            "zh_CN": "开始烘焙"
+        },
+        "Sample": {
+            "zh_CN": "采样"
+        },
+        "Samples": {
+            "zh_CN": "采样"
+        },
+        "Sampling": {
+            "zh_CN": "采样"
+        },
+        "Save & Export": {
+            "zh_CN": "保存与导出"
+        },
+        "Save ALL jobs and settings to a JSON file (excludes objects)": {
+            "zh_CN": "将所有任务保存到 JSON 文件（不含物体）"
+        },
+        "Save And Quit": {
+            "zh_CN": "保存并退出"
+        },
+        "Save External": {
+            "zh_CN": "保存外部"
+        },
+        "Save Path": {
+            "zh_CN": "保存路径"
+        },
+        "Save Preset": {
+            "zh_CN": "保存预设"
+        },
+        "Sep": {
+            "zh_CN": "分隔符"
+        },
+        "Separate": {
+            "zh_CN": "分离"
+        },
+        "Separator": {
+            "zh_CN": "分隔符"
+        },
+        "Set": {
+            "zh_CN": "Set"
+        },
+        "Set Active": {
+            "zh_CN": "Set Active"
+        },
+        "Size": {
+            "zh_CN": "大小"
+        },
+        "Smart Set": {
+            "zh_CN": "Smart Set"
+        },
+        "Smart Set (Sel -> Act)": {
+            "zh_CN": "Smart Set (Sel -> Act)"
+        },
+        "Source": {
+            "zh_CN": "源"
+        },
+        "Space": {
+            "zh_CN": "Space"
+        },
+        "Spec < F0 is Dielectric": {
+            "zh_CN": "Spec < F0 is Dielectric"
+        },
+        "Spec > F0 becomes Metallic": {
+            "zh_CN": "Spec > F0 becomes Metallic"
+        },
+        "Special Map": {
+            "zh_CN": "网格贴图"
+        },
+        "Special Settings": {
+            "zh_CN": "特殊设置"
+        },
+        "Start": {
+            "zh_CN": "起始"
+        },
+        "Start Index": {
+            "zh_CN": "起始索引"
+        },
+        "Start#": {
+            "zh_CN": "起始序号"
+        },
+        "Status": {
+            "zh_CN": "状态"
+        },
+        "Std": {
+            "zh_CN": "标准"
+        },
+        "Suf": {
+            "zh_CN": "后缀"
+        },
+        "Suffix": {
+            "zh_CN": "后缀"
+        },
+        "TIFF Codec": {
+            "zh_CN": "TIFF 编码"
+        },
+        "Target (Active)": {
+            "zh_CN": "Target (Active)"
+        },
+        "Texture set index": {
+            "zh_CN": "贴图集索引"
+        },
+        "Thickness": {
+            "zh_CN": "厚度"
+        },
+        "Threshold for separating Dielectric from Metallic (F0)": {
+            "zh_CN": "Threshold for separating Dielectric from Metallic (F0)"
+        },
+        "To Disk": {
+            "zh_CN": "保存到磁盘"
+        },
+        "Transmission": {
+            "zh_CN": "透射"
+        },
+        "USD": {
+            "zh_CN": "USD"
+        },
+        "Up": {
+            "zh_CN": "上移"
+        },
+        "Use Alpha": {
+            "zh_CN": "使用透明通道"
+        },
+        "Use Custom Map": {
+            "zh_CN": "使用自定义通道"
+        },
+        "Use Map": {
+            "zh_CN": "使用贴图"
+        },
+        "Use Pixel Size": {
+            "zh_CN": "使用像素尺寸"
+        },
+        "bw": {
+            "zh_CN": "黑白"
+        },
+        "object": {
+            "zh_CN": "物体"
+        }
+    }
+}

@@ -1,5 +1,6 @@
 import bpy
-from .constants import FORMAT_SETTINGS
+from .constants import FORMAT_SETTINGS, CAT_MESH, CAT_LIGHT, CAT_DATA, CHANNEL_BAKE_INFO
+from .state_manager import BakeStateManager
 
 def draw_header(layout, text, icon='NONE'):
     row = layout.row(align=True)
@@ -26,7 +27,7 @@ def draw_image_format_options(layout, setting, prefix=""):
     e_p = f"{prefix}exr_code"
     t_p = f"{prefix}tiff_codec"
     d_p = f"{prefix}color_depth"
-    m_p = f"{prefix}color_mode"
+    # m_p = f"{prefix}color_mode" # 标准模式下隐藏，用户只需调整深度
     
     fmt = getattr(setting, f_p)
     fs = FORMAT_SETTINGS.get(fmt, {})
@@ -43,9 +44,9 @@ def draw_image_format_options(layout, setting, prefix=""):
         
     row = layout.row(align=True)
     if "depths" in fs and len(fs["depths"]) > 0:
-        row.prop(setting, d_p, text="")
-    if "modes" in fs and len(fs["modes"]) > 0:
-        row.prop(setting, m_p, text="")
+        row.prop(setting, d_p, text="Depth")
+    # if "modes" in fs and len(fs["modes"]) > 0:
+    #     row.prop(setting, m_p, text="")
 
 def draw_active_channel_properties(layout, channel, setting):
     if not channel: return
@@ -61,8 +62,15 @@ def draw_active_channel_properties(layout, channel, setting):
     sub.prop(channel, "prefix", text="Pre")
     sub.prop(channel, "suffix", text="Suf")
     
-    if setting.colorspace_setting:
-        col.prop(channel, "custom_cs", text="Color Space", icon='COLOR')
+    box.separator()
+    col = box.column()
+    col.prop(channel, "override_defaults", toggle=True)
+    
+    if channel.override_defaults:
+        sub = col.box()
+        sub.label(text="Advanced Color Override", icon='COLOR')
+        sub.prop(channel, "custom_cs", text="Space")
+        sub.prop(channel, "custom_mode", text="Export Mode")
         
     box.separator()
     
@@ -107,9 +115,22 @@ def draw_active_channel_properties(layout, channel, setting):
         col.prop(channel, f"{channel.id}_sample", text="Samples")
         col.prop(channel, f"{channel.id}_rad" if channel.id!='ao' else "ao_dis", text="Rad/Dist")
         
+    elif channel.id == 'curvature':
+        col = box.column(align=True)
+        col.prop(channel, "curvature_sample", text="Samples")
+        col.prop(channel, "curvature_rad", text="Radius")
+        col.prop(channel, "curvature_contrast", text="Contrast")
+        
     elif channel.id == 'wireframe':
         box.prop(channel, "wireframe_dis", text="Size")
         box.prop(channel, "wireframe_use_pix")
+        
+    elif channel.id.startswith('pbr_conv_'):
+        col = box.column(align=True)
+        draw_header(col, "Conversion Logic", 'NODETREE')
+        col.prop(channel, "pbr_conv_threshold", text="F0 Threshold")
+        col.label(text="Spec < F0 is Dielectric", icon='INFO')
+        col.label(text="Spec > F0 becomes Metallic", icon='INFO')
 
 def draw_results(scene, layout, bj):
     layout.label(text="Baked Results", icon='IMAGE_DATA')
@@ -127,8 +148,41 @@ def draw_results(scene, layout, bj):
     box = layout.box()
     draw_header(box, "Export Settings", 'OUTPUT')
     col = box.column(align=True)
-    col.prop(bj, "bake_result_save_path", text="")
-    draw_image_format_options(col, bj, "bake_result_")
+    
+    col.prop(bj.bake_result_settings, "save_path", text="")
+    draw_image_format_options(col, bj.bake_result_settings.image_settings, "")
+
+def draw_crash_report(layout):
+    mgr = BakeStateManager()
+    if mgr.has_crash_record():
+        data = mgr.read_log()
+        if not data: return
+        
+        box = layout.box()
+        box.alert = True 
+        row = box.row()
+        row.label(text="Detected Unexpected Exit (Crash)", icon='ERROR')
+        row.operator("bake.clear_crash_log", text="", icon='X')
+        
+        col = box.column()
+        col.scale_y = 0.8
+        
+        # 显示友好的错误信息
+        # Safe get for keys
+        t = data.get('start_time', '?')
+        obj = data.get('current_object', 'Unknown')
+        curr = data.get('current_step', 0)
+        total = data.get('total_steps', '?')
+        err = data.get('last_error', '')
+        
+        col.label(text=f"Time: {t}")
+        col.label(text=f"Last Object: {obj}")
+        col.label(text=f"Progress: {curr} / {total}")
+        
+        if err:
+            col.label(text=f"Last Error: {err}")
+        else:
+            col.label(text="Check this object's UV/Mesh complexity")
 
 class UI_UL_ObjectList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
@@ -139,13 +193,21 @@ class UI_UL_ObjectList(bpy.types.UIList):
 
 class BAKETOOL_UL_ChannelList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # [优化] 使用图标区分通道类型
+        info = CHANNEL_BAKE_INFO.get(item.id, {})
+        cat = info.get('cat', 'DATA')
+        icon_map = {CAT_MESH: 'MESH_DATA', CAT_LIGHT: 'LIGHT_SUN', CAT_DATA: 'MATERIAL'}
+        ic = icon_map.get(cat, 'TEXTURE')
+        
         row = layout.row(align=True)
         row.prop(item, "enabled", text="")
-        row.label(text=item.name, icon='TEXTURE' if item.enabled else 'SHADING_SOLID')
+        row.label(text=item.name, icon=ic)
 
 class LIST_UL_JobsList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        layout.label(text=item.name or f"Job {index}", icon='PREFERENCES')
+        row = layout.row(align=True)
+        row.prop(item, "enabled", text="")
+        row.label(text=item.name or f"Job {index}", icon='PREFERENCES')
 
 class LIST_UL_CustomBakeChannelList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
@@ -162,7 +224,7 @@ class BAKE_PT_NodePanel(bpy.types.Panel):
     bl_idname = "BAKE_PT_NodePanel"
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
-    bl_category = 'Baking'
+    bl_category = 'Bake'
     
     @classmethod
     def poll(cls, context): 
@@ -171,17 +233,19 @@ class BAKE_PT_NodePanel(bpy.types.Panel):
     def draw(self, context):
         l = self.layout
         bj = context.scene.BakeJobs
+        nbs = bj.node_bake_settings # Shortcut
+        
         b = l.box()
         draw_header(b, "Res & Save", 'PREFERENCES')
         
         r = b.row(align=True)
-        r.prop(bj, "node_bake_res_x", text="X")
-        r.prop(bj, "node_bake_res_y", text="Y")
+        r.prop(nbs, "res_x", text="X")
+        r.prop(nbs, "res_y", text="Y")
         
-        b.prop(bj, "node_bake_save_outside", text="To Disk", icon='DISK_DRIVE')
-        if bj.node_bake_save_outside:
-            draw_file_path(b, bj, "node_bake_save_path", 2)
-            draw_image_format_options(b, bj, "node_bake_")
+        b.prop(nbs, "save_outside", text="To Disk", icon='DISK_DRIVE')
+        if nbs.save_outside:
+            draw_file_path(b, nbs, "save_path", 2)
+            draw_image_format_options(b, nbs.image_settings, "")
             
         l.operator("bake.selected_node_bake", text="Bake Node", icon='RENDER_STILL')
 
@@ -190,16 +254,41 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
     bl_idname = "BAKE_PT_BakePanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'Baking'
+    bl_category = 'Bake'
     
     def draw(self, context):
         l = self.layout
-        bj = context.scene.BakeJobs
+        
+        # 绘制崩溃报告
+        draw_crash_report(l)
+        
+        scene = context.scene
+        bj = scene.BakeJobs
+        
+        if scene.is_baking:
+            col = l.column(align=True)
+            col.label(text=scene.bake_status, icon='RENDER_STILL')
+            col.prop(scene, "bake_progress", text="Progress", slider=True)
+            l.separator()
+            
+        if scene.bake_error_log:
+            box = l.box()
+            box.alert = True
+            box.label(text="Bake Errors:", icon='ERROR')
+            for line in scene.bake_error_log.split('\n')[-5:]:
+                if line: box.label(text=line)
+            if l.operator("wm.context_set_string", text="Clear Errors", icon='TRASH'):
+                pass
+
         b = l.box()
         r = b.row()
         
         r.template_list("LIST_UL_JobsList", "", bj, "jobs", bj, "job_index", rows=3)
         draw_template_list_ops(r, "jobs_channel")
+
+        row = b.row(align=True)
+        row.operator("bake.save_setting", text="Save Preset", icon='IMPORT')
+        row.operator("bake.load_setting", text="Load Preset", icon='EXPORT')
         
         if not bj.jobs:
             b.label(text="Add job to start", icon='INFO')
@@ -209,17 +298,17 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         s = j.setting
         b.prop(j, "name", text="")
         
-        self.draw_inputs(l, bj, s)
-        self.draw_channels(l, bj, s)
-        self.draw_saves(l, bj, s)
-        self.draw_others(l, bj, s)
+        self.draw_inputs(context, l, bj, s)
+        self.draw_channels(context, l, bj, s)
+        self.draw_saves(context, l, bj, s)
+        self.draw_others(context, l, bj, s)
         
         l.separator()
         r = l.row()
         r.scale_y = 2.0
         r.operator("bake.bake_operator", text="START BAKE", icon='RENDER_STILL')
 
-    def draw_inputs(self, l, bj, s):
+    def draw_inputs(self, context, l, bj, s):
         l.prop(bj, "open_inputs", text="Inputs", icon="DISCLOSURE_TRI_DOWN" if bj.open_inputs else "DISCLOSURE_TRI_RIGHT", emboss=False)
         if not bj.open_inputs: return
         
@@ -237,10 +326,17 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         r.template_list("UI_UL_ObjectList", "", s, "bake_objects", s, "active_object_index", rows=3)
         
         c = r.column(align=True)
-        c.operator("bake.record_objects", icon='ADD').objecttype=0
-        c.operator("bake.generic_channel_op", icon='TRASH').target="bake_objects"
+        # 新的物体管理按钮组
+        op = c.operator("bake.manage_objects", icon='FILE_REFRESH', text="")
+        op.action = 'SET'
+        op = c.operator("bake.manage_objects", icon='ADD', text="")
+        op.action = 'ADD'
+        op = c.operator("bake.manage_objects", icon='REMOVE', text="")
+        op.action = 'REMOVE'
+        op = c.operator("bake.manage_objects", icon='TRASH', text="")
+        op.action = 'CLEAR'
         
-        # [新增] ID 贴图高级设置
+        # ID 贴图高级设置
         if any(c.id.startswith('ID_') for c in s.channels if c.enabled):
             sb = b.box(); draw_header(sb, "ID Map Optimization", 'COLOR')
             
@@ -249,15 +345,25 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
                 sb.prop(s, "id_start_color", text="")
                 
             sb.prop(s, "id_iterations", slider=True)
+            sb.prop(s, "id_seed")
 
         if s.bake_mode == 'SELECT_ACTIVE':
             sb = b.box()
-            c = sb.column(align=True)
-            r = c.row(align=True)
-            r.prop(s, "active_object")
-            r.operator("bake.record_objects", icon='EYEDROPPER').objecttype=1
+            sb.label(text="Target (Active)", icon='TARGET')
+            
+            # 智能设置大按钮
+            row = sb.row()
+            row.scale_y = 1.2
+            op = row.operator("bake.manage_objects", text="Smart Set (Sel -> Act)", icon='PIVOT_ACTIVE')
+            op.action = 'SMART_SET'
+            
+            # 手动设置
+            row = sb.row(align=True)
+            row.prop(s, "active_object", text="")
+            op = row.operator("bake.manage_objects", icon='EYEDROPPER', text="")
+            op.action = 'SET_ACTIVE'
 
-    def draw_channels(self, l, bj, s):
+    def draw_channels(self, context, l, bj, s):
         l.prop(bj, "open_channels", text="Channels", icon="DISCLOSURE_TRI_DOWN" if bj.open_channels else "DISCLOSURE_TRI_RIGHT", emboss=False)
         if not bj.open_channels: return
         
@@ -269,9 +375,12 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         if s.channels and 0 <= s.active_channel_index < len(s.channels):
             draw_active_channel_properties(b, s.channels[s.active_channel_index], s)
             
-        b.prop(s, "use_special_map", text="Mesh Maps", icon='MOD_MASK', toggle=True)
+        row = b.row(align=True)
+        row.prop(s, "use_light_map", text="Light Maps", icon='LIGHT_SUN', toggle=True)
+        row.prop(s, "use_mesh_map", text="Mesh Maps", icon='MESH_DATA', toggle=True)
+        row.prop(s, "use_extension_map", text="Extension (PBR Conv)", icon='NODE_COMPOSITING', toggle=True)
 
-    def draw_saves(self, l, bj, s):
+    def draw_saves(self, context, l, bj, s):
         l.prop(bj, "open_saves", text="Save & Export", icon="DISCLOSURE_TRI_DOWN" if bj.open_saves else "DISCLOSURE_TRI_RIGHT", emboss=False)
         if not bj.open_saves: return
         
@@ -291,7 +400,32 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             draw_file_path(sb, s, "save_path", 0)
             draw_image_format_options(sb, s)
             
-            # [改进] Export 依赖于 Save Out，移入内部
+            sb.separator()
+            row = sb.row(align=True)
+            row.prop(s, "bake_motion", text="Bake Image Sequence", icon='RENDER_ANIMATION')
+            
+            if s.bake_motion:
+                if s.use_mesh_map:
+                    sb.label(text="Mesh Maps + Animation might be redundant", icon='INFO')
+                if s.bake_texture_apply:
+                    sb.label(text="Auto-Apply is disabled for sequences", icon='INFO')
+                
+                col = sb.column(align=True)
+                r = col.row(align=True)
+                r.prop(s, "bake_motion_use_custom", text="Custom Frames", toggle=True)
+                
+                if s.bake_motion_use_custom:
+                    r = col.row(align=True)
+                    r.prop(s, "bake_motion_start", text="Start")
+                    r.prop(s, "bake_motion_last", text="Duration")
+                else:
+                    col.label(text=f"Sync Scene: {context.scene.frame_start}-{context.scene.frame_end}", icon='TIME')
+                
+                row = col.row(align=True)
+                row.prop(s, "bake_motion_separator", text="Sep")
+                row.prop(s, "bake_motion_startindex", text="Start#")
+                row.prop(s, "bake_motion_digit", text="Pad")
+
             sb.separator()
             sb.prop(s, "export_model", text="Export Mesh", icon='EXPORT', toggle=True)
             
@@ -299,7 +433,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
                 r = sb.row(align=True)
                 r.prop(s, "export_format", expand=True)
 
-    def draw_others(self, l, bj, s):
+    def draw_others(self, context, l, bj, s):
         l.prop(bj, "open_other", text="Custom Maps", icon="DISCLOSURE_TRI_DOWN" if bj.open_other else "DISCLOSURE_TRI_RIGHT", emboss=False)
         if not bj.open_other: return
         
@@ -325,13 +459,9 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
                 r.prop(c, "prefix", text="Pre")
                 r.prop(c, "suffix", text="Suf")
                 
-                # Loop through appropriate channels including Alpha
                 channels_to_draw = ['bw'] if c.bw else ['r','g','b','a']
-                
                 for char in channels_to_draw:
-                    # Get the sub-property settings object
                     settings = getattr(c, f"{char}_settings")
-                    
                     r = db.row(align=True)
                     r.prop(settings, "use_map", text=char.upper(), toggle=True)
                     
