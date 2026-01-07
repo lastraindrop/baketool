@@ -55,9 +55,15 @@ class TaskBuilder:
                 name = get_base_name(obj, mat=primary_mat, is_batch=is_batch)
                 tasks.append(BakeTask([obj], mats, obj, name, name))
                 
-        elif mode == 'COMBINE_OBJECT':
+        elif mode == 'COMBINE_OBJECT' or mode == 'UDIM':
             primary_mat = get_primary_mat(active_obj) if active_obj else (get_primary_mat(objects[0]) if objects else None)
-            name = get_base_name(active_obj, mat=primary_mat) if active_obj else "Combined"
+            
+            # For UDIM, we might want a specific default name if not custom
+            if mode == 'UDIM' and setting.name_setting != 'CUSTOM':
+                name = "UDIM_Bake"
+            else:
+                name = get_base_name(active_obj, mat=primary_mat) if active_obj else "Combined"
+                
             all_mats = {ms.material for obj in objects for ms in obj.material_slots if ms.material}
             tasks.append(BakeTask(objects, list(all_mats), active_obj, name, name))
             
@@ -91,7 +97,7 @@ class BakeContextManager:
         
         c_mode = self.override_color_mode if self.override_color_mode else s.color_mode
         img_args = {
-            'file_format': format_map.get(s.save_format, 'PNG'), 
+            'file_format': s.save_format if s.save_format else 'PNG', 
             'color_depth': s.color_depth, 
             'color_mode': c_mode, 
             'quality': s.quality,
@@ -198,18 +204,28 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
 
     def _prepare_job(self, context, job):
         s = job.setting
+        # Strict Mode: Only use objects explicitly added to the job list
         objs = [o.bakeobject for o in s.bake_objects if o.bakeobject]
-        if not objs and context.selected_objects: 
-            objs = [o for o in context.selected_objects if o.type=='MESH']
-        if not objs: return True 
         
+        if not objs: 
+            self.report({'WARNING'}, f"Job '{job.name}' is skipped: No objects assigned.")
+            return False
+
         # Check UVs
         no_uv = check_objects_uv(objs)
         if no_uv: 
             self.report({'ERROR'}, f"Missing UVs: {', '.join(no_uv)}")
             return False
 
-        active = s.active_object or (context.active_object if context.active_object in objs else objs[0])
+        # Strict Active Object Determination
+        # Priority: 1. Explicitly set Active Object -> 2. First object in list
+        active = s.active_object if s.active_object else objs[0]
+        
+        # Validation: Ensure active object is actually in the list (if we are in active mode)
+        if s.bake_mode == 'SELECT_ACTIVE' and active not in objs:
+             # If the assigned active object isn't in our bake list, fallback to first valid
+             active = objs[0]
+
         tasks = TaskBuilder.build(context, s, objs, active)
         chans = self._collect_channels(job)
         if not chans: return True
@@ -267,8 +283,8 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
         
         with BakeContextManager(context, s):
             with safe_context_override(context, task.active_obj, task.objects):
-                # Smart UV Handling
-                with SmartUVHandler(task.objects, s):
+                # Smart UV / UDIM Layout Handling
+                with UVLayoutManager(task.objects, s):
                     with NodeGraphHandler(task.materials) as handler:
                         # Protect other materials
                         handler.setup_protection(task.objects, task.materials)
@@ -289,38 +305,14 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
             apply_baked_result(task.active_obj, baked_images, s, task.base_name)
 
     def _bake_single_channel(self, context, setting, task, c, handler, current_results):
+        """Orchestrates the baking process for a single channel."""
         prop = c['prop']
         chan_id = c['id']
-        is_custom = chan_id == 'CUSTOM'
         
-        # Determine Color Space
-        if is_custom:
-            target_cs = prop.color_space
-        elif prop.override_defaults:
-            target_cs = prop.custom_cs
-        else:
-            target_cs = c['info'].get('def_cs', 'sRGB')
-            
-        is_float = setting.float32 or chan_id in {'position', 'normal', 'displacement'}
+        # 1. Configuration & Image Setup
+        target_cs, is_float = self._get_color_settings(setting, prop, c)
+        udim_tiles = self._get_udim_configuration(setting, task.objects)
         
-        # --- UDIM Logic ---
-        udim_tiles = None
-        if setting.use_udim:
-            if setting.udim_mode == 'AUTO':
-                udim_tiles = get_active_uv_udim_tiles(task.objects)
-            elif setting.udim_mode == 'MANUAL':
-                start = setting.udim_start_tile
-                u, v = setting.udim_grid_u, setting.udim_grid_v
-                udim_tiles = []
-                for i in range(u):
-                    for j in range(v):
-                        udim_tiles.append(start + i + (j * 10))
-            elif setting.udim_mode == 'LIST':
-                start = setting.udim_start_tile
-                count = setting.udim_count
-                udim_tiles = [start + i for i in range(count)]
-        
-        # Setup Image
         img_name = f"{c['prefix']}{task.base_name}{c['suffix']}"
         img = set_image(
             img_name, setting.res_x, setting.res_y, 
@@ -329,18 +321,86 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
             space=target_cs, 
             clear=setting.clearimage, 
             basiccolor=setting.colorbase,
-            use_udim=setting.use_udim,
+            use_udim=(setting.bake_mode == 'UDIM'),
             udim_tiles=udim_tiles
         )
         
-        # NumPy Optimization Check
-        if chan_id.startswith('pbr_conv_') and current_results:
-            spec = current_results.get('specular')
-            diff = current_results.get('color')
-            if spec and process_pbr_numpy(img, spec, diff, chan_id, prop.pbr_conv_threshold):
-                return img
+        # 2. Optimization: NumPy PBR Conversion (Early Return)
+        if self._try_numpy_pbr(chan_id, prop, img, current_results):
+            return img
 
-        # ID Map Generation
+        # 3. Scene & Node Preparation
+        # Helper ID for node logic (e.g., 'POS', 'UV', 'ID')
+        mesh_type = self._get_mesh_type(chan_id)
+        
+        self._prepare_node_graph(task, setting, handler, chan_id, prop, c['bake_pass'], img, mesh_type)
+        
+        # 4. Execution
+        success = self._run_blender_bake(setting, prop, c['bake_pass'], mesh_type, chan_id)
+        
+        return img if success else None
+
+    # --- Helper Methods for _bake_single_channel ---
+
+    def _get_color_settings(self, setting, prop, c):
+        """Determines the target color space and bit depth requirement."""
+        chan_id = c['id']
+        is_custom = chan_id == 'CUSTOM'
+        
+        if is_custom:
+            target_cs = prop.color_space
+        elif prop.override_defaults:
+            target_cs = prop.custom_cs
+        else:
+            target_cs = c['info'].get('def_cs', 'sRGB')
+            
+        is_float = setting.float32 or chan_id in {'position', 'normal', 'displacement'}
+        return target_cs, is_float
+
+    def _get_udim_configuration(self, setting, objects):
+        """Calculates UDIM tiles based on the selected mode."""
+        if setting.bake_mode != 'UDIM':
+            return None
+            
+        if setting.udim_mode == 'AUTO':
+            return get_active_uv_udim_tiles(objects)
+        elif setting.udim_mode == 'MANUAL':
+            start = setting.udim_start_tile
+            u, v = setting.udim_grid_u, setting.udim_grid_v
+            return [start + i + (j * 10) for i in range(u) for j in range(v)]
+        elif setting.udim_mode == 'SEQUENCE':
+            start = setting.udim_start_tile
+            # Smart count: 1 tile per object
+            return [start + i for i in range(len(objects))]
+        return None
+
+    def _try_numpy_pbr(self, chan_id, prop, img, current_results):
+        """Attempts to generate the map using NumPy instead of baking."""
+        if not chan_id.startswith('pbr_conv_') or not current_results:
+            return False
+            
+        spec = current_results.get('specular')
+        diff = current_results.get('color')
+        
+        # Requires specular map at minimum
+        if spec and process_pbr_numpy(img, spec, diff, chan_id, prop.pbr_conv_threshold):
+            return True
+        return False
+
+    def _get_mesh_type(self, chan_id):
+        """Resolves the internal mesh type identifier for the node handler."""
+        mesh_type = {
+            'position': 'POS', 'UV': 'UV', 'wireframe': 'WF', 'ao': 'AO',
+            'bevel': 'BEVEL', 'bevnor': 'BEVEL', 'slope': 'SLOPE'
+        }.get(chan_id)
+        
+        if not mesh_type and chan_id.startswith('ID_'):
+            return 'ID'
+        return mesh_type
+
+    def _prepare_node_graph(self, task, setting, handler, chan_id, prop, bake_pass, img, mesh_type):
+        """Sets up the node graph and attributes for baking."""
+        # Generate ID Map Attributes if needed
         attr_name = None
         if chan_id.startswith('ID_'):
             type_key = {'ID_mat':'MAT','ID_ele':'ELEMENT','ID_UVI':'UVI','ID_seam':'SEAM'}.get(chan_id, 'ELEMENT')
@@ -351,27 +411,24 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
                 setting.id_manual_start_color,
                 setting.id_seed
             )
-            if attr_name: handler.temp_attributes.append((task.active_obj, attr_name))
+            if attr_name: 
+                handler.temp_attributes.append((task.active_obj, attr_name))
 
-        # Helper ID for node logic
-        mesh_type = {
-            'position':'POS','UV':'UV','wireframe':'WF','ao':'AO',
-            'bevel':'BEVEL','bevnor':'BEVEL','slope':'SLOPE'
-        }.get(chan_id)
-        if not mesh_type and chan_id.startswith('ID_'): mesh_type = 'ID'
-
-        # Configure Nodes
+        # Setup Node Graph
         handler.setup_for_pass(
-            c['bake_pass'], chan_id, img, 
+            bake_pass, chan_id, img, 
             mesh_type=mesh_type, 
             attr_name=attr_name, 
             channel_settings=prop
         )
+
+    def _run_blender_bake(self, setting, prop, bake_pass, mesh_type, chan_id):
+        """Constructs parameters and executes the bake operator."""
+        is_custom = chan_id == 'CUSTOM'
         
-        # Execute Blender Bake
         try:
             params = {
-                'type': c['bake_pass'] if not mesh_type and not is_custom else 'EMIT', 
+                'type': bake_pass if not mesh_type and not is_custom else 'EMIT', 
                 'margin': setting.margin, 
                 'use_clear': setting.clearimage, 
                 'target': 'IMAGE_TEXTURES'
@@ -388,11 +445,11 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
                 })
                 
             bpy.ops.object.bake(**params)
-            return img
+            return True
             
         except RuntimeError as e:
             logger.error(f"Bake Fail {chan_id}: {e}")
-            return None
+            return False
 
     def _handle_save(self, context, setting, task, c, img, f_info):
         path = ""

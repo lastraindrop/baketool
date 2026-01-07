@@ -334,6 +334,13 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         col.prop(s, "bake_mode")
         
         draw_header(b, "Targets", 'OUTLINER_OB_MESH')
+        
+        if len(s.bake_objects) == 0:
+            box = b.box()
+            box.alert = True
+            box.label(text="List is empty!", icon='ERROR')
+            box.label(text="Add objects to bake.", icon='INFO')
+            
         r = b.row()
         r.template_list("UI_UL_ObjectList", "", s, "bake_objects", s, "active_object_index", rows=3)
         
@@ -362,21 +369,21 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             col.prop(s, "auto_uv_keep_active")
 
         # --- UDIM UI ---
-        sb = b.box()
-        draw_header(sb, "UDIM Tiling", 'FILE_IMAGE')
-        sb.prop(s, "use_udim", toggle=True)
-        if s.use_udim:
+        if s.bake_mode == 'UDIM':
+            sb = b.box()
+            draw_header(sb, "UDIM Tiling", 'FILE_IMAGE')
+            
             col = sb.column(align=True)
-            col.prop(s, "udim_mode", text="")
+            col.prop(s, "udim_mode", text="Method")
             
             if s.udim_mode == 'MANUAL':
                 col.prop(s, "udim_start_tile", text="Start")
                 r = col.row(align=True)
                 r.prop(s, "udim_grid_u", text="Grid U")
                 r.prop(s, "udim_grid_v", text="Grid V")
-            elif s.udim_mode == 'LIST':
+            elif s.udim_mode == 'SEQUENCE':
                 col.prop(s, "udim_start_tile", text="Start")
-                col.prop(s, "udim_count", text="Count")
+                col.label(text="1 Tile per Object", icon='SORTALPHA')
             elif s.udim_mode == 'AUTO':
                 col.label(text="Detects from Active UV", icon='INFO')
 

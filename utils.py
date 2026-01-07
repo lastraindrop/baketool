@@ -147,243 +147,257 @@ class SceneSettingsContext:
             try: setattr(target, k, v)
             except: pass
 
-# --- UDIM Distribution Logic ---
+# --- UV & UDIM Layout Manager ---
 
-class UDIMPacker:
-    """Helper to distribute UV islands across multiple UDIM tiles."""
-    
-    @staticmethod
-    def pack(obj, start_tile, grid_u, grid_v, margin=0.001):
-        if obj.type != 'MESH': return
-
-        bm = bmesh.from_edit_mesh(obj.data)
-        uv_layer = bm.loops.layers.uv.verify()
-
-        # 1. Identify Islands
-        faces_set = set(bm.faces)
-        islands = [] # List of lists of faces
-        
-        while faces_set:
-            seed = faces_set.pop()
-            stack = [seed]
-            island = [seed]
-            
-            while stack:
-                curr = stack.pop()
-                for loop in curr.loops:
-                    # Check shared vertices in UV space? 
-                    # For simplicity in this Bake Tool context (after Smart Project),
-                    # we can assume topological connectivity implies UV connectivity 
-                    # UNLESS it's a seam. But Smart Project cuts seams.
-                    # We use a robust "select linked" approach via internal operators for reliability
-                    pass 
-            
-            # Re-implementation: Using bpy.ops.uv.select_linked is safer than manual python recursion for UVs
-            # But we are in Python context.
-            # Faster approach: Collect all islands via a simple pass, or assume Smart Project
-            # output needs re-packing.
-            # Let's use the Selection Logic Strategy which is robust in Blender:
-            break # Break wrapper to use selection logic below
-
-        # --- Selection Based Strategy (Robust & leverages Blender C++ ops) ---
-        
-        # 1. Calculate Target Tiles
-        tiles = []
-        for v in range(grid_v):
-            for u in range(grid_u):
-                tile_idx = start_tile + u + (v * 10)
-                offset_x = u
-                offset_y = v
-                tiles.append({'id': tile_idx, 'x': offset_x, 'y': offset_y})
-        
-        if len(tiles) <= 1: return # No need to distribute
-
-        # 2. Distribute Faces
-        # We need to split the mesh into N chunks roughly equal in surface area
-        # Simply selecting random chunks is bad.
-        # We will cycle through islands.
-        
-        bpy.ops.mesh.select_all(action='DESELECT')
-        bpy.ops.mesh.select_mode(type='FACE')
-        
-        # Get all faces
-        all_faces = bm.faces[:]
-        unprocessed_faces = set(all_faces)
-        
-        island_groups = [[] for _ in tiles] # Lists of faces per tile
-        current_tile_idx = 0
-        
-        # Greedy allocation
-        while unprocessed_faces:
-            seed = unprocessed_faces.pop()
-            
-            # Select Linked (UV aware)
-            seed.select = True
-            bm.select_history.add(seed)
-            bpy.ops.uv.select_linked() # Selects the UV island
-            
-            # Find what was selected
-            selected_faces = [f for f in bm.faces if f.select]
-            
-            # Assign to current tile
-            island_groups[current_tile_idx].extend(selected_faces)
-            
-            # Cleanup for next iteration
-            for f in selected_faces:
-                if f in unprocessed_faces: unprocessed_faces.remove(f)
-                f.select = False # Deselect for next pass
-            
-            # Round robin distribution
-            # (Ideally we would balance by Area, but that requires heavy calc. Round robin is "okay" for now)
-            current_tile_idx = (current_tile_idx + 1) % len(tiles)
-
-        # 3. Pack and Shift per Tile
-        for i, tile in enumerate(tiles):
-            faces = island_groups[i]
-            if not faces: continue
-            
-            # Select faces for this tile
-            bpy.ops.mesh.select_all(action='DESELECT')
-            for f in faces: f.select = True
-            
-            # Pack into 0-1 first
-            bpy.ops.uv.pack_islands(margin=margin)
-            
-            # Shift to UDIM
-            if tile['x'] != 0 or tile['y'] != 0:
-                bpy.ops.uv.cursor_set(location=(0,0)) # Pivot
-                # Translate
-                bpy.ops.transform.translate(value=(tile['x'], tile['y'], 0), constraint_axis=(True, True, False))
-        
-        bmesh.update_edit_mesh(obj.data)
-
-
-# --- Smart UV Handler ---
-
-class SmartUVHandler:
+class UVLayoutManager:
+    """
+    Manages UV layers for baking, including:
+    1. Creating temporary UV layers to protect original data.
+    2. Generating Smart UVs.
+    3. Repacking/Distributing UVs into UDIM tiles (0-1 -> 1001, 1002...)
+    """
     def __init__(self, objects, settings):
         self.objects = [o for o in objects if o.type == 'MESH']
         self.settings = settings
         self.original_states = {} # {obj_name: {active_idx, render_idx}}
+        self.temp_layer_name = "BT_Bake_Temp_UV"
+        self.created_layers = []
 
     def __enter__(self):
-        if not self.settings.use_auto_uv: return self
-        
-        # 1. Record State & Setup UVs
+        self._record_and_setup_layers()
+        self._process_layout()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._restore_state()
+
+    def _record_and_setup_layers(self):
+        """Record current state and create temporary baking UV layer."""
         for obj in self.objects:
+            # Record state
             self.original_states[obj.name] = {
                 'active': obj.data.uv_layers.active_index,
                 'render': next((i for i, l in enumerate(obj.data.uv_layers) if l.active_render), 0)
             }
             
-            # Get or Create Target UV
-            uv_name = self.settings.auto_uv_name
-            uv_layer = obj.data.uv_layers.get(uv_name)
-            if not uv_layer:
-                uv_layer = obj.data.uv_layers.new(name=uv_name)
-            
-            obj.data.uv_layers.active = uv_layer
-            # Restore render layer
-            if obj.data.uv_layers:
-                 obj.data.uv_layers[self.original_states[obj.name]['render']].active_render = True
+            # Create Temp Layer (Copy from Active or New)
+            # If using Auto Smart UV, we might start fresh, otherwise copy active.
+            src_uv = obj.data.uv_layers.active
+            if src_uv:
+                new_uv = obj.data.uv_layers.new(name=self.temp_layer_name)
+                # Copy data from source
+                if new_uv: # Blender automatically copies data from active when creating new
+                    new_uv.active = True
+                    new_uv.active_render = True
+                    self.created_layers.append((obj, new_uv))
+            else:
+                # No UV, create one
+                new_uv = obj.data.uv_layers.new(name=self.temp_layer_name)
+                new_uv.active = True
+                new_uv.active_render = True
+                self.created_layers.append((obj, new_uv))
 
-        # 2. Smart Project & UDIM Packing
-        if self.objects:
-            # Setup Edit Mode
-            current_mode = bpy.context.object.mode if bpy.context.object else 'OBJECT'
-            if current_mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
-            
-            bpy.ops.object.select_all(action='DESELECT')
-            for obj in self.objects: obj.select_set(True)
-            bpy.context.view_layer.objects.active = self.objects[0]
-            
+    def _process_layout(self):
+        """Execute Smart UV or UDIM Repacking logic."""
+        s = self.settings
+        
+        # Mode A: Smart UV Project (Overrides everything)
+        if s.use_auto_uv:
+            self._apply_smart_uv()
+        
+        # Mode B: UDIM Repacking (Only if UDIM mode is ON and we are NOT in 'AUTO' detection mode)
+        # If mode is AUTO, we assume user set up UVs correctly.
+        # If mode is MANUAL/SEQUENCE, we force distribute islands into that grid.
+        if s.bake_mode == 'UDIM' and s.udim_mode in {'MANUAL', 'SEQUENCE'}:
+            self._distribute_udim()
+
+    def _apply_smart_uv(self):
+        # Select all objects
+        ctx_override = self._get_context_override()
+        with ctx_override:
             bpy.ops.object.mode_set(mode='EDIT')
             bpy.ops.mesh.select_all(action='SELECT')
             
-            # A. Initial Unwrap (0-1)
             bpy.ops.uv.smart_project(
                 angle_limit=self.settings.auto_uv_angle,
                 island_margin=self.settings.auto_uv_margin,
                 area_weight=0.0
             )
-            
-            # B. UDIM Distribution (If enabled and making new UV)
-            if self.settings.use_udim:
-                # Determine Grid
-                start = self.settings.udim_start_tile
-                u = 1; v = 1
-                
-                if self.settings.udim_mode == 'MANUAL':
-                    u = self.settings.udim_grid_u
-                    v = self.settings.udim_grid_v
-                elif self.settings.udim_mode == 'LIST':
-                    u = self.settings.udim_count # Treat list as horizontal strip
-                    v = 1
-                elif self.settings.udim_mode == 'AUTO':
-                    # For generating NEW UVs, 'Auto' is ambiguous. 
-                    # Default to a 2x2 grid if users chose Auto but wants New UVs, or fallback to 1001.
-                    # Let's assume a 2x1 strip for simplicity or just 1001.
-                    # Better: Don't distribute if Auto, just let Smart Project fill 1001.
-                    pass 
-                
-                if u > 1 or v > 1:
-                    # Apply to all selected objects individually or together?
-                    # Smart Project acts on all. We should iterate objects to pack.
-                    # But we are in Edit Mode with all selected.
-                    # It's safer to loop objects one by one for BMesh operations
-                    bpy.ops.object.mode_set(mode='OBJECT')
-                    for obj in self.objects:
-                        bpy.ops.object.select_all(action='DESELECT')
-                        obj.select_set(True)
-                        bpy.context.view_layer.objects.active = obj
-                        bpy.ops.object.mode_set(mode='EDIT')
-                        
-                        UDIMPacker.pack(obj, start, u, v, self.settings.auto_uv_margin)
-                        
-                        bpy.ops.object.mode_set(mode='OBJECT')
-            
-            # Restore mode if needed, but context manager exit handles restoration of state
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+    def _distribute_udim(self):
+        """
+        Distributes UV islands from the 0-1 space into the target UDIM grid.
+        Supports SEQUENCE (Per-Object) and MANUAL (Grid Distribution).
+        Uses BMesh for direct data manipulation to avoid Context Errors.
+        """
+        s = self.settings
+        start_tile = s.udim_start_tile
+        
+        # 1. Calculate Offsets
+        offsets = []
+        if s.udim_mode == 'SEQUENCE':
+            # One object -> One tile
+            for i in range(len(self.objects)):
+                offsets.append((i, 0))
+        elif s.udim_mode == 'MANUAL':
+            # Grid Distribution
+            grid_u, grid_v = s.udim_grid_u, s.udim_grid_v
+            for v in range(grid_v):
+                for u in range(grid_u):
+                    offsets.append((u, v))
+        
+        if not offsets: return
+
+        # 2. Execute Distribution
+        
+        # SEQUENCE Mode: Assign entire object to one tile
+        if s.udim_mode == 'SEQUENCE':
+            # Ensure we are in object mode
             if bpy.context.object.mode != 'OBJECT':
                 bpy.ops.object.mode_set(mode='OBJECT')
-            
-        return self
+                
+            for i, obj in enumerate(self.objects):
+                if i >= len(offsets): break 
+                
+                offset_x, offset_y = offsets[i]
+                if offset_x == 0 and offset_y == 0: continue
+                
+                # BMesh Operation - Safe & Fast
+                bm = bmesh.new()
+                bm.from_mesh(obj.data)
+                uv_layer = bm.loops.layers.uv.verify()
+                
+                # Shift all UVs
+                for face in bm.faces:
+                    for loop in face.loops:
+                        loop[uv_layer].uv[0] += offset_x
+                        loop[uv_layer].uv[1] += offset_y
+                
+                bm.to_mesh(obj.data)
+                bm.free()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if not self.settings.use_auto_uv or self.settings.auto_uv_keep_active: return
+        # MANUAL Mode: Distribute islands (Round Robin)
+        else:
+            # For Manual Grid packing, we still rely on Select Linked which works best with Ops,
+            # BUT we must avoid uv.cursor_set. 
+            # We can use bmesh translation or simple uv property shifting if we select loops.
+            
+            # Since Manual Mode relies on complex island detection, let's refine it to be safer.
+            # We will use the robust round-robin selection but translate via BMesh manually 
+            # or ensure we don't use context-sensitive pivot ops.
+            
+            ctx_override = self._get_context_override()
+            with ctx_override:
+                bpy.ops.object.mode_set(mode='EDIT')
+                bpy.ops.mesh.select_all(action='SELECT')
+                if not s.use_auto_uv:
+                    bpy.ops.uv.pack_islands(margin=s.auto_uv_margin)
+                bpy.ops.mesh.select_all(action='DESELECT')
+                bpy.ops.object.mode_set(mode='OBJECT')
+
+                for obj in self.objects:
+                    self._distribute_obj_islands_round_robin(obj, offsets)
+
+    def _distribute_obj_islands_round_robin(self, obj, tile_offsets):
+        """
+        Moves islands of a single object to target tiles in a round-robin fashion.
+        Uses BMesh translation to avoid context issues.
+        """
+        # 1. Identify Islands using BMesh (Pure Data approach is hard for UVs, so we mix)
+        # We use Edit Mode selection to FIND islands, but BMesh to MOVE them? 
+        # Actually, bpy.ops.transform.translate works in VIEW_3D if we don't set constraint to UV specific.
+        # But we want to move UVs. 
+        # Safer approach: Select faces in Edit Mode -> Get selected faces in BMesh -> Move UVs in BMesh.
         
-        # Restore Active UV state
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_mode(type='FACE')
+        bpy.ops.mesh.select_all(action='DESELECT')
+        
+        import bmesh
+        bm = bmesh.from_edit_mesh(obj.data)
+        uv_layer = bm.loops.layers.uv.verify()
+        
+        tile_idx = 0
+        total_tiles = len(tile_offsets)
+        
+        while True:
+            # Find a visible, unselected face
+            seed = None
+            for f in bm.faces:
+                if not f.hide and not f.select:
+                    seed = f
+                    break
+            
+            if not seed: break
+            
+            # Select Island
+            seed.select = True
+            bm.select_history.add(seed)
+            bpy.ops.uv.select_linked() 
+            
+            # Update BMesh selection from Ops
+            # (select_linked updates the internal mesh, we need to refresh bmesh view?)
+            # bmesh.update_edit_mesh(obj.data) # This syncs
+            # Actually select_linked works on the edit mesh.
+            
+            # Identify selected faces
+            selected_faces = [f for f in bm.faces if f.select]
+            if not selected_faces: break # Should not happen
+
+            # Move UVs using BMesh Data (No Ops!)
+            offset_x, offset_y = tile_offsets[tile_idx]
+            if offset_x != 0 or offset_y != 0:
+                for f in selected_faces:
+                    for loop in f.loops:
+                        loop[uv_layer].uv[0] += offset_x
+                        loop[uv_layer].uv[1] += offset_y
+
+            # Hide processed faces
+            bpy.ops.mesh.hide(unselected=False)
+            bpy.ops.mesh.select_all(action='DESELECT') # Clear for next pass
+            
+            tile_idx = (tile_idx + 1) % total_tiles
+            
+            # Sync back to ensure hiding works for next iteration
+            bmesh.update_edit_mesh(obj.data)
+
+        # Unhide everything
+        bpy.ops.mesh.reveal()
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+    def _get_context_override(self):
+        """Helper to create context override for operators."""
+        # Ensure we are in object mode first
+        if bpy.context.object.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+            
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in self.objects: o.select_set(True)
+        bpy.context.view_layer.objects.active = self.objects[0]
+        
+        return safe_context_override(bpy.context, self.objects[0], self.objects)
+
+    def _restore_state(self):
+        # Remove Temp Layers
+        for obj, layer in self.created_layers:
+            try:
+                if layer: obj.data.uv_layers.remove(layer)
+            except: pass
+            
+        # Restore Indices
         for obj in self.objects:
             if obj.name in self.original_states:
                 state = self.original_states[obj.name]
-                if state['active'] < len(obj.data.uv_layers):
+                try:
                     obj.data.uv_layers.active_index = state['active']
+                    # Restore render active
+                    if state['render'] < len(obj.data.uv_layers):
+                         obj.data.uv_layers[state['render']].active_render = True
+                except: pass
 
 # --- UDIM System Utilities ---
-
-class ImageEditorContext:
-    """
-    Context Manager that temporarily switches the current area to 'IMAGE_EDITOR'
-    to run operators like tile_add, then restores it.
-    """
-    def __init__(self, context):
-        self.context = context
-        self.area = context.area
-        self.old_type = self.area.ui_type
-        
-    def __enter__(self):
-        self.area.ui_type = 'UV'
-        region = next((r for r in self.area.regions if r.type == 'WINDOW'), None)
-        if not region and self.area.regions: region = self.area.regions[0]
-            
-        override = self.context.copy()
-        override['area'] = self.area
-        override['region'] = region
-        override['screen'] = self.context.screen
-        return override
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.area.ui_type != self.old_type:
-            self.area.ui_type = self.old_type
 
 def get_active_uv_udim_tiles(objects):
     """
@@ -420,6 +434,69 @@ def get_active_uv_udim_tiles(objects):
 
 # --- Image & IO Helpers ---
 
+@contextmanager
+def robust_image_editor_context(context, image):
+    """
+    Safely finds or hijacks an area to function as an IMAGE_EDITOR context.
+    Crucial for running `bpy.ops.image` operators inside a Modal Timer where `context.area` might be None.
+    """
+    # 1. Find a valid Window and Screen
+    window = context.window
+    if not window and context.window_manager.windows:
+        window = context.window_manager.windows[0]
+    screen = window.screen
+    
+    # 2. Find a valid Area
+    # Priority: Existing Image Editor -> View 3D -> Any valid area
+    area = None
+    
+    # Check if current context area is valid
+    if context.area and context.area.type != 'EMPTY':
+        area = context.area
+    
+    # If not, search the screen
+    if not area:
+        for a in screen.areas:
+            if a.type == 'IMAGE_EDITOR':
+                area = a
+                break
+        if not area:
+            for a in screen.areas:
+                if a.type == 'VIEW_3D':
+                    area = a
+                    break
+        if not area and screen.areas:
+            area = screen.areas[0]
+            
+    if not area:
+        logger.error("Could not find any valid area for Image Editor context.")
+        yield False
+        return
+
+    # 3. Hijack the area
+    old_type = area.type
+    try:
+        if old_type != 'IMAGE_EDITOR':
+            area.type = 'IMAGE_EDITOR'
+        
+        # Essential: Set the active image so the operator knows what to modify
+        area.spaces.active.image = image
+        
+        # Find the region (needed for some ops)
+        region = next((r for r in area.regions if r.type == 'WINDOW'), None)
+        
+        # 4. Yield the override context
+        with context.temp_override(window=window, area=area, region=region, screen=screen):
+            yield True
+            
+    except Exception as e:
+        logger.error(f"Context hijack failed: {e}")
+        yield False
+    finally:
+        # 5. Restore
+        if area.type != old_type:
+            area.type = old_type
+
 def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basiccolor=(0,0,0,0), clear=True, 
               use_udim=False, udim_tiles=None):
     """Get or create an image with specified settings (Supports UDIM)."""
@@ -443,13 +520,35 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
     if use_udim and image.source == 'TILED':
         target_tiles = set(udim_tiles) if udim_tiles else {1001}
         existing_tiles = {t.number for t in image.tiles}
-        missing_tiles = target_tiles - existing_tiles
         
+        # 1. Add Missing Tiles
+        missing_tiles = target_tiles - existing_tiles
         if missing_tiles:
-            with ImageEditorContext(bpy.context) as ctx:
-                ctx['area'].spaces.active.image = image
-                for t_idx in missing_tiles:
-                    try: bpy.ops.image.tile_add(ctx, number=t_idx, count=1, label='', fill=True)
+            # Use the robust context manager to create filled tiles via Operator
+            with robust_image_editor_context(bpy.context, image) as valid:
+                if valid:
+                    for t_idx in missing_tiles:
+                        try: 
+                            bpy.ops.image.tile_add(number=t_idx, count=1, label=str(t_idx), fill=True)
+                        except Exception as e:
+                            logger.warning(f"Failed to add UDIM tile {t_idx}: {e}")
+                else:
+                    for t_idx in missing_tiles:
+                        image.tiles.new(tile_number=t_idx)
+
+        # 2. Remove Extra Tiles (Cleanup)
+        extra_tiles = existing_tiles - target_tiles
+        if extra_tiles:
+            # Note: Removing tiles shifts indices, so we iterate carefully or by reference
+            # image.tiles collection behaves like a list, removal by pointer is safest if possible, 
+            # or finding by number.
+            for t_idx in extra_tiles:
+                tile_ptr = image.tiles.get(t_idx) # Access by tile index (1001), not list index? No, get() uses index/key
+                # image.tiles.get(1001) returns None usually, keys are not tile numbers.
+                # We must find the tile object.
+                tile_to_remove = next((t for t in image.tiles if t.number == t_idx), None)
+                if tile_to_remove:
+                    try: image.tiles.remove(tile_to_remove)
                     except: pass
 
     if clear: image.generated_color = basiccolor
