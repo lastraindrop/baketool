@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 bl_info = {
     "name": "Simple Bake Tool",
     "author": "lastraindrop",
-    "version": (0, 9, 0),
+    "version": (0, 9, 1),
     "blender": (3, 6, 0),
     "location": "3D VIEW > N panel > Baking",
     "description": "Quite simple baking tool",

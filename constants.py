@@ -19,10 +19,6 @@ bake_mode=[
 ("SELECT_ACTIVE","Active Bake","Bake selected to active",3),
 ("SPLIT_MATERIAL","Split Material Bake","Bake each split material",4)
 ]
-special_bake=[
-('NO','No','Normal bake'),
-('AUTOATLAS','ATLAS','Make ATLAS texture')
-]
 basic_format=[
     ("BMP", "BMP", "Output image in bitmap format", 1),
     ("IRIS", "Iris", "Output image in SGI IRIS format", 2),

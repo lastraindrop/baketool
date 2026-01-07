@@ -9,6 +9,7 @@ from .state_manager import BakeStateManager
 import json
 import os
 
+# --- Data Structures ---
 BakeStep = namedtuple('BakeStep', ['job', 'task', 'channels', 'frame_info'])
 BakeTask = namedtuple('BakeTask', ['objects', 'materials', 'active_obj', 'base_name', 'folder_name'])
 
@@ -42,21 +43,28 @@ class TaskBuilder:
             
             return clean(base)
 
+        def get_primary_mat(target_obj):
+            if not target_obj: return None
+            return target_obj.material_slots[0].material if target_obj.material_slots else None
+
         if mode == 'SINGLE_OBJECT':
             is_batch = len(objects) > 1
             for obj in objects:
                 mats = [ms.material for ms in obj.material_slots if ms.material]
-                name = get_base_name(obj, is_batch=is_batch)
+                primary_mat = mats[0] if mats else None
+                name = get_base_name(obj, mat=primary_mat, is_batch=is_batch)
                 tasks.append(BakeTask([obj], mats, obj, name, name))
                 
         elif mode == 'COMBINE_OBJECT':
-            name = get_base_name(active_obj) if active_obj else "Combined"
+            primary_mat = get_primary_mat(active_obj) if active_obj else (get_primary_mat(objects[0]) if objects else None)
+            name = get_base_name(active_obj, mat=primary_mat) if active_obj else "Combined"
             all_mats = {ms.material for obj in objects for ms in obj.material_slots if ms.material}
             tasks.append(BakeTask(objects, list(all_mats), active_obj, name, name))
             
         elif mode == 'SELECT_ACTIVE':
             if active_obj:
-                name = get_base_name(active_obj)
+                primary_mat = get_primary_mat(active_obj)
+                name = get_base_name(active_obj, mat=primary_mat)
                 mats = [ms.material for ms in active_obj.material_slots if ms.material]
                 tasks.append(BakeTask(objects, mats, active_obj, name, name))
                 
@@ -102,6 +110,7 @@ class BakeContextManager:
     def __exit__(self, *args):
         for ctx in reversed(self.stack): ctx.__exit__(*args)
 
+
 class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
     bl_label = "Bake"
     bl_idname = "bake.bake_operator"
@@ -115,7 +124,6 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
         self.current_step_idx = 0
         self.sequence_tracking = {}
         
-        # 初始化状态管理器
         self.state_mgr = BakeStateManager()
         
         if context.object and context.object.mode != 'OBJECT': 
@@ -142,12 +150,50 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
         scene.bake_error_log = ""
         self.total_steps = len(self.bake_queue)
 
-        # 记录会话开始
         job_names = ",".join([j.name for j in jobs])
         self.state_mgr.start_session(self.total_steps, job_names)
 
         self._timer = context.window_manager.event_timer_add(0.1, window=context.window)
         context.window_manager.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+
+    def modal(self, context, event):
+        if event.type == 'TIMER':
+            if self.current_step_idx >= self.total_steps: 
+                self.finish(context)
+                return {'FINISHED'}
+            
+            # Update UI
+            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+            
+            try: 
+                step = self.bake_queue[self.current_step_idx]
+                
+                # Update Log
+                if self.state_mgr:
+                    self.state_mgr.update_step(
+                        self.current_step_idx + 1,
+                        step.task.active_obj.name,
+                        "Processing"
+                    )
+                
+                # Execute Step
+                self._process_step(context, step)
+                
+            except Exception as e:
+                err_msg = f"Step {self.current_step_idx+1} Error: {e}"
+                context.scene.bake_error_log += err_msg + "\n"
+                logger.error(traceback.format_exc())
+                if self.state_mgr:
+                    self.state_mgr.log_error(err_msg)
+            
+            self.current_step_idx += 1
+            context.scene.bake_progress = (self.current_step_idx / self.total_steps) * 100.0
+            
+        elif event.type == 'ESC': 
+            self.cancel(context)
+            return {'CANCELLED'}
+            
         return {'RUNNING_MODAL'}
 
     def _prepare_job(self, context, job):
@@ -157,8 +203,10 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
             objs = [o for o in context.selected_objects if o.type=='MESH']
         if not objs: return True 
         
-        if check_objects_uv(objs): 
-            self.report({'ERROR'}, f"Missing UVs in job '{job.name}'")
+        # Check UVs
+        no_uv = check_objects_uv(objs)
+        if no_uv: 
+            self.report({'ERROR'}, f"Missing UVs: {', '.join(no_uv)}")
             return False
 
         active = s.active_object or (context.active_object if context.active_object in objs else objs[0])
@@ -166,6 +214,7 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
         chans = self._collect_channels(job)
         if not chans: return True
 
+        # Frame Range
         frames = [None]
         if s.bake_motion and s.save_out:
             start = s.bake_motion_start if s.bake_motion_use_custom else context.scene.frame_start
@@ -180,68 +229,32 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
     def _collect_channels(self, job):
         s = job.setting
         chans = []
+        
+        # Standard Channels
         for c in s.channels:
             if not c.enabled: continue
             info = CHANNEL_BAKE_INFO.get(c.id, {})
             chans.append({
-                'id': c.id, 'name': c.name, 'channel_prop': c, 
+                'id': c.id, 'name': c.name, 'prop': c, 
                 'bake_pass': info.get('bake_pass', 'EMIT'),
-                'prefix': c.prefix, 'suffix': c.suffix, 
-                'info': info
+                'info': info, 'prefix': c.prefix, 'suffix': c.suffix
             })
             
+        # Custom Channels
         if s.use_custom_map:
             for c in job.Custombakechannels:
                 chans.append({
-                    'id': 'CUSTOM', 'name': c.name, 'channel_prop': c, 
-                    'bake_pass': 'EMIT', 'prefix': c.prefix, 'suffix': c.suffix,
-                    'info': {'cat': 'DATA', 'def_cs': c.color_space} 
+                    'id': 'CUSTOM', 'name': c.name, 'prop': c, 
+                    'bake_pass': 'EMIT', 
+                    'info': {'cat': 'DATA', 'def_cs': c.color_space},
+                    'prefix': c.prefix, 'suffix': c.suffix
                 })
         
-        # Sort: ID Maps (0) -> Standard Maps (1) -> Extension/Calculated Maps (2)
-        def get_sort_weight(x):
-            if x['id'].startswith('ID'): return 0
-            if x['info'].get('cat') == 'EXTENSION': return 2
-            return 1
-            
-        chans.sort(key=get_sort_weight)
+        # Sort execution order (ID maps first, Extensions last)
+        chans.sort(key=lambda x: 0 if x['id'].startswith('ID') else (2 if x['info'].get('cat') == 'EXTENSION' else 1))
         return chans
 
-    def modal(self, context, event):
-        if event.type == 'TIMER':
-            if self.current_step_idx >= self.total_steps: 
-                self.finish(context)
-                return {'FINISHED'}
-            
-            try: 
-                step = self.bake_queue[self.current_step_idx]
-                # 更新状态日志：记录当前正在处理的对象
-                if self.state_mgr:
-                    self.state_mgr.update_step(
-                        self.current_step_idx + 1,
-                        step.task.active_obj.name,
-                        "Processing"
-                    )
-                
-                self._run_step(context, step)
-            except Exception as e:
-                err_msg = f"Step {self.current_step_idx} Error: {e}"
-                context.scene.bake_error_log += err_msg + "\n"
-                logger.error(traceback.format_exc())
-                # 记录错误到日志
-                if self.state_mgr:
-                    self.state_mgr.log_error(err_msg)
-            
-            self.current_step_idx += 1
-            context.scene.bake_progress = (self.current_step_idx / self.total_steps) * 100.0
-            
-        elif event.type == 'ESC': 
-            self.cancel(context)
-            return {'CANCELLED'}
-            
-        return {'RUNNING_MODAL'}
-
-    def _run_step(self, context, step):
+    def _process_step(self, context, step):
         job, task, channels, f_info = step.job, step.task, step.channels, step.frame_info
         s = job.setting
         
@@ -253,146 +266,151 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
         baked_images = {}
         
         with BakeContextManager(context, s):
-            with ContextOverride(context, task.active_obj, task.objects):
-                with NodeGraphHandler(task.materials) as handler:
-                    
-                    handler.setup_protection(task.objects, task.materials)
-                    
-                    for c in channels:
-                        img = self._bake_channel(context, s, task, c, handler, f_info, baked_images)
-                        if img:
-                            key = c['name'] if c['id'] == 'CUSTOM' else c['id']
-                            baked_images[key] = img
+            with safe_context_override(context, task.active_obj, task.objects):
+                # Smart UV Handling
+                with SmartUVHandler(task.objects, s):
+                    with NodeGraphHandler(task.materials) as handler:
+                        # Protect other materials
+                        handler.setup_protection(task.objects, task.materials)
+                        
+                        for c in channels:
+                            if not context.scene.is_baking: raise InterruptedError("Cancelled")
+                            
+                            img = self._bake_single_channel(context, s, task, c, handler, baked_images)
+                            
+                            if img:
+                                key = c['name'] if c['id'] == 'CUSTOM' else c['id']
+                                baked_images[key] = img
+                                
+                                # Save
+                                self._handle_save(context, s, task, c, img, f_info)
 
-            if s.bake_texture_apply and not f_info:
-                apply_baked_result(task.active_obj, baked_images, s, task.base_name)
+        if s.bake_texture_apply and not f_info:
+            apply_baked_result(task.active_obj, baked_images, s, task.base_name)
 
-    def _bake_channel(self, context, setting, task, c, handler, f_info, current_baked_map=None):
-        prop = c['channel_prop']
-        is_custom_chan = c['id'] == 'CUSTOM'
+    def _bake_single_channel(self, context, setting, task, c, handler, current_results):
+        prop = c['prop']
+        chan_id = c['id']
+        is_custom = chan_id == 'CUSTOM'
         
-        target_cs = 'sRGB'
-        target_mode = 'RGB' 
-        
-        if is_custom_chan:
+        # Determine Color Space
+        if is_custom:
             target_cs = prop.color_space
-            target_mode = 'BW' if prop.bw else 'RGB' 
+        elif prop.override_defaults:
+            target_cs = prop.custom_cs
         else:
-            if prop.override_defaults:
-                target_cs = prop.custom_cs
-                target_mode = prop.custom_mode
-            else:
-                info = c['info']
-                target_cs = info.get('def_cs', 'sRGB')
-                target_mode = info.get('def_mode', 'RGB')
+            target_cs = c['info'].get('def_cs', 'sRGB')
+            
+        is_float = setting.float32 or chan_id in {'position', 'normal', 'displacement'}
         
-        is_float = setting.float32 or c['id'] in {'position', 'normal', 'displacement'}
+        # --- UDIM Logic ---
+        udim_tiles = None
+        if setting.use_udim:
+            if setting.udim_mode == 'AUTO':
+                udim_tiles = get_active_uv_udim_tiles(task.objects)
+            elif setting.udim_mode == 'MANUAL':
+                start = setting.udim_start_tile
+                u, v = setting.udim_grid_u, setting.udim_grid_v
+                udim_tiles = []
+                for i in range(u):
+                    for j in range(v):
+                        udim_tiles.append(start + i + (j * 10))
+            elif setting.udim_mode == 'LIST':
+                start = setting.udim_start_tile
+                count = setting.udim_count
+                udim_tiles = [start + i for i in range(count)]
         
+        # Setup Image
         img_name = f"{c['prefix']}{task.base_name}{c['suffix']}"
-        
         img = set_image(
             img_name, setting.res_x, setting.res_y, 
             alpha=setting.use_alpha, 
             full=is_float, 
             space=target_cs, 
-            ncol=(target_cs == 'Non-Color'), 
             clear=setting.clearimage, 
-            basiccolor=setting.colorbase
+            basiccolor=setting.colorbase,
+            use_udim=setting.use_udim,
+            udim_tiles=udim_tiles
         )
         
-        # --- Numpy Optimization Check ---
-        numpy_success = False
-        if c['id'].startswith('pbr_conv_') and current_baked_map:
-            spec_img = current_baked_map.get('specular')
-            diff_img = current_baked_map.get('color') # In our defs, 'color' is BaseColor/Diffuse
-            
-            if spec_img and (c['id'] == 'pbr_conv_metal' or diff_img):
-                logger.info(f"Using Numpy Acceleration for {c['name']}")
-                numpy_success = process_pbr_numpy(
-                    img, spec_img, diff_img, 
-                    c['id'], 
-                    prop.pbr_conv_threshold
-                )
+        # NumPy Optimization Check
+        if chan_id.startswith('pbr_conv_') and current_results:
+            spec = current_results.get('specular')
+            diff = current_results.get('color')
+            if spec and process_pbr_numpy(img, spec, diff, chan_id, prop.pbr_conv_threshold):
+                return img
 
-        if not numpy_success:
-            attr_name = None
-            if c['id'].startswith('ID_'):
-                type_key = {'ID_mat':'MAT','ID_ele':'ELEMENT','ID_UVI':'UVI','ID_seam':'SEAM'}.get(c['id'], 'ELEMENT')
-                attr_name = setup_mesh_attribute(
-                    task.active_obj, type_key, 
-                    setting.id_start_color, 
-                    setting.id_iterations, 
-                    setting.id_manual_start_color,
-                    setting.id_seed
-                )
-                if attr_name: 
-                    handler.temp_attributes.append((task.active_obj, attr_name))
-
-            mesh_type_map = {
-                'position':'POS','UV':'UV','wireframe':'WF','ao':'AO',
-                'bevel':'BEVEL','bevnor':'BEVEL','slope':'SLOPE','thickness':'THICKNESS',
-                'curvature':'CURVATURE'
-            }
-            mesh_type = mesh_type_map.get(c['id'])
-            if not mesh_type and c['id'].startswith('ID_'):
-                mesh_type = 'ID'
-
-            handler.setup_for_pass(
-                bake_pass=c['bake_pass'], 
-                socket_name=c['id'], 
-                image=img, 
-                mesh_type=mesh_type, 
-                attr_name=attr_name, 
-                channel_settings=prop
+        # ID Map Generation
+        attr_name = None
+        if chan_id.startswith('ID_'):
+            type_key = {'ID_mat':'MAT','ID_ele':'ELEMENT','ID_UVI':'UVI','ID_seam':'SEAM'}.get(chan_id, 'ELEMENT')
+            attr_name = setup_mesh_attribute(
+                task.active_obj, type_key, 
+                setting.id_start_color, 
+                setting.id_iterations, 
+                setting.id_manual_start_color,
+                setting.id_seed
             )
+            if attr_name: handler.temp_attributes.append((task.active_obj, attr_name))
+
+        # Helper ID for node logic
+        mesh_type = {
+            'position':'POS','UV':'UV','wireframe':'WF','ao':'AO',
+            'bevel':'BEVEL','bevnor':'BEVEL','slope':'SLOPE'
+        }.get(chan_id)
+        if not mesh_type and chan_id.startswith('ID_'): mesh_type = 'ID'
+
+        # Configure Nodes
+        handler.setup_for_pass(
+            c['bake_pass'], chan_id, img, 
+            mesh_type=mesh_type, 
+            attr_name=attr_name, 
+            channel_settings=prop
+        )
+        
+        # Execute Blender Bake
+        try:
+            params = {
+                'type': c['bake_pass'] if not mesh_type and not is_custom else 'EMIT', 
+                'margin': setting.margin, 
+                'use_clear': setting.clearimage, 
+                'target': 'IMAGE_TEXTURES'
+            }
             
-            try:
-                params = {
-                    'type': c['bake_pass'] if not mesh_type and not is_custom_chan else 'EMIT', 
-                    'margin': setting.margin, 
-                    'use_clear': setting.clearimage, 
-                    'target': 'IMAGE_TEXTURES'
-                }
-                if params['type'] == 'NORMAL': 
-                    params['normal_space'] = 'OBJECT' if prop.normal_obj else 'TANGENT'
-                    
-                if setting.bake_mode == 'SELECT_ACTIVE':
-                    params.update({
-                        'use_selected_to_active': True, 
-                        'cage_object': setting.cage_object.name if setting.cage_object else "", 
-                        'cage_extrusion': setting.extrusion
-                    })
-                    
-                bpy.ops.object.bake(**params)
-            except RuntimeError as e:
-                logger.error(f"Bake error {c['name']}: {e}")
-                return None
+            if params['type'] == 'NORMAL': 
+                params['normal_space'] = 'OBJECT' if prop.normal_obj else 'TANGENT'
+                
+            if setting.bake_mode == 'SELECT_ACTIVE':
+                params.update({
+                    'use_selected_to_active': True, 
+                    'cage_object': setting.cage_object.name if setting.cage_object else "", 
+                    'cage_extrusion': setting.extrusion
+                })
+                
+            bpy.ops.object.bake(**params)
+            return img
+            
+        except RuntimeError as e:
+            logger.error(f"Bake Fail {chan_id}: {e}")
+            return None
 
-        self._handle_save(context, setting, task, c, img, f_info, target_mode)
-        return img
-
-    def _handle_save(self, context, setting, task, c, img, f_info, target_mode):
+    def _handle_save(self, context, setting, task, c, img, f_info):
         path = ""
         if setting.save_out:
-            img_sets = {'color_mode': target_mode}
-            with SceneSettingsContext('image', img_sets):
-                args = {
-                    'image': img, 'path': setting.save_path, 
-                    'folder': setting.create_new_folder, 'folder_name': task.folder_name,
-                    'file_format': setting.save_format
-                }
-                if f_info:
-                    args.update({
-                        'motion': True, 
-                        'frame': f_info['save_idx'], 
-                        'fillnum': f_info['digits'], 
-                        'separator': setting.bake_motion_separator
-                    })
-                
-                path = save_image(**args)
-                
-                if f_info and path:
-                    self._track_sequence(img, path, f_info['save_idx'])      
+            path = save_image(
+                img, setting.save_path, 
+                folder=setting.create_new_folder,
+                folder_name=task.folder_name,
+                file_format=setting.save_format,
+                motion=bool(f_info),
+                frame=f_info['save_idx'] if f_info else 0,
+                fillnum=f_info['digits'] if f_info else 4,
+                separator=setting.bake_motion_separator,
+                save=True
+            )
+            
+            if f_info and path:
+                self._track_sequence(img, path, f_info['save_idx'])
         else:
             img.pack()
             
@@ -410,22 +428,22 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
 
     def _add_result_entry(self, context, img, type_name, obj_name, path):
         results = context.scene.baked_image_results
+        # Check duplicate
         for r in results:
             if r.image == img: return
         item = results.add()
         item.image = img
         item.channel_type = type_name
         item.object_name = obj_name
-        item.filepath = path
+        item.filepath = path or ""
 
     def finish(self, context):
         context.scene.is_baking = False
         context.scene.bake_status = "Finished"
         
-        # 正常完成，清除日志
-        if self.state_mgr:
-            self.state_mgr.finish_session()
+        if self.state_mgr: self.state_mgr.finish_session()
         
+        # Setup Sequence References
         if self.sequence_tracking:
             for img, info in self.sequence_tracking.items():
                 try:
@@ -433,8 +451,7 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
                     img.filepath = info['first_path']
                     img.frame_duration = info['count']
                     img.reload() 
-                except Exception as e:
-                    logger.warning(f"Failed to setup sequence for {img.name}: {e}")
+                except: pass
             self.sequence_tracking.clear()
         
         if self._timer: 
@@ -447,24 +464,19 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
     def cancel(self, context):
         context.scene.is_baking = False
         context.scene.bake_status = "Cancelled"
-        
-        # 用户取消，清除日志
-        if self.state_mgr:
-            self.state_mgr.finish_session()
-            
+        if self.state_mgr: self.state_mgr.finish_session()
         if self._timer: 
             context.window_manager.event_timer_remove(self._timer)
             self._timer = None
+
+# --- Other Operators (Kept mostly same but cleaned) ---
 
 class BAKETOOL_OT_ResetChannels(bpy.types.Operator):
     bl_idname = "bake.reset_channels"; bl_label = "Reset"
     def execute(self, context):
         if not context.scene.BakeJobs.jobs: return {'CANCELLED'}
         s = context.scene.BakeJobs.jobs[context.scene.BakeJobs.job_index].setting
-        
-        # Use shared logic
         reset_channels_logic(s)
-        
         return {'FINISHED'}
 
 class BAKETOOL_OT_GenericChannelOperator(bpy.types.Operator):
@@ -482,11 +494,15 @@ class BAKETOOL_OT_GenericChannelOperator(bpy.types.Operator):
         
         if self.action_type=='ADD':
             coll.add()
-            if self.target=="jobs_channel": 
-                # Use operator here as this is an explicit user action via UI button
-                bpy.ops.bake.reset_channels()
+            if self.target=="jobs_channel": bpy.ops.bake.reset_channels()
         elif self.action_type=='DELETE': coll.remove(idx)
         elif self.action_type=='CLEAR': coll.clear()
+        elif self.action_type=='UP' and idx > 0:
+            coll.move(idx, idx-1); 
+            if self.target=="jobs_channel": bj.job_index -= 1
+        elif self.action_type=='DOWN' and idx < len(coll)-1:
+            coll.move(idx, idx+1)
+            if self.target=="jobs_channel": bj.job_index += 1
         return {'FINISHED'}
 
 class BAKETOOL_OT_SetSaveLocal(bpy.types.Operator):
@@ -500,14 +516,8 @@ class BAKETOOL_OT_SetSaveLocal(bpy.types.Operator):
         return{'FINISHED'}
 
 class BAKETOOL_OT_ManageObjects(bpy.types.Operator):
-    bl_idname = "bake.manage_objects"
-    bl_label = "Manage Objects"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    action: props.EnumProperty(items=[
-        ('SET', 'Set', ''),('ADD', 'Add', ''),('REMOVE', 'Remove', ''),
-        ('CLEAR', 'Clear', ''),('SET_ACTIVE', 'Set Active', ''),('SMART_SET', 'Smart Set', '')
-    ])
+    bl_idname = "bake.manage_objects"; bl_label = "Manage Objects"; bl_options = {'REGISTER', 'UNDO'}
+    action: props.EnumProperty(items=[('SET','',''),('ADD','',''),('REMOVE','',''),('CLEAR','',''),('SET_ACTIVE','',''),('SMART_SET','','')])
 
     def execute(self, context):
         if not context.scene.BakeJobs.jobs: return {'CANCELLED'}
@@ -528,18 +538,14 @@ class BAKETOOL_OT_ManageObjects(bpy.types.Operator):
                 s.active_object = act_obj
                 targets = [o for o in targets if o != act_obj]
             for o in targets: add_obj(o)
-                
         elif self.action == 'ADD':
             for o in sel_meshes:
                 if s.bake_mode == 'SELECT_ACTIVE' and o == s.active_object: continue
                 add_obj(o)
-
         elif self.action == 'REMOVE':
             to_remove = set(sel_meshes)
             for i in range(len(s.bake_objects)-1, -1, -1):
-                if s.bake_objects[i].bakeobject in to_remove:
-                    s.bake_objects.remove(i)
-                    
+                if s.bake_objects[i].bakeobject in to_remove: s.bake_objects.remove(i)
         elif self.action == 'CLEAR': s.bake_objects.clear()
         elif self.action == 'SET_ACTIVE': 
             if act_obj: s.active_object = act_obj
@@ -576,26 +582,31 @@ class BAKETOOL_OT_BakeSelectedNode(bpy.types.Operator):
         node = context.active_node
         if not (mat and node): return {'CANCELLED'}
         
-        img = set_image(f"{mat.name}_{node.name}", nbs.res_x, nbs.res_y)
-        with NodeGraphHandler([mat]) as h:
-            tree = mat.node_tree
-            out_n = next((n for n in tree.nodes if n.bl_idname=='ShaderNodeOutputMaterial' and n.is_active_output), None)
-            if out_n:
-                emi = tree.nodes.new('ShaderNodeEmission')
-                emi.location = (out_n.location.x-200, out_n.location.y)
-                tree.links.new(node.outputs[0], emi.inputs[0])
-                tree.links.new(emi.outputs[0], out_n.inputs[0])
-                
-                # Register for cleanup
-                h.active_nodes[mat].extend([emi])
-                h.history[mat] = {'sock': out_n.inputs[0], 'src': out_n.inputs[0].links[0].from_socket if out_n.inputs[0].is_linked else None}
-                
-                bpy.ops.object.bake(type='EMIT', margin=nbs.margin)
-                
-                if nbs.save_outside: 
-                    save_image(img, nbs.save_path, file_format=nbs.image_settings.save_format)
-                else: 
-                    img.pack()
+        img_name = f"{mat.name}_{node.name}"
+        img = set_image(img_name, nbs.res_x, nbs.res_y)
+        
+        try:
+            # Simplified node bake using handler
+            with safe_context_override(context, context.active_object):
+                with NodeGraphHandler([mat]) as h:
+                    tree = mat.node_tree
+                    # Manually add emission for selected node
+                    out_n = next((n for n in tree.nodes if n.bl_idname=='ShaderNodeOutputMaterial' and n.is_active_output), None)
+                    if out_n:
+                        emi = h._add_node(mat, 'ShaderNodeEmission', location=(out_n.location.x-200, out_n.location.y))
+                        tree.links.new(node.outputs[0], emi.inputs[0])
+                        tree.links.new(emi.outputs[0], out_n.inputs[0])
+                        
+                        bpy.ops.object.bake(type='EMIT', margin=nbs.margin)
+                        
+                        if nbs.save_outside: 
+                            save_image(img, nbs.save_path, file_format=nbs.image_settings.save_format)
+                        else: 
+                            img.pack()
+        except Exception as e:
+            self.report({'ERROR'}, str(e))
+            return {'CANCELLED'}
+
         return {'FINISHED'}
 
 class BAKETOOL_OT_DeleteResult(bpy.types.Operator):
@@ -630,12 +641,7 @@ class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):
 class BAKETOOL_OT_ClearCrashLog(bpy.types.Operator):
     bl_idname = "bake.clear_crash_log"
     bl_label = "Dismiss Warning"
-    bl_description = "Clear the crash log and hide this warning"
-    
     def execute(self, context):
-        try:
-            mgr = BakeStateManager()
-            mgr.finish_session() # Use finish logic to delete file
-        except Exception as e:
-            self.report({'ERROR'}, f"Failed to clear log: {e}")
+        try: BakeStateManager().finish_session() # Use finish logic to delete file
+        except: pass
         return {'FINISHED'}

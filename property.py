@@ -170,7 +170,6 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     
     bake_type: props.EnumProperty(items=bake_type, name='Bake Type', default="BSDF", update=update_channels)
     bake_mode: props.EnumProperty(items=get_bake_mode_items, name='Bake Mode')
-    special_bake_method: props.EnumProperty(items=special_bake, name='Special Settings', default="NO") 
     
     extrusion: props.FloatProperty(name='Extrude', min=0)
     
@@ -223,6 +222,31 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     use_extension_map: bpy.props.BoolProperty(default=False, name='Extension Maps', update=update_channels)
     
     use_custom_map: props.BoolProperty(default=False, name='Use Custom Map')
+
+    # --- Smart UV Settings ---
+    use_auto_uv: props.BoolProperty(name="Auto Smart UV", default=False, description="Automatically create and unwrap a new UV map for baking")
+    auto_uv_name: props.StringProperty(name="UV Name", default="Smart_UV")
+    auto_uv_angle: props.FloatProperty(name="Angle Limit", default=66.0, min=1.0, max=89.0, subtype='ANGLE')
+    auto_uv_margin: props.FloatProperty(name="Island Margin", default=0.001, min=0.0, max=1.0, precision=4)
+    auto_uv_keep_active: props.BoolProperty(name="Keep as Active", default=False, description="Keep the new UV as active after baking")
+
+    # --- UDIM Settings ---
+    use_udim: props.BoolProperty(name="Use UDIM", default=False, description="Enable UDIM tiled texture workflow")
+    udim_mode: props.EnumProperty(
+        name="UDIM Mode",
+        items=[
+            ('AUTO', 'Auto Detect', 'Detect required tiles from mesh UVs'),
+            ('MANUAL', 'Manual Grid', 'Create a specific grid of tiles'),
+            ('LIST', 'Simple List', 'Create a sequence of tiles')
+        ],
+        default='AUTO'
+    )
+    # For Manual/List mode
+    udim_start_tile: props.IntProperty(name="Start Tile", default=1001, min=1001, max=1099)
+    udim_count: props.IntProperty(name="Tile Count", default=1, min=1, max=99)
+    # Simple Manual Grid (e.g. 2x2)
+    udim_grid_u: props.IntProperty(name="Grid U", default=2, min=1)
+    udim_grid_v: props.IntProperty(name="Grid V", default=1, min=1)
 
     id_manual_start_color: props.BoolProperty(name='Manual Start Color', default=True)
     id_start_color: props.FloatVectorProperty(name='ID Start Color', default=(1.0, 0.0, 0.0, 1.0), subtype='COLOR', size=4)

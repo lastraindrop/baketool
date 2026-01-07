@@ -27,7 +27,6 @@ def draw_image_format_options(layout, setting, prefix=""):
     e_p = f"{prefix}exr_code"
     t_p = f"{prefix}tiff_codec"
     d_p = f"{prefix}color_depth"
-    # m_p = f"{prefix}color_mode" # 标准模式下隐藏，用户只需调整深度
     
     fmt = getattr(setting, f_p)
     fs = FORMAT_SETTINGS.get(fmt, {})
@@ -45,8 +44,75 @@ def draw_image_format_options(layout, setting, prefix=""):
     row = layout.row(align=True)
     if "depths" in fs and len(fs["depths"]) > 0:
         row.prop(setting, d_p, text="Depth")
-    # if "modes" in fs and len(fs["modes"]) > 0:
-    #     row.prop(setting, m_p, text="")
+
+# --- Specific Channel UI Drawers ---
+
+def _draw_normal(layout, channel):
+    col = layout.column(align=True)
+    draw_header(col, "Normal Map", 'NORMALS_FACE')
+    col.prop(channel, "normal_type", text="Std")
+    if channel.normal_type == 'CUSTOM':
+        r = col.row(align=True)
+        r.prop(channel, "normal_X")
+        r.prop(channel, "normal_Y")
+        r.prop(channel, "normal_Z")
+    col.prop(channel, "normal_obj", text="Object Space")
+
+def _draw_light_path(layout, channel):
+    col = layout.column(align=True)
+    draw_header(col, "Light Paths", 'LIGHT_SUN')
+    r = col.row(align=True)
+    r.prop(channel, f"{channel.id}_dir", text="Dir", toggle=True)
+    r.prop(channel, f"{channel.id}_ind", text="Ind", toggle=True)
+    r.prop(channel, f"{channel.id}_col", text="Col", toggle=True)
+
+def _draw_combine(layout, channel):
+    col = layout.column(align=True)
+    draw_header(col, "Passes", 'RENDERLAYERS')
+    r = col.row(align=True)
+    r.prop(channel, "com_dir", text="Dir", toggle=True)
+    r.prop(channel, "com_ind", text="Ind", toggle=True)
+    col.separator()
+    grid = col.grid_flow(columns=2, align=True)
+    grid.prop(channel, "com_diff")
+    grid.prop(channel, "com_gloss")
+    grid.prop(channel, "com_tran")
+    grid.prop(channel, "com_emi")
+
+def _draw_ao_bevel(layout, channel):
+    col = layout.column(align=True)
+    col.prop(channel, f"{channel.id}_sample", text="Samples")
+    col.prop(channel, f"{channel.id}_rad" if channel.id!='ao' else "ao_dis", text="Rad/Dist")
+
+def _draw_curvature(layout, channel):
+    col = layout.column(align=True)
+    col.prop(channel, "curvature_sample", text="Samples")
+    col.prop(channel, "curvature_rad", text="Radius")
+    col.prop(channel, "curvature_contrast", text="Contrast")
+
+def _draw_wireframe(layout, channel):
+    layout.prop(channel, "wireframe_dis", text="Size")
+    layout.prop(channel, "wireframe_use_pix")
+
+def _draw_pbr_conv(layout, channel):
+    col = layout.column(align=True)
+    draw_header(col, "Conversion Logic", 'NODETREE')
+    col.prop(channel, "pbr_conv_threshold", text="F0 Threshold")
+    col.label(text="Spec < F0 is Dielectric", icon='INFO')
+    col.label(text="Spec > F0 becomes Metallic", icon='INFO')
+
+CHANNEL_UI_MAP = {
+    'normal': _draw_normal,
+    'diff': _draw_light_path,
+    'gloss': _draw_light_path,
+    'tranb': _draw_light_path,
+    'combine': _draw_combine,
+    'ao': _draw_ao_bevel,
+    'bevel': _draw_ao_bevel,
+    'bevnor': _draw_ao_bevel,
+    'curvature': _draw_curvature,
+    'wireframe': _draw_wireframe,
+}
 
 def draw_active_channel_properties(layout, channel, setting):
     if not channel: return
@@ -76,61 +142,12 @@ def draw_active_channel_properties(layout, channel, setting):
     
     if channel.id == 'rough':
         box.prop(channel, "rough_inv", icon='ARROW_LEFTRIGHT')
-        
-    elif channel.id == 'normal':
-        col = box.column(align=True)
-        draw_header(col, "Normal Map", 'NORMALS_FACE')
-        col.prop(channel, "normal_type", text="Std")
-        
-        if channel.normal_type == 'CUSTOM':
-            r = col.row(align=True)
-            r.prop(channel, "normal_X")
-            r.prop(channel, "normal_Y")
-            r.prop(channel, "normal_Z")
-        col.prop(channel, "normal_obj", text="Object Space")
-        
-    elif channel.id in {'diff', 'gloss', 'tranb'}:
-        col = box.column(align=True)
-        draw_header(col, "Light Paths", 'LIGHT_SUN')
-        r = col.row(align=True)
-        r.prop(channel, f"{channel.id}_dir", text="Dir", toggle=True)
-        r.prop(channel, f"{channel.id}_ind", text="Ind", toggle=True)
-        r.prop(channel, f"{channel.id}_col", text="Col", toggle=True)
-        
-    elif channel.id == 'combine':
-        col = box.column(align=True)
-        draw_header(col, "Passes", 'RENDERLAYERS')
-        r = col.row(align=True)
-        r.prop(channel, "com_dir", text="Dir", toggle=True)
-        r.prop(channel, "com_ind", text="Ind", toggle=True)
-        col.separator()
-        grid = col.grid_flow(columns=2, align=True)
-        grid.prop(channel, "com_diff")
-        grid.prop(channel, "com_gloss")
-        grid.prop(channel, "com_tran")
-        grid.prop(channel, "com_emi")
-        
-    elif channel.id in ('ao', 'bevel', 'bevnor'):
-        col = box.column(align=True)
-        col.prop(channel, f"{channel.id}_sample", text="Samples")
-        col.prop(channel, f"{channel.id}_rad" if channel.id!='ao' else "ao_dis", text="Rad/Dist")
-        
-    elif channel.id == 'curvature':
-        col = box.column(align=True)
-        col.prop(channel, "curvature_sample", text="Samples")
-        col.prop(channel, "curvature_rad", text="Radius")
-        col.prop(channel, "curvature_contrast", text="Contrast")
-        
-    elif channel.id == 'wireframe':
-        box.prop(channel, "wireframe_dis", text="Size")
-        box.prop(channel, "wireframe_use_pix")
-        
     elif channel.id.startswith('pbr_conv_'):
-        col = box.column(align=True)
-        draw_header(col, "Conversion Logic", 'NODETREE')
-        col.prop(channel, "pbr_conv_threshold", text="F0 Threshold")
-        col.label(text="Spec < F0 is Dielectric", icon='INFO')
-        col.label(text="Spec > F0 becomes Metallic", icon='INFO')
+        _draw_pbr_conv(box, channel)
+    else:
+        draw_func = CHANNEL_UI_MAP.get(channel.id)
+        if draw_func:
+            draw_func(box, channel)
 
 def draw_results(scene, layout, bj):
     layout.label(text="Baked Results", icon='IMAGE_DATA')
@@ -167,8 +184,6 @@ def draw_crash_report(layout):
         col = box.column()
         col.scale_y = 0.8
         
-        # 显示友好的错误信息
-        # Safe get for keys
         t = data.get('start_time', '?')
         obj = data.get('current_object', 'Unknown')
         curr = data.get('current_step', 0)
@@ -193,7 +208,6 @@ class UI_UL_ObjectList(bpy.types.UIList):
 
 class BAKETOOL_UL_ChannelList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        # [优化] 使用图标区分通道类型
         info = CHANNEL_BAKE_INFO.get(item.id, {})
         cat = info.get('cat', 'DATA')
         icon_map = {CAT_MESH: 'MESH_DATA', CAT_LIGHT: 'LIGHT_SUN', CAT_DATA: 'MATERIAL'}
@@ -233,7 +247,7 @@ class BAKE_PT_NodePanel(bpy.types.Panel):
     def draw(self, context):
         l = self.layout
         bj = context.scene.BakeJobs
-        nbs = bj.node_bake_settings # Shortcut
+        nbs = bj.node_bake_settings
         
         b = l.box()
         draw_header(b, "Res & Save", 'PREFERENCES')
@@ -258,8 +272,6 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
     
     def draw(self, context):
         l = self.layout
-        
-        # 绘制崩溃报告
         draw_crash_report(l)
         
         scene = context.scene
@@ -326,7 +338,6 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         r.template_list("UI_UL_ObjectList", "", s, "bake_objects", s, "active_object_index", rows=3)
         
         c = r.column(align=True)
-        # 新的物体管理按钮组
         op = c.operator("bake.manage_objects", icon='FILE_REFRESH', text="")
         op.action = 'SET'
         op = c.operator("bake.manage_objects", icon='ADD', text="")
@@ -336,7 +347,39 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         op = c.operator("bake.manage_objects", icon='TRASH', text="")
         op.action = 'CLEAR'
         
-        # ID 贴图高级设置
+        # --- Smart UV UI ---
+        sb = b.box()
+        draw_header(sb, "Smart UV", 'GROUP_UVS')
+        sb.prop(s, "use_auto_uv", toggle=True)
+        if s.use_auto_uv:
+            col = sb.column(align=True)
+            col.prop(s, "auto_uv_name", text="Name")
+            
+            row = col.row(align=True)
+            row.prop(s, "auto_uv_angle")
+            row.prop(s, "auto_uv_margin")
+            
+            col.prop(s, "auto_uv_keep_active")
+
+        # --- UDIM UI ---
+        sb = b.box()
+        draw_header(sb, "UDIM Tiling", 'FILE_IMAGE')
+        sb.prop(s, "use_udim", toggle=True)
+        if s.use_udim:
+            col = sb.column(align=True)
+            col.prop(s, "udim_mode", text="")
+            
+            if s.udim_mode == 'MANUAL':
+                col.prop(s, "udim_start_tile", text="Start")
+                r = col.row(align=True)
+                r.prop(s, "udim_grid_u", text="Grid U")
+                r.prop(s, "udim_grid_v", text="Grid V")
+            elif s.udim_mode == 'LIST':
+                col.prop(s, "udim_start_tile", text="Start")
+                col.prop(s, "udim_count", text="Count")
+            elif s.udim_mode == 'AUTO':
+                col.label(text="Detects from Active UV", icon='INFO')
+
         if any(c.id.startswith('ID_') for c in s.channels if c.enabled):
             sb = b.box(); draw_header(sb, "ID Map Optimization", 'COLOR')
             
@@ -351,13 +394,11 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             sb = b.box()
             sb.label(text="Target (Active)", icon='TARGET')
             
-            # 智能设置大按钮
             row = sb.row()
             row.scale_y = 1.2
             op = row.operator("bake.manage_objects", text="Smart Set (Sel -> Act)", icon='PIVOT_ACTIVE')
             op.action = 'SMART_SET'
             
-            # 手动设置
             row = sb.row(align=True)
             row.prop(s, "active_object", text="")
             op = row.operator("bake.manage_objects", icon='EYEDROPPER', text="")
