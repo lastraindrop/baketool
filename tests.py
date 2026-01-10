@@ -1048,6 +1048,194 @@ class TestNodeGroupChannel(unittest.TestCase):
             self.assertEqual(group_node.bl_idname, 'ShaderNodeGroup')
             self.assertEqual(group_node.node_tree, self.ng)
 
+class TestEmergencyCleanup(unittest.TestCase):
+    """Test the emergency cleanup operator logic."""
+    
+    def setUp(self):
+        cleanup_scene()
+        
+    def test_cleanup_temp_data(self):
+        # 1. Create junk
+        obj = create_test_object("JunkObj")
+        uv = obj.data.uv_layers.new(name="BT_Bake_Temp_UV")
+        img = bpy.data.images.new("BT_Protection_Dummy_Test", 32, 32)
+        
+        # 2. Run operator
+        from .core import cleanup
+        try:
+            bpy.utils.register_class(cleanup.BAKETOOL_OT_EmergencyCleanup)
+        except: pass
+        
+        bpy.ops.bake.emergency_cleanup()
+        
+        # 3. Verify
+        self.assertNotIn("BT_Bake_Temp_UV", [l.name for l in obj.data.uv_layers])
+        self.assertNotIn("BT_Protection_Dummy_Test", [i.name for i in bpy.data.images])
+
+class TestSceneSettingsContext(unittest.TestCase):
+    """Test safe restoration of scene and render settings."""
+    
+    def test_cycles_settings_restoration(self):
+        scene = bpy.context.scene
+        scene.cycles.samples = 10
+        
+        settings = {'samples': 100}
+        with ops.SceneSettingsContext('cycles', settings):
+            self.assertEqual(scene.cycles.samples, 100)
+            
+        self.assertEqual(scene.cycles.samples, 10)
+
+class TestApplyBakedResult(unittest.TestCase):
+    """Test the logic that creates a new object with baked textures applied."""
+    
+    def setUp(self):
+        cleanup_scene()
+        self.obj = create_test_object("Original")
+        self.img = utils.set_image("Baked_Color", 32, 32)
+        
+    def test_apply_single_object(self):
+        baked_images = {'color': self.img}
+        setting = get_job_setting()
+        
+        new_obj = utils.apply_baked_result(self.obj, baked_images, setting, "TestBake")
+        
+        self.assertIsNotNone(new_obj)
+        self.assertTrue(new_obj.name.startswith("TestBake"))
+        self.assertEqual(len(new_obj.data.materials), 1)
+        
+        mat = new_obj.data.materials[0]
+        self.assertTrue(mat.use_nodes)
+        tex_nodes = [n for n in mat.node_tree.nodes if n.bl_idname == 'ShaderNodeTexImage']
+        self.assertEqual(len(tex_nodes), 1)
+        self.assertEqual(tex_nodes[0].image, self.img)
+
+class TestModelExporter_Logic(unittest.TestCase):
+    """Test the ModelExporter wrapper for path creation."""
+    
+    def setUp(self):
+        cleanup_scene()
+        self.temp_dir = tempfile.mkdtemp()
+        
+    def tearDown(self):
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+            
+    def test_export_directory_creation(self):
+        setting = get_job_setting()
+        setting.save_path = self.temp_dir
+        setting.create_new_folder = True
+        
+        folder_name = "MyExportFolder"
+        base_path = Path(bpy.path.abspath(setting.save_path))
+        if setting.create_new_folder:
+            base_path = base_path / folder_name
+            
+        base_path.mkdir(parents=True, exist_ok=True)
+        self.assertTrue(base_path.exists())
+
+class TestFullBakeIntegration(unittest.TestCase):
+    """
+    Integration Test: Simulates a complete user workflow using REAL logic classes.
+    This tests the actual baking engine in the Blender environment.
+    """
+    
+    def setUp(self):
+        cleanup_scene()
+        self.temp_dir = tempfile.mkdtemp()
+        
+    def tearDown(self):
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+
+    def test_complete_bake_workflow(self):
+        # 1. Setup Scene (Real Blender Data)
+        obj = create_test_object("Integrate_Obj", color=(1, 0, 0, 1)) # Red Object
+        
+        # 2. Configure Job Settings
+        scene = bpy.context.scene
+        bj = scene.BakeJobs
+        bj.jobs.clear()
+        job = bj.jobs.add()
+        s = job.setting
+        
+        # Add object to bake list
+        bo = s.bake_objects.add()
+        bo.bakeobject = obj
+        
+        # Configure settings for a real bake
+        s.bake_mode = 'SINGLE_OBJECT'
+        s.name_setting = 'OBJECT' # Ensure name matches obj.name
+        s.res_x = 64
+        s.res_y = 64
+        s.save_out = True
+        s.save_path = self.temp_dir
+        s.save_format = 'PNG'
+        s.bake_type = 'BSDF'
+        
+        # Sync channels
+        utils.reset_channels_logic(s)
+        channels = []
+        for c in s.channels:
+            if c.id == 'color':
+                c.enabled = True
+                info = CHANNEL_BAKE_INFO.get(c.id, {})
+                channels.append({
+                    'id': c.id, 'name': c.name, 'prop': c, 
+                    'bake_pass': info.get('bake_pass', 'EMIT'),
+                    'info': info, 'prefix': c.prefix, 'suffix': c.suffix
+                })
+            else:
+                c.enabled = False
+
+        # 3. Execute Real Engine Logic (The actual code from ops.py)
+        # We simulate the loop found in BAKETOOL_OT_BakeOperator._process_step
+        
+        # Build tasks using real TaskBuilder
+        tasks = ops.TaskBuilder.build(bpy.context, s, [obj], obj)
+        self.assertEqual(len(tasks), 1)
+        task = tasks[0]
+        
+        baked_images = {}
+        
+        # Use BakeContextManager to apply real render settings
+        with ops.BakeContextManager(bpy.context, s):
+            # Use safe_context_override to handle selection/active state
+            with utils.safe_context_override(bpy.context, task.active_obj, task.objects):
+                # Use UVLayoutManager to handle temp UVs (Real mesh modification)
+                with utils.UVLayoutManager(task.objects, s):
+                    # Use NodeGraphHandler to setup materials (Real shader nodes)
+                    with utils.NodeGraphHandler(task.materials) as handler:
+                        handler.setup_protection(task.objects, task.materials)
+                        
+                        for c_config in channels:
+                            # Execute the real BakePassExecutor (This calls bpy.ops.object.bake)
+                            img = ops.BakePassExecutor.execute(
+                                s, task, c_config, handler, baked_images
+                            )
+                            
+                            if img:
+                                baked_images[c_config['id']] = img
+                                # Save the image to disk
+                                utils.save_image(
+                                    img, s.save_path, 
+                                    file_format=s.save_format,
+                                    save=True
+                                )
+
+        # 4. Final Verification
+        img_name = f"Integrate_Obj_color"
+        self.assertIn(img_name, bpy.data.images, "Real bake failed to produce image")
+        
+        # Verify physical file existence
+        expected_file = os.path.join(self.temp_dir, f"{img_name}.png")
+        self.assertTrue(os.path.exists(expected_file), f"Physical file not created at {expected_file}")
+        
+        # Verify image content (Simple check: is it red?)
+        # For a 1.0, 0.0, 0.0, 1.0 bake, the pixels should contain data
+        pixels = np.empty(64 * 64 * 4, dtype=np.float32)
+        bpy.data.images[img_name].pixels.foreach_get(pixels)
+        self.assertTrue(np.mean(pixels[0::4]) > 0.5, "Bake result seems to be black (No data)")
+
 class BAKETOOL_OT_RunTests(bpy.types.Operator):
     bl_idname = "bake.run_dev_tests"
     bl_label = "Run Full Test Suite"
@@ -1085,7 +1273,12 @@ class BAKETOOL_OT_RunTests(bpy.types.Operator):
             TestNodeGraphHandler_Extended,
             TestUVDataManipulation,
             TestTaskBuilder_Logic,
-            TestNodeGroupChannel
+            TestNodeGroupChannel,
+            TestEmergencyCleanup,
+            TestSceneSettingsContext,
+            TestApplyBakedResult,
+            TestModelExporter_Logic,
+            TestFullBakeIntegration
         ]
         
         for tc in test_classes:

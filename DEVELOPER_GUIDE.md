@@ -85,7 +85,25 @@ SBT 在 `v0.9.2` 引入了模块化架构，将核心逻辑从 `utils.py` 拆解
 *   系统会在 `%TEMP%/sbt_last_session.json` 记录每一步的状态。
 *   Blender 重启后，插件读取此文件，若上次未正常结束，则在 UI 显示警告。
 
-### 4.2 紧急清理 (Emergency Cleanup)
-*   **场景**: 若 Blender 崩溃，`__exit__` 清理代码未执行，场景中会残留 `BT_Bake_Temp_UV` 层或紫色/白色贴图。
-*   **工具**: 调用 `bpy.ops.bake.emergency_cleanup()` (或 F3 搜索 "Clean Up Bake Junk")。
-*   **逻辑**: 扫描全场景，按命名特征暴力删除所有临时数据。
+## 5. 质量保证与测试 (Quality Assurance)
+
+为了确保重构过程中的稳定性，SBT 引入了一套完整的自动化测试套件（位于 `tests.py`）。
+
+### 5.1 测试覆盖范围
+*   **单元测试**: 验证 math_utils 算法、路径处理和预设序列化。
+*   **组件测试**: 模拟 `NodeGraphHandler` 对材质的修改与还原。
+*   **集成测试 (`TestFullBakeIntegration`)**: **核心测试**。在真实的 Blender 环境中模拟从“创建模型”到“点击烘焙”再到“检查磁盘文件”的全流程。
+
+### 5.2 如何运行测试
+1.  在 `__init__.py` 中，确保 `HAS_TESTS` 为 True。
+2.  在 Blender N 面板底部勾选 **Debug Mode**。
+3.  点击 **Run Full Test Suite**。
+4.  检查控制台 (System Console) 输出的详细结果。
+
+### 5.3 贡献准则
+任何新增的功能模块或核心逻辑修改，**必须**在 `tests.py` 中添加对应的测试用例。这对于目前处于“持续优化”阶段的项目至关重要。
+
+---
+
+## 6. 当前开发状态 (Current Status)
+目前项目正处于 `v0.9.3` 的重构中后期，重点在于提高大规模场景下的内存效率（通过 NumPy 进一步替代 BMesh 遍历）以及完善跨平台路径的兼容性测试。
