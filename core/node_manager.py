@@ -32,20 +32,26 @@ class NodeGraphHandler:
             self.temp_logic_nodes[mat] = []
 
     def cleanup(self):
-        for mat in self.materials:
-            if not mat.node_tree: continue
+        # 1. Clean up all materials that had nodes added (including protected ones)
+        for mat in list(self.temp_logic_nodes.keys()):
+            if not mat or not mat.node_tree: continue
             tree = mat.node_tree
+            
+            # Remove session nodes if this material was one of the active ones
             if mat in self.session_nodes:
                 for n in self.session_nodes[mat].values():
                     try: tree.nodes.remove(n)
                     except: pass
+            
+            # Remove all temp logic nodes
             if mat in self.temp_logic_nodes:
                 for n in self.temp_logic_nodes[mat]:
                     try: tree.nodes.remove(n)
                     except: pass
         
+        # 2. Restore original links
         for mat, link_info in self.original_links.items():
-            if not mat.node_tree: continue
+            if not mat or not mat.node_tree: continue
             try:
                 out_n = self._find_output(mat.node_tree)
                 if out_n and link_info:
@@ -54,21 +60,37 @@ class NodeGraphHandler:
                         mat.node_tree.links.new(from_socket, out_n.inputs[0])
             except: pass
         
+        # 3. Clean up temp attributes
         for obj, attr in self.temp_attributes:
             try: 
                 if attr in obj.data.attributes:
                     obj.data.attributes.remove(obj.data.attributes[attr])
             except: pass
 
+        # 4. Explicitly remove the protection dummy image if it has no users left
+        d = bpy.data.images.get("BT_Protection_Dummy")
+        if d and d.users == 0:
+            try: bpy.data.images.remove(d)
+            except: pass
+
     def setup_protection(self, objects, active_materials):
+        """
+        Ensure non-active materials on objects have an active texture node 
+        to prevent Blender's baker from potentially using wrong nodes.
+        Uses a temporary dummy image that shouldn't be saved.
+        """
         active_set = set(active_materials)
         d = bpy.data.images.get("BT_Protection_Dummy") or bpy.data.images.new("BT_Protection_Dummy", 32, 32, alpha=True)
-        d.use_fake_user=True
+        # Ensure it doesn't persist after nodes are gone
+        d.use_fake_user = False 
+        
         for obj in objects:
-            if obj.type!='MESH': continue
+            if obj.type != 'MESH': continue
             for s in obj.material_slots:
                 m = s.material
                 if m and m.use_nodes and m not in active_set:
+                    # We add a node to the material's tree. 
+                    # The NodeGraphHandler will track this in temp_logic_nodes[m]
                     self._add_node(m, 'ShaderNodeTexImage', image=d)
 
     def setup_for_pass(self, bake_pass, socket_name, image, mesh_type=None, attr_name=None, channel_settings=None):

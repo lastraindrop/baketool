@@ -901,6 +901,32 @@ class TestNodeGraphHandler_Extended(unittest.TestCase):
         final_node_count = len(self.tree.nodes)
         self.assertEqual(final_node_count, initial_node_count, "Node tree should be clean after error")
 
+    def test_protection_cleanup(self):
+        """Verify that protection nodes on non-active materials are cleaned up."""
+        # Create a second object with a different material
+        obj2 = create_test_object("OtherObj")
+        mat2 = obj2.data.materials[0]
+        initial_node_count_mat2 = len(mat2.node_tree.nodes)
+        
+        with ops.NodeGraphHandler([self.mat]) as h:
+            # mat2 is NOT in the active materials list [self.mat]
+            h.setup_protection([self.obj, obj2], [self.mat])
+            
+            # Verify nodes were added to mat2
+            self.assertTrue(len(mat2.node_tree.nodes) > initial_node_count_mat2)
+            
+        # Verify cleanup (The fix in node_manager.py should handle this)
+        self.assertEqual(len(mat2.node_tree.nodes), initial_node_count_mat2, "Protected material should be cleaned up")
+
+    def test_protection_image_cleanup(self):
+        """Verify that BT_Protection_Dummy image is removed if unused."""
+        with ops.NodeGraphHandler([self.mat]) as h:
+            h.setup_protection([self.obj], [self.mat])
+            self.assertIn("BT_Protection_Dummy", bpy.data.images)
+            
+        # The cleanup() method should have removed it because users dropped to 0
+        self.assertNotIn("BT_Protection_Dummy", bpy.data.images, "Protection dummy image should be removed if unused")
+
 class TestUVDataManipulation(unittest.TestCase):
     """Verify actual mesh UV data modification by Utils."""
     
@@ -1058,7 +1084,8 @@ class TestEmergencyCleanup(unittest.TestCase):
         # 1. Create junk
         obj = create_test_object("JunkObj")
         uv = obj.data.uv_layers.new(name="BT_Bake_Temp_UV")
-        img = bpy.data.images.new("BT_Protection_Dummy_Test", 32, 32)
+        # Use the actual name used by the addon
+        img = bpy.data.images.new("BT_Protection_Dummy", 32, 32)
         
         # 2. Run operator
         from .core import cleanup
@@ -1070,7 +1097,7 @@ class TestEmergencyCleanup(unittest.TestCase):
         
         # 3. Verify
         self.assertNotIn("BT_Bake_Temp_UV", [l.name for l in obj.data.uv_layers])
-        self.assertNotIn("BT_Protection_Dummy_Test", [i.name for i in bpy.data.images])
+        self.assertNotIn("BT_Protection_Dummy", [i.name for i in bpy.data.images])
 
 class TestSceneSettingsContext(unittest.TestCase):
     """Test safe restoration of scene and render settings."""
