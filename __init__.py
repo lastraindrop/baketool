@@ -25,6 +25,7 @@ from . import translations
 from . import ui
 from . import ops
 from . import property
+from .core import cleanup
 # 稳健加载测试模块 // Robust test module loading
 try:
     from . import tests
@@ -84,6 +85,7 @@ operator_classes = [
     ops.BAKETOOL_OT_SaveSetting,
     ops.BAKETOOL_OT_LoadSetting,
     ops.BAKETOOL_OT_ClearCrashLog,
+    cleanup.BAKETOOL_OT_EmergencyCleanup,
 ]
 
 if HAS_TESTS:

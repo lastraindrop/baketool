@@ -1,5 +1,5 @@
 import bpy
-from .constants import FORMAT_SETTINGS, CAT_MESH, CAT_LIGHT, CAT_DATA, CHANNEL_BAKE_INFO
+from .constants import FORMAT_SETTINGS, CAT_MESH, CAT_LIGHT, CAT_DATA, CAT_EXTENSION, CHANNEL_BAKE_INFO
 from .state_manager import BakeStateManager
 
 def draw_header(layout, text, icon='NONE'):
