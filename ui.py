@@ -101,6 +101,14 @@ def _draw_pbr_conv(layout, channel):
     col.label(text="Spec < F0 is Dielectric", icon='INFO')
     col.label(text="Spec > F0 becomes Metallic", icon='INFO')
 
+def _draw_node_group(layout, channel):
+    col = layout.column(align=True)
+    draw_header(col, "Target Node Group", 'NODETREE')
+    col.prop_search(channel, "node_group", bpy.data, "node_groups", text="", icon='GROUP')
+    if channel.node_group:
+        col.prop(channel, "node_group_output", text="Output Name", icon='OUTPUT')
+        col.label(text="Leave Output empty for default", icon='INFO')
+
 CHANNEL_UI_MAP = {
     'normal': _draw_normal,
     'diff': _draw_light_path,
@@ -112,6 +120,7 @@ CHANNEL_UI_MAP = {
     'bevnor': _draw_ao_bevel,
     'curvature': _draw_curvature,
     'wireframe': _draw_wireframe,
+    'node_group': _draw_node_group,
 }
 
 def draw_active_channel_properties(layout, channel, setting):
@@ -201,16 +210,39 @@ def draw_crash_report(layout):
 
 class UI_UL_ObjectList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        row = layout.row(align=True)
         if item.bakeobject:
-            layout.label(text=item.bakeobject.name, icon='OBJECT_DATA')
+            row.label(text=item.bakeobject.name, icon='OBJECT_DATA')
         else:
-            layout.label(text="Missing", icon='ERROR')
+            row.label(text="Missing", icon='ERROR')
+            
+        # Contextual UI for Custom UDIM
+        scene = context.scene
+        if hasattr(scene, "BakeJobs") and scene.BakeJobs.jobs:
+            job = scene.BakeJobs.jobs[scene.BakeJobs.job_index]
+            s = job.setting
+            if s.bake_mode == 'UDIM':
+                if s.udim_mode in {'CUSTOM', 'REPACK'}:
+                    row.prop(item, "udim_tile", text="Tile", emboss=False)
+                
+                # Resolution Override UI
+                row.separator()
+                row.prop(item, "override_size", text="", icon='FULLSCREEN_ENTER')
+                if item.override_size:
+                    row.prop(item, "udim_width", text="W")
+                    row.prop(item, "udim_height", text="H")
 
 class BAKETOOL_UL_ChannelList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         info = CHANNEL_BAKE_INFO.get(item.id, {})
         cat = info.get('cat', 'DATA')
-        icon_map = {CAT_MESH: 'MESH_DATA', CAT_LIGHT: 'LIGHT_SUN', CAT_DATA: 'MATERIAL'}
+        # Optimized mapping: Use RENDERLAYERS for passes/lighting results to avoid confusion with light objects
+        icon_map = {
+            CAT_MESH: 'MESH_DATA', 
+            CAT_LIGHT: 'RENDERLAYERS', 
+            CAT_DATA: 'MATERIAL',
+            CAT_EXTENSION: 'NODETREE'
+        }
         ic = icon_map.get(cat, 'TEXTURE')
         
         row = layout.row(align=True)
@@ -277,6 +309,20 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         scene = context.scene
         bj = scene.BakeJobs
         
+        # --- Global Developer / Debug Mode ---
+        row = l.row(align=True)
+        row.alignment = 'RIGHT'
+        row.prop(bj, "debug_mode", text="", icon='CONSOLE')
+        
+        if bj.debug_mode:
+            box = l.box()
+            box.label(text="Developer Zone", icon='CONSOLE')
+            box.alert = True
+            box.label(text="⚠ Warning: Developer use only!", icon='ERROR')
+            box.label(text="Operations may reset scene data.", icon='INFO')
+            box.operator("bake.run_dev_tests", text="Run Test Suite", icon='CHECKBOX_HLT')
+            l.separator()
+        
         if scene.is_baking:
             col = l.column(align=True)
             col.label(text=scene.bake_status, icon='RENDER_STILL')
@@ -308,6 +354,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             
         j = bj.jobs[bj.job_index]
         s = j.setting
+        
         b.prop(j, "name", text="")
         
         self.draw_inputs(context, l, bj, s)
@@ -354,38 +401,40 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         op = c.operator("bake.manage_objects", icon='TRASH', text="")
         op.action = 'CLEAR'
         
-        # --- Smart UV UI ---
+        # --- UV & Layout Settings ---
         sb = b.box()
-        draw_header(sb, "Smart UV", 'GROUP_UVS')
+        draw_header(sb, "UV Settings", 'GROUP_UVS')
+        
+        # Smart UV Toggle
         sb.prop(s, "use_auto_uv", toggle=True)
         if s.use_auto_uv:
             col = sb.column(align=True)
-            col.prop(s, "auto_uv_name", text="Name")
-            
             row = col.row(align=True)
             row.prop(s, "auto_uv_angle")
             row.prop(s, "auto_uv_margin")
-            
-            col.prop(s, "auto_uv_keep_active")
-
-        # --- UDIM UI ---
+        
+        # UDIM Settings
         if s.bake_mode == 'UDIM':
-            sb = b.box()
+            sb.separator()
             draw_header(sb, "UDIM Tiling", 'FILE_IMAGE')
             
             col = sb.column(align=True)
             col.prop(s, "udim_mode", text="Method")
             
-            if s.udim_mode == 'MANUAL':
-                col.prop(s, "udim_start_tile", text="Start")
-                r = col.row(align=True)
-                r.prop(s, "udim_grid_u", text="Grid U")
-                r.prop(s, "udim_grid_v", text="Grid V")
-            elif s.udim_mode == 'SEQUENCE':
-                col.prop(s, "udim_start_tile", text="Start")
-                col.label(text="1 Tile per Object", icon='SORTALPHA')
-            elif s.udim_mode == 'AUTO':
-                col.label(text="Detects from Active UV", icon='INFO')
+            if s.udim_mode == 'DETECT':
+                col.label(text="Auto-detects tiles from object UVs", icon='INFO')
+            elif s.udim_mode == 'CUSTOM':
+                col.label(text="Assign tiles in the object list above", icon='INFO')
+            elif s.udim_mode == 'REPACK':
+                col.label(text="Re-packs 1001 objects to new tiles", icon='INFO')
+
+            col.operator("bake.refresh_udim_locations", icon='FILE_REFRESH', text="Refresh / Repack UDIMs")
+
+        # Common UV Output Settings (Name)
+        # Show if we are creating new UVs (Smart UV) OR modifying them (UDIM)
+        if s.use_auto_uv or s.bake_mode == 'UDIM':
+            sb.separator()
+            sb.prop(s, "auto_uv_name", text="Target UV Name")
 
         if any(c.id.startswith('ID_') for c in s.channels if c.enabled):
             sb = b.box(); draw_header(sb, "ID Map Optimization", 'COLOR')
@@ -491,11 +540,11 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         
         if s.use_custom_map:
             r = b.row()
-            r.template_list("LIST_UL_CustomBakeChannelList", "", j, "Custombakechannels", j, "Custombakechannels_index", rows=4)
+            r.template_list("LIST_UL_CustomBakeChannelList", "", j, "custom_bake_channels", j, "custom_bake_channels_index", rows=4)
             draw_template_list_ops(r, "job_custom_channel")
             
-            if j.Custombakechannels and 0 <= j.Custombakechannels_index < len(j.Custombakechannels):
-                c = j.Custombakechannels[j.Custombakechannels_index]
+            if j.custom_bake_channels and 0 <= j.custom_bake_channels_index < len(j.custom_bake_channels):
+                c = j.custom_bake_channels[j.custom_bake_channels_index]
                 db = b.box()
                 col = db.column(align=True)
                 

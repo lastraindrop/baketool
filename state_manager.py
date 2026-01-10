@@ -6,17 +6,10 @@ from pathlib import Path
 
 class BakeStateManager:
     def __init__(self):
-        # 优先存储在插件目录下的 logs 文件夹
-        self.log_dir = Path(__file__).parent / "logs"
-        self.log_file = self.log_dir / "last_session.json"
-        
-        # 确保目录存在，如果权限不足则回退到 Blender 临时目录
-        try:
-            if not self.log_dir.exists():
-                self.log_dir.mkdir(parents=True, exist_ok=True)
-        except Exception:
-            self.log_dir = Path(bpy.app.tempdir)
-            self.log_file = self.log_dir / "sbt_last_session.json"
+        # 使用系统临时目录，避免插件安装目录的权限问题
+        # Use system temp directory to avoid permission issues in addon dir
+        self.log_dir = Path(bpy.app.tempdir)
+        self.log_file = self.log_dir / "sbt_last_session.json"
 
     def start_session(self, total_steps, job_name):
         """开始任务，创建日志"""
@@ -68,6 +61,8 @@ class BakeStateManager:
         try:
             with open(self.log_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=4, ensure_ascii=False)
+                f.flush()
+                os.fsync(f.fileno())
         except Exception as e:
             print(f"BakeTool Log Error: {e}")
 

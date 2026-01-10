@@ -25,6 +25,14 @@ from . import translations
 from . import ui
 from . import ops
 from . import property
+# 稳健加载测试模块 // Robust test module loading
+try:
+    from . import tests
+    HAS_TESTS = True
+except ImportError:
+    import traceback
+    traceback.print_exc()
+    HAS_TESTS = False
 
 from .utils import *
 from .constants import *
@@ -67,6 +75,7 @@ operator_classes = [
     ops.BAKETOOL_OT_BakeSelectedNode,
     ops.BAKETOOL_OT_SetSaveLocal,
     ops.BAKETOOL_OT_ManageObjects,
+    ops.BAKETOOL_OT_RefreshUDIM,
     ops.BAKETOOL_OT_GenericChannelOperator,
     ops.BAKETOOL_OT_DeleteResult,
     ops.BAKETOOL_OT_DeleteAllResults,
@@ -76,6 +85,9 @@ operator_classes = [
     ops.BAKETOOL_OT_LoadSetting,
     ops.BAKETOOL_OT_ClearCrashLog,
 ]
+
+if HAS_TESTS:
+    operator_classes.append(tests.BAKETOOL_OT_RunTests)
 
 ui_classes = [
     ui.UI_UL_ObjectList,
@@ -127,7 +139,8 @@ def register():
         kmi.properties.name = 'BAKE_PT_BakePanel'
         addon_keymaps.append((km, kmi))
     # 制作翻译 // Create translations
-    bpy.app.translations.register("SBT_zh_CN", translations.trandict_CHN)
+    # Register all loaded languages using the package name as the context/domain
+    bpy.app.translations.register(__name__, translations.translation_dict)
     
     
 def unregister():
@@ -151,7 +164,7 @@ def unregister():
         
     addon_keymaps.clear()
     # 注销翻译 // Unregister translations
-    bpy.app.translations.unregister("SBT_zh_CN")
+    bpy.app.translations.unregister(__name__)
     
 if __name__ == "__main__":
     register()

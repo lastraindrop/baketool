@@ -45,14 +45,6 @@ def load_translations():
 # Load on module import
 translation_data = load_translations()
 
-# For backward compatibility with __init__.py, we expose the "zh_CN" part explicitly 
-# or just expose the whole map if __init__ is updated.
-# __init__.py expects: bpy.app.translations.register("SBT_zh_CN", translations.trandict_CHN)
-# We will construct trandict_CHN to match that expectation.
-
-trandict_CHN = {}
-if "zh_CN" in translation_data:
-    trandict_CHN["zh_CN"] = translation_data["zh_CN"]
-else:
-    # Fallback to empty if json fails
-    trandict_CHN["zh_CN"] = {}
+# Expose the full dictionary for registration
+# Format: {locale: {(context, src): dest}}
+translation_dict = translation_data

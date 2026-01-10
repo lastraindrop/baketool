@@ -58,6 +58,12 @@ def get_bake_mode_items(self, context):
 
 class BakeObject(bpy.types.PropertyGroup):
     bakeobject: props.PointerProperty(name="object", type=bpy.types.Object)
+    udim_tile: props.IntProperty(name="UDIM Tile", default=1001, min=1001, max=1099, description="Target UDIM Tile for this object")
+    
+    # UDIM Resolution Settings
+    override_size: props.BoolProperty(name="Override Size", default=False, description="Use custom resolution for this tile instead of global bake resolution")
+    udim_width: props.IntProperty(name="Width", default=1024, min=1)
+    udim_height: props.IntProperty(name="Height", default=1024, min=1)
 
 class BakeChannelSource(bpy.types.PropertyGroup):
     use_map: props.BoolProperty(name='Use Map', default=False)
@@ -134,6 +140,10 @@ class BakeChannel(bpy.types.PropertyGroup):
     # PBR Conversion Settings
     pbr_conv_threshold: props.FloatProperty(name='Dielectric Specular', default=0.04, min=0.0, max=1.0, description="Threshold for separating Dielectric from Metallic (F0)")
 
+    # Node Group Settings
+    node_group: props.StringProperty(name="Node Group", description="Name of the Shader Node Group to use as bake source")
+    node_group_output: props.StringProperty(name="Output Socket", default="", description="Name of the output socket to bake. Leave empty for first output.")
+
 class CustomBakeChannel(bpy.types.PropertyGroup):
     name: props.StringProperty(name='Name', default="Custom Channel")
     color_space: props.EnumProperty(items=COLOR_SPACES, name='Color Space', default='NONCOL')
@@ -154,7 +164,6 @@ class CustomBakeChannel(bpy.types.PropertyGroup):
     suffix: props.StringProperty(name='Suffix')
     
 class BakeJobSetting(bpy.types.PropertyGroup):
-    debug_mode: bpy.props.BoolProperty(name="Debug Mode", default=False, update=update_debug_mode)
     save_and_quit: props.BoolProperty(default=False, name='Save And Quit')
     bake_texture_apply: props.BoolProperty(default=False, name='Apply Bake')
     
@@ -235,11 +244,11 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     udim_mode: props.EnumProperty(
         name="UDIM Mode",
         items=[
-            ('SEQUENCE', 'Object Sequence', 'Automatically assign one object per tile (1001, 1002...)'),
-            ('AUTO', 'Auto Detect', 'Detect required tiles from mesh UVs'),
-            ('MANUAL', 'Manual Grid', 'Create a specific grid of tiles (e.g. 2x2)'),
+            ('DETECT', 'Use Existing UVs', 'Trust current UV positions (e.g. 1002, 1011). Bake assumes UVs are already laid out.'),
+            ('REPACK', 'Auto Repack 0-1', 'Keep existing UDIM UVs, but automatically move 0-1 UVs to new empty tiles.'),
+            ('CUSTOM', 'Custom List', 'Force UVs to the specific tiles defined in the object list below.'),
         ],
-        default='SEQUENCE'
+        default='DETECT'
     )
     # For Manual/List mode
     udim_start_tile: props.IntProperty(name="Start Tile", default=1001, min=1001, max=1099)
@@ -257,8 +266,8 @@ class BakeJob(bpy.types.PropertyGroup):
     name: props.StringProperty(name="Job Name", default="New Job")
     enabled: props.BoolProperty(name="Enabled", default=True)
     setting: props.PointerProperty(type=BakeJobSetting)
-    Custombakechannels: props.CollectionProperty(type=CustomBakeChannel)
-    Custombakechannels_index: props.IntProperty(name='Index', default=0)
+    custom_bake_channels: props.CollectionProperty(type=CustomBakeChannel)
+    custom_bake_channels_index: props.IntProperty(name='Index', default=0)
 
 class BakeImageSettings(bpy.types.PropertyGroup):
     save_format: props.EnumProperty(items=BASIC_FORMATS, default="PNG")
@@ -285,6 +294,7 @@ class BakeResultSettings(bpy.types.PropertyGroup):
     image_settings: props.PointerProperty(type=BakeImageSettings)
     
 class BakeJobs(bpy.types.PropertyGroup):
+    debug_mode: bpy.props.BoolProperty(name="Debug Mode", default=False, update=update_debug_mode)
     jobs: props.CollectionProperty(type=BakeJob)
     job_index: props.IntProperty(name='Index', default=0)
     node_bake_settings: props.PointerProperty(type=BakeNodeSettings)

@@ -143,6 +143,7 @@ CHANNEL_BAKE_INFO = {
     # --- Extension / Conversion ---
     'pbr_conv_base': {'bake_pass': 'EMIT', 'cat': CAT_EXTENSION, 'def_cs': 'sRGB', 'def_mode': 'RGB'},
     'pbr_conv_metal': {'bake_pass': 'EMIT', 'cat': CAT_EXTENSION, 'def_cs': 'Non-Color', 'def_mode': 'BW'},
+    'node_group': {'bake_pass': 'EMIT', 'cat': CAT_EXTENSION, 'def_cs': 'sRGB', 'def_mode': 'RGB'},
 }
 
 # --- BSDF Node Connector Mapping ---
@@ -262,5 +263,6 @@ CHANNEL_DEFINITIONS = {
     'EXTENSION': [
         {'id': 'pbr_conv_base', 'name': 'Conv: Base Color', 'defaults': {'suffix': '_base_conv'}},
         {'id': 'pbr_conv_metal', 'name': 'Conv: Metallic', 'defaults': {'suffix': '_metal_conv'}},
+        {'id': 'node_group', 'name': 'Custom Node Group', 'defaults': {'suffix': '_custom_ng'}},
     ]
 }

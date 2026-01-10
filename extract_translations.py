@@ -9,7 +9,7 @@ import argparse
 # 默认输出文件
 DEFAULT_JSON = "translations.json"
 # 目标语言
-TARGET_LANG = "zh_CN"
+TARGET_LANGS = ["zh_CN", "fr_FR", "ru_RU", "ja_JP"]
 # 忽略目录
 IGNORE_DIRS = {'__pycache__', '.git', '.vscode', '.venv', 'doc', 'build', 'dist'}
 # 忽略文件
@@ -176,9 +176,16 @@ def sync_json(found_keys, json_path, mode='update'):
         # 如果 Key 存在且 mode 不是 clean，保留旧值
         if key in current_data and mode != 'clean':
             new_data[key] = current_data[key]
+            # 检查是否有新增的语言列需要补充
+            for lang in TARGET_LANGS:
+                if lang not in new_data[key]:
+                    new_data[key][lang] = key
         else:
             # 新增 Key
-            new_data[key] = {TARGET_LANG: key} # 默认填充原文
+            new_data[key] = {}
+            for lang in TARGET_LANGS:
+                new_data[key][lang] = key # 默认填充原文
+            
             if key not in existing_keys:
                 added += 1
                 

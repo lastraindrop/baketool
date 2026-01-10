@@ -13,6 +13,30 @@ logger = logging.getLogger(__name__)
 
 # --- General Helpers ---
 
+def get_safe_base_name(setting, obj, mat=None, is_batch=False):
+    """Centralized naming logic for baking and exporting."""
+    mode = setting.bake_mode
+    m = setting.name_setting
+    base = "Bake"
+    
+    if m == 'CUSTOM':
+        base = setting.custom_name
+        if is_batch:
+            suffix = f"_{obj.name}"
+            if mode == 'SPLIT_MATERIAL' and mat:
+                suffix += f"_{mat.name}"
+            base += suffix
+    elif m == 'OBJECT': 
+        base = obj.name
+    elif m == 'MAT': 
+        base = mat.name if mat else "NoMat"
+        if is_batch and mode == 'SPLIT_MATERIAL':
+            base = f"{obj.name}_{base}"
+    elif m == 'OBJ_MAT': 
+        base = f"{obj.name}_{mat.name if mat else 'NoMat'}"
+        
+    return bpy.path.clean_name(base)
+
 def check_objects_uv(objects):
     """Return a list of object names that are missing UV layers."""
     return [obj.name for obj in objects if obj.type == 'MESH' and not obj.data.uv_layers]
@@ -20,82 +44,61 @@ def check_objects_uv(objects):
 def reset_channels_logic(setting):
     """
     Reset and repopulate channels based on the current bake_type and enabled map toggles.
-    Directly modifies the collection property, safe to call from UI/Operators.
+    Directly modifies the collection property. Preserves existing user settings where possible.
     """
     defs = []
-    
-    # 1. Base Definitions based on Bake Type
     b_type = setting.bake_type
-    if b_type == 'BSDF':
-        # Compatibility check for Blender 4.0+
-        key = 'BSDF_4' if bpy.app.version >= (4, 0, 0) else 'BSDF_3'
-        defs.extend(CHANNEL_DEFINITIONS.get(key, []))
-    else:
-        defs.extend(CHANNEL_DEFINITIONS.get(b_type, []))
     
-    # 2. Optional Maps
-    if setting.use_light_map: 
-        defs.extend(CHANNEL_DEFINITIONS.get('LIGHT', []))
-    if setting.use_mesh_map: 
-        defs.extend(CHANNEL_DEFINITIONS.get('MESH', []))
-    if setting.use_extension_map:
-        defs.extend(CHANNEL_DEFINITIONS.get('EXTENSION', []))
+    # 1. Collect target definitions
+    key = ('BSDF_4' if bpy.app.version >= (4, 0, 0) else 'BSDF_3') if b_type == 'BSDF' else b_type
+    defs.extend(CHANNEL_DEFINITIONS.get(key, []))
     
-    target_ids = {d['id'] for d in defs}
+    if setting.use_light_map: defs.extend(CHANNEL_DEFINITIONS.get('LIGHT', []))
+    if setting.use_mesh_map: defs.extend(CHANNEL_DEFINITIONS.get('MESH', []))
+    if setting.use_extension_map: defs.extend(CHANNEL_DEFINITIONS.get('EXTENSION', []))
     
-    # 3. Remove invalid channels (iterate backwards)
+    target_ids = {d['id']: d for d in defs}
+    
+    # 2. Sync existing channels
+    # Remove channels no longer in the definitions
     for i in range(len(setting.channels)-1, -1, -1):
-         if setting.channels[i].id not in target_ids: 
-             setting.channels.remove(i)
+        if setting.channels[i].id not in target_ids:
+            setting.channels.remove(i)
+            
+    # 3. Add or update channels
+    existing = {c.id: c for c in setting.channels}
     
-    # 4. Add new channels
-    existing_ids = {c.id for c in setting.channels}
     for d in defs:
-        if d['id'] not in existing_ids:
+        d_id = d['id']
+        if d_id not in existing:
             new_chan = setting.channels.add()
-            new_chan.id = d['id']
+            new_chan.id = d_id
             new_chan.name = d['name']
-            # Apply defaults
+            # Apply defaults only for new channels
             defaults = d.get('defaults', {})
             for k, v in defaults.items():
-                if hasattr(new_chan, k):
-                    setattr(new_chan, k, v)
+                if hasattr(new_chan, k): setattr(new_chan, k, v)
+        else:
+            # Optionally update name if definition changed
+            existing[d_id].name = d['name']
 
 @contextmanager
 def safe_context_override(context, active_object=None, selected_objects=None):
     """
-    Safe context override for Blender 3.2+.
-    Falls back to selection manipulation if temp_override is unavailable.
+    Safe context override using context.temp_override (Blender 3.2+).
+    Directly overrides context members without modifying scene selection state.
     """
     kw = {}
     if active_object:
         kw['active_object'] = active_object
+        # Explicitly set 'object' as well, as some operators rely on context.object
+        kw['object'] = active_object
     if selected_objects:
         kw['selected_objects'] = selected_objects
         kw['selected_editable_objects'] = selected_objects
     
-    if hasattr(context, "temp_override"):
-        with context.temp_override(**kw):
-            yield
-    else:
-        # Legacy fallback
-        original_active = context.view_layer.objects.active
-        original_selected = context.selected_objects[:]
-        try:
-            bpy.ops.object.select_all(action='DESELECT')
-            if active_object:
-                context.view_layer.objects.active = active_object
-            for obj in (selected_objects or []):
-                obj.select_set(True)
-            yield
-        finally:
-            try:
-                bpy.ops.object.select_all(action='DESELECT')
-                if original_active:
-                    context.view_layer.objects.active = original_active
-                for obj in original_selected:
-                    obj.select_set(True)
-            except: pass
+    with context.temp_override(**kw):
+        yield
 
 class SceneSettingsContext:
     """
@@ -108,7 +111,11 @@ class SceneSettingsContext:
         
         # Mapping for properties that have different names in UI vs API
         self.attr_map = {
-            'scene': {'res_x': 'resolution_x', 'res_y': 'resolution_y'}
+            'scene': {
+                'res_x': 'resolution_x', 
+                'res_y': 'resolution_y',
+                'res_pct': 'resolution_percentage'
+            }
         }
 
     def _get_target(self):
@@ -148,6 +155,87 @@ class SceneSettingsContext:
             except: pass
 
 # --- UV & UDIM Layout Manager ---
+
+def detect_object_udim_tile(obj):
+    """
+    Analyzes the object's active UV layer using NumPy to find its dominant UDIM tile.
+    Returns: (int) Tile Index (e.g., 1001, 1002). Defaults to 1001 if empty or error.
+    """
+    if obj.type != 'MESH' or not obj.data.uv_layers: return 1001
+    
+    try:
+        uv_layer = obj.data.uv_layers.active
+        n_loops = len(obj.data.loops)
+        if n_loops == 0: return 1001
+        
+        # Fast extraction
+        uvs = np.zeros(n_loops * 2, dtype=np.float32)
+        uv_layer.data.foreach_get("uv", uvs)
+        uvs = uvs.reshape(-1, 2)
+        
+        # Determine tile for each vertex
+        u_indices = np.floor(uvs[:, 0]).astype(int)
+        v_indices = np.floor(uvs[:, 1]).astype(int)
+        
+        # Clamp and filter valid UDIM range (1001-1099, usually 10x10)
+        valid = (u_indices >= 0) & (u_indices < 10) & (v_indices >= 0) & (v_indices < 10)
+        if not np.any(valid): return 1001
+        
+        tiles = 1001 + u_indices[valid] + (v_indices[valid] * 10)
+        
+        # Majority vote: which tile appears most often
+        counts = np.bincount(tiles)
+        return int(np.argmax(counts))
+    except Exception as e:
+        logger.warning(f"UV Detect Failed for {obj.name}: {e}")
+        return 1001
+
+class UDIMPacker:
+    """Helper to calculate new UDIM layouts."""
+    @staticmethod
+    def calculate_repack(objects):
+        """
+        Returns a mapping {obj: target_tile_index}
+        Logic:
+        1. Keep objects that are already in valid non-1001 tiles.
+        2. Move objects that are in 1001 (or overlapping) to new free tiles.
+        """
+        assignments = {}
+        used_tiles = set()
+        pending_objects = []
+        
+        # 1. Analysis Phase
+        for obj in objects:
+            current_tile = detect_object_udim_tile(obj)
+            
+            # If strictly 1001, we treat it as "Pending Assignment" (standard 0-1 UVs)
+            # If > 1001, we treat it as "Intentionally Placed"
+            if current_tile > 1001:
+                if current_tile in used_tiles:
+                    # Conflict! Two objects manually placed in the same high tile.
+                    # Strategy: Keep one, move other? Or Keep both (assuming user knows)?
+                    # For safety, we keep both in Custom/Detect, but in Repack we might warn.
+                    # Here we assume user intention -> Keep.
+                    pass
+                assignments[obj] = current_tile
+                used_tiles.add(current_tile)
+            else:
+                pending_objects.append(obj)
+        
+        # 2. Allocation Phase
+        # Sort pending objects by name to ensure deterministic result
+        pending_objects.sort(key=lambda o: o.name)
+        
+        next_tile = 1001
+        for obj in pending_objects:
+            # Find next free tile
+            while next_tile in used_tiles:
+                next_tile += 1
+            
+            assignments[obj] = next_tile
+            used_tiles.add(next_tile)
+            
+        return assignments
 
 class UVLayoutManager:
     """
@@ -198,18 +286,79 @@ class UVLayoutManager:
                 self.created_layers.append((obj, new_uv))
 
     def _process_layout(self):
-        """Execute Smart UV or UDIM Repacking logic."""
+        """
+        Execute UV Layout Logic.
+        Pipeline: [Smart UV Gen (Optional)] -> [UDIM Offset (Optional)]
+        """
         s = self.settings
         
-        # Mode A: Smart UV Project (Overrides everything)
+        # Step 1: UV Generation (Smart UV)
+        # If enabled, this resets all UVs to the 0-1 (1001) space.
         if s.use_auto_uv:
             self._apply_smart_uv()
         
-        # Mode B: UDIM Repacking (Only if UDIM mode is ON and we are NOT in 'AUTO' detection mode)
-        # If mode is AUTO, we assume user set up UVs correctly.
-        # If mode is MANUAL/SEQUENCE, we force distribute islands into that grid.
-        if s.bake_mode == 'UDIM' and s.udim_mode in {'MANUAL', 'SEQUENCE'}:
-            self._distribute_udim()
+        # Step 2: UDIM Distribution
+        if s.bake_mode == 'UDIM':
+            if s.udim_mode == 'CUSTOM':
+                self._distribute_udim_custom()
+            elif s.udim_mode == 'REPACK':
+                self._distribute_udim_repack()
+            # If DETECT: Do nothing. Trust existing layout.
+
+    def _distribute_udim_repack(self):
+        """Auto-assign 1001 objects to new tiles."""
+        assignments = UDIMPacker.calculate_repack(self.objects)
+        self._apply_assignments(assignments)
+
+    def _distribute_udim_custom(self):
+        """Moves UVs based on the per-object 'udim_tile' setting in BakeObject list."""
+        s = self.settings
+        assignments = {}
+        for bo in s.bake_objects:
+            if bo.bakeobject and bo.bakeobject in self.objects:
+                assignments[bo.bakeobject] = bo.udim_tile
+        
+        self._apply_assignments(assignments)
+
+    def _apply_assignments(self, assignments):
+        """
+        Optimized UV mover using NumPy/foreach_set.
+        assignments: dict {obj: target_tile_int}
+        """
+        for obj, target_tile in assignments.items():
+            current_tile = detect_object_udim_tile(obj)
+            if current_tile == target_tile: continue
+            
+            # Calculate integer offset
+            # Target (e.g. 1012) -> u=1, v=1
+            # Current (e.g. 1001) -> u=0, v=0
+            # Offset = (1, 1)
+            
+            t_u = (target_tile - 1001) % 10
+            t_v = (target_tile - 1001) // 10
+            
+            c_u = (current_tile - 1001) % 10
+            c_v = (current_tile - 1001) // 10
+            
+            off_u = t_u - c_u
+            off_v = t_v - c_v
+            
+            if off_u == 0 and off_v == 0: continue
+            
+            # Apply offset
+            uv_layer = obj.data.uv_layers.active
+            if not uv_layer: continue
+            
+            count = len(uv_layer.data)
+            uvs = np.zeros(count * 2, dtype=np.float32)
+            uv_layer.data.foreach_get("uv", uvs)
+            
+            # Reshape for easy addition: [ [u,v], [u,v] ... ]
+            uvs_2d = uvs.reshape(-1, 2)
+            uvs_2d[:, 0] += off_u
+            uvs_2d[:, 1] += off_v
+            
+            uv_layer.data.foreach_set("uv", uvs_2d.flatten())
 
     def _apply_smart_uv(self):
         # Select all objects
@@ -225,148 +374,6 @@ class UVLayoutManager:
             )
             bpy.ops.object.mode_set(mode='OBJECT')
 
-    def _distribute_udim(self):
-        """
-        Distributes UV islands from the 0-1 space into the target UDIM grid.
-        Supports SEQUENCE (Per-Object) and MANUAL (Grid Distribution).
-        Uses BMesh for direct data manipulation to avoid Context Errors.
-        """
-        s = self.settings
-        start_tile = s.udim_start_tile
-        
-        # 1. Calculate Offsets
-        offsets = []
-        if s.udim_mode == 'SEQUENCE':
-            # One object -> One tile
-            for i in range(len(self.objects)):
-                offsets.append((i, 0))
-        elif s.udim_mode == 'MANUAL':
-            # Grid Distribution
-            grid_u, grid_v = s.udim_grid_u, s.udim_grid_v
-            for v in range(grid_v):
-                for u in range(grid_u):
-                    offsets.append((u, v))
-        
-        if not offsets: return
-
-        # 2. Execute Distribution
-        
-        # SEQUENCE Mode: Assign entire object to one tile
-        if s.udim_mode == 'SEQUENCE':
-            # Ensure we are in object mode
-            if bpy.context.object.mode != 'OBJECT':
-                bpy.ops.object.mode_set(mode='OBJECT')
-                
-            for i, obj in enumerate(self.objects):
-                if i >= len(offsets): break 
-                
-                offset_x, offset_y = offsets[i]
-                if offset_x == 0 and offset_y == 0: continue
-                
-                # BMesh Operation - Safe & Fast
-                bm = bmesh.new()
-                bm.from_mesh(obj.data)
-                uv_layer = bm.loops.layers.uv.verify()
-                
-                # Shift all UVs
-                for face in bm.faces:
-                    for loop in face.loops:
-                        loop[uv_layer].uv[0] += offset_x
-                        loop[uv_layer].uv[1] += offset_y
-                
-                bm.to_mesh(obj.data)
-                bm.free()
-
-        # MANUAL Mode: Distribute islands (Round Robin)
-        else:
-            # For Manual Grid packing, we still rely on Select Linked which works best with Ops,
-            # BUT we must avoid uv.cursor_set. 
-            # We can use bmesh translation or simple uv property shifting if we select loops.
-            
-            # Since Manual Mode relies on complex island detection, let's refine it to be safer.
-            # We will use the robust round-robin selection but translate via BMesh manually 
-            # or ensure we don't use context-sensitive pivot ops.
-            
-            ctx_override = self._get_context_override()
-            with ctx_override:
-                bpy.ops.object.mode_set(mode='EDIT')
-                bpy.ops.mesh.select_all(action='SELECT')
-                if not s.use_auto_uv:
-                    bpy.ops.uv.pack_islands(margin=s.auto_uv_margin)
-                bpy.ops.mesh.select_all(action='DESELECT')
-                bpy.ops.object.mode_set(mode='OBJECT')
-
-                for obj in self.objects:
-                    self._distribute_obj_islands_round_robin(obj, offsets)
-
-    def _distribute_obj_islands_round_robin(self, obj, tile_offsets):
-        """
-        Moves islands of a single object to target tiles in a round-robin fashion.
-        Uses BMesh translation to avoid context issues.
-        """
-        # 1. Identify Islands using BMesh (Pure Data approach is hard for UVs, so we mix)
-        # We use Edit Mode selection to FIND islands, but BMesh to MOVE them? 
-        # Actually, bpy.ops.transform.translate works in VIEW_3D if we don't set constraint to UV specific.
-        # But we want to move UVs. 
-        # Safer approach: Select faces in Edit Mode -> Get selected faces in BMesh -> Move UVs in BMesh.
-        
-        bpy.context.view_layer.objects.active = obj
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_mode(type='FACE')
-        bpy.ops.mesh.select_all(action='DESELECT')
-        
-        import bmesh
-        bm = bmesh.from_edit_mesh(obj.data)
-        uv_layer = bm.loops.layers.uv.verify()
-        
-        tile_idx = 0
-        total_tiles = len(tile_offsets)
-        
-        while True:
-            # Find a visible, unselected face
-            seed = None
-            for f in bm.faces:
-                if not f.hide and not f.select:
-                    seed = f
-                    break
-            
-            if not seed: break
-            
-            # Select Island
-            seed.select = True
-            bm.select_history.add(seed)
-            bpy.ops.uv.select_linked() 
-            
-            # Update BMesh selection from Ops
-            # (select_linked updates the internal mesh, we need to refresh bmesh view?)
-            # bmesh.update_edit_mesh(obj.data) # This syncs
-            # Actually select_linked works on the edit mesh.
-            
-            # Identify selected faces
-            selected_faces = [f for f in bm.faces if f.select]
-            if not selected_faces: break # Should not happen
-
-            # Move UVs using BMesh Data (No Ops!)
-            offset_x, offset_y = tile_offsets[tile_idx]
-            if offset_x != 0 or offset_y != 0:
-                for f in selected_faces:
-                    for loop in f.loops:
-                        loop[uv_layer].uv[0] += offset_x
-                        loop[uv_layer].uv[1] += offset_y
-
-            # Hide processed faces
-            bpy.ops.mesh.hide(unselected=False)
-            bpy.ops.mesh.select_all(action='DESELECT') # Clear for next pass
-            
-            tile_idx = (tile_idx + 1) % total_tiles
-            
-            # Sync back to ensure hiding works for next iteration
-            bmesh.update_edit_mesh(obj.data)
-
-        # Unhide everything
-        bpy.ops.mesh.reveal()
-        bpy.ops.object.mode_set(mode='OBJECT')
-
     def _get_context_override(self):
         """Helper to create context override for operators."""
         # Ensure we are in object mode first
@@ -378,24 +385,35 @@ class UVLayoutManager:
         bpy.context.view_layer.objects.active = self.objects[0]
         
         return safe_context_override(bpy.context, self.objects[0], self.objects)
-
+    
     def _restore_state(self):
-        # Remove Temp Layers
+        """Restore original UV indices and remove temporary layers."""
+        # 1. Remove the temporary layers we created
+        # We iterate in reverse to avoid index shifting issues if we were removing by index,
+        # but here we remove by reference/name, which is safer.
         for obj, layer in self.created_layers:
             try:
-                if layer: obj.data.uv_layers.remove(layer)
-            except: pass
+                # Validate object still exists and layer is still attached
+                if obj and layer and layer.name in obj.data.uv_layers:
+                    obj.data.uv_layers.remove(layer)
+            except Exception as e:
+                logger.warning(f"Failed to remove temp UV for {obj.name}: {e}")
+
+        # 2. Restore original active/render indices
+        for obj_name, state in self.original_states.items():
+            obj = bpy.data.objects.get(obj_name)
+            if not obj or obj.type != 'MESH': continue
             
-        # Restore Indices
-        for obj in self.objects:
-            if obj.name in self.original_states:
-                state = self.original_states[obj.name]
-                try:
+            try:
+                if state['active'] < len(obj.data.uv_layers):
                     obj.data.uv_layers.active_index = state['active']
-                    # Restore render active
-                    if state['render'] < len(obj.data.uv_layers):
-                         obj.data.uv_layers[state['render']].active_render = True
-                except: pass
+                
+                # Restore render active state
+                render_idx = state['render']
+                if render_idx < len(obj.data.uv_layers):
+                    obj.data.uv_layers[render_idx].active_render = True
+            except Exception as e:
+                logger.warning(f"Failed to restore UV state for {obj_name}: {e}")
 
 # --- UDIM System Utilities ---
 
@@ -405,30 +423,9 @@ def get_active_uv_udim_tiles(objects):
     """
     tiles = set()
     for obj in objects:
-        if obj.type != 'MESH' or not obj.data.uv_layers: continue
-        uv_layer = obj.data.uv_layers.active
-        if not uv_layer: continue
-        
-        data_len = len(obj.data.loops)
-        uvs = np.zeros(data_len * 2, dtype=np.float32)
-        uv_layer.data.foreach_get("uv", uvs)
-        uvs = uvs.reshape(-1, 2)
-        
-        u_floor = np.floor(uvs[:, 0]).astype(np.int32)
-        v_floor = np.floor(uvs[:, 1]).astype(np.int32)
-        
-        mask = (u_floor >= 0) & (v_floor >= 0) & (u_floor < 10)
-        
-        if not np.any(mask): 
-            tiles.add(1001)
-            continue
-            
-        valid_u = u_floor[mask]
-        valid_v = v_floor[mask]
-        
-        indices = 1001 + valid_u + (valid_v * 10)
-        tiles.update(np.unique(indices).tolist())
-        
+        tile = detect_object_udim_tile(obj)
+        tiles.add(tile)
+    
     if not tiles: tiles.add(1001)
     return sorted(list(tiles))
 
@@ -498,15 +495,35 @@ def robust_image_editor_context(context, image):
             area.type = old_type
 
 def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basiccolor=(0,0,0,0), clear=True, 
-              use_udim=False, udim_tiles=None):
-    """Get or create an image with specified settings (Supports UDIM)."""
+              use_udim=False, udim_tiles=None, tile_resolutions=None):
+    """Get or create an image with specified settings (Supports UDIM with per-tile resolution)."""
     image = bpy.data.images.get(name)
     
+    # Conflict check: If existing image has different tiled state, remove it
+    if image:
+        is_tiled = (image.source == 'TILED')
+        if is_tiled != use_udim:
+            bpy.data.images.remove(image)
+            image = None
+    
     if not image:
-        image = bpy.data.images.new(name, width=x, height=y, alpha=alpha, float_buffer=full, tiled=use_udim)
+        # Determine 1001 size for creation (Global X/Y or Custom 1001)
+        init_x, init_y = x, y
+        if use_udim and tile_resolutions and 1001 in tile_resolutions:
+            init_x, init_y = tile_resolutions[1001]
+            
+        image = bpy.data.images.new(name, width=init_x, height=init_y, alpha=alpha, float_buffer=full, tiled=use_udim)
     else:
-        if image.size[0] != x or image.size[1] != y: 
-            image.scale(x, y)
+        # Scale if size mismatches (Handles both Single and UDIM 1001 base size)
+        target_w, target_h = x, y
+        if use_udim and tile_resolutions and 1001 in tile_resolutions:
+            target_w, target_h = tile_resolutions[1001]
+            
+        if image.size[0] != target_w or image.size[1] != target_h: 
+            image.scale(target_w, target_h)
+            if image.source == 'GENERATED':
+                image.generated_width = target_w
+                image.generated_height = target_h
 
     image.file_format = 'PNG' 
     image.use_fake_user = True
@@ -521,6 +538,15 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
         target_tiles = set(udim_tiles) if udim_tiles else {1001}
         existing_tiles = {t.number for t in image.tiles}
         
+        # [Fix] Ensure 1001 (Main Tile) respects custom resolution if specified
+        if 1001 in existing_tiles and 1001 in target_tiles:
+            t_w, t_h = x, y
+            if tile_resolutions and 1001 in tile_resolutions:
+                t_w, t_h = tile_resolutions[1001]
+            
+            if image.size[0] != t_w or image.size[1] != t_h:
+                image.scale(t_w, t_h)
+
         # 1. Add Missing Tiles
         missing_tiles = target_tiles - existing_tiles
         if missing_tiles:
@@ -528,11 +554,28 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
             with robust_image_editor_context(bpy.context, image) as valid:
                 if valid:
                     for t_idx in missing_tiles:
+                        # Determine resolution for this specific tile
+                        t_w, t_h = x, y
+                        if tile_resolutions and t_idx in tile_resolutions:
+                            t_w, t_h = tile_resolutions[t_idx]
+                        
                         try: 
-                            bpy.ops.image.tile_add(number=t_idx, count=1, label=str(t_idx), fill=True)
+                            bpy.ops.image.tile_add(
+                                number=t_idx, 
+                                count=1, 
+                                label=str(t_idx), 
+                                fill=True, 
+                                width=t_w, 
+                                height=t_h,
+                                float=full,
+                                alpha=alpha,
+                                generated_type='BLANK',
+                                color=basiccolor
+                            )
                         except Exception as e:
                             logger.warning(f"Failed to add UDIM tile {t_idx}: {e}")
                 else:
+                    # Fallback (Cannot set resolution easily via API without ops)
                     for t_idx in missing_tiles:
                         image.tiles.new(tile_number=t_idx)
 
@@ -562,12 +605,26 @@ def save_image(image, path='//', folder=False, folder_name='folder', file_format
     if str(base) == '.': base = Path(bpy.data.filepath).parent 
     directory = base / folder_name if folder else base
     try: directory.mkdir(parents=True, exist_ok=True)
-    except: return None
+    except Exception as e:
+        logger.error(f"Failed to create directory '{directory}': {e}")
+        return None
     
     info = FORMAT_SETTINGS.get(file_format, {})
     ext = info.get("extensions", ["." + file_format.lower()])[0]
     
     fname = f"{image.name}{separator}{str(frame).zfill(fillnum)}{ext}" if motion else f"{image.name}{ext}"
+    
+    # [Fix] UDIM Handling: Blender requires a token (e.g. <UDIM>) in the filepath for tiled images.
+    # We replace the numeric suffix or just append the token if missing.
+    if image.source == 'TILED':
+        # Simple heuristic: If saving a tiled image, force the <UDIM> token pattern.
+        # usually "Name.<UDIM>.ext"
+        if "<UDIM>" not in fname:
+            # Strip extension, append .<UDIM>, re-append extension
+            stem = Path(fname).stem
+            # If motion is involved, it might be Name_0001.<UDIM>.ext - complicated but supported
+            fname = f"{stem}.<UDIM>{ext}"
+
     filepath = directory / fname
     abs_path = str(filepath.resolve())
     
@@ -624,67 +681,108 @@ def setup_mesh_attribute(obj, id_type='ELEMENT', start_color=(1,0,0,1), iteratio
     current_mode = obj.mode
     if current_mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
     
-    bm = bmesh.new()
-    try:
-        bm.from_mesh(obj.data)
-        bm.ensure_lookup_table()
-        face_island_map = np.zeros(len(bm.faces), dtype=np.int32)
-        island_count = 0
+    # --- Fast Path: Material ID (NumPy) ---
+    if id_type == 'MAT':
+        poly_count = len(obj.data.polygons)
+        if poly_count == 0: return None
         
-        if id_type == 'MAT':
-            for i, f in enumerate(bm.faces):
-                face_island_map[i] = f.material_index
-            island_count = np.max(face_island_map) + 1 if len(face_island_map) > 0 else 0
-        else:
-            visited = np.zeros(len(bm.faces), dtype=bool)
-            faces = bm.faces
-            uv_lay = bm.loops.layers.uv.active if id_type == 'UVI' else None
-            
-            for i in range(len(faces)):
-                if visited[i]: continue
-                stack = [faces[i]]
-                visited[i] = True
-                face_island_map[i] = island_count
-                
-                while stack:
-                    curr = stack.pop()
-                    for edge in curr.edges:
-                        if id_type == 'SEAM' and edge.seam: continue
-                        for other_f in edge.link_faces:
-                            if visited[other_f.index]: continue
-                            should_join = True
-                            if id_type == 'UVI' and uv_lay:
-                                is_continuous = True
-                                for v in edge.verts:
-                                    l1 = next((l for l in curr.loops if l.vert == v), None)
-                                    l2 = next((l for l in other_f.loops if l.vert == v), None)
-                                    if l1 and l2:
-                                        if (l1[uv_lay].uv - l2[uv_lay].uv).length_squared > 1e-5:
-                                            is_continuous = False; break
-                                if not is_continuous: should_join = False
-                            
-                            if should_join:
-                                visited[other_f.index] = True
-                                face_island_map[other_f.index] = island_count
-                                stack.append(other_f)
-                island_count += 1
-
-        if island_count < 1: island_count = 1
-        palette = generate_optimized_colors(island_count, start_color, iterations, manual_start, seed)
-        unique, counts = np.unique(face_island_map, return_counts=True)
-        remap_table = np.zeros(island_count + 1, dtype=np.int32)
-        valid_mask = unique < len(remap_table)
-        remap_table[unique[valid_mask]] = np.arange(len(unique[valid_mask]))
+        mat_indices = np.zeros(poly_count, dtype=np.int32)
+        obj.data.polygons.foreach_get("material_index", mat_indices)
         
-        remapped_indices = np.clip(remap_table[face_island_map], 0, len(palette)-1)
-        loop_totals = np.zeros(len(obj.data.polygons), dtype=np.int32)
+        unique_mats = np.unique(mat_indices)
+        palette = generate_optimized_colors(len(unique_mats), start_color, iterations, manual_start, seed)
+        
+        # Ensure we don't crash on empty/invalid indices
+        max_idx = np.max(mat_indices) if len(mat_indices) > 0 else 0
+        full_palette = np.zeros((max_idx + 1, 4), dtype=np.float32)
+        full_palette[unique_mats] = palette
+        
+        loop_totals = np.zeros(poly_count, dtype=np.int32)
         obj.data.polygons.foreach_get("loop_total", loop_totals)
-        loop_colors = np.repeat(palette[remapped_indices], loop_totals, axis=0)
+        loop_colors = np.repeat(full_palette[mat_indices], loop_totals, axis=0)
         
         obj.data.attributes.new(name=attr_name, type='BYTE_COLOR', domain='CORNER')
         obj.data.attributes[attr_name].data.foreach_set("color", loop_colors.flatten())
+        
+        if current_mode != 'OBJECT': bpy.ops.object.mode_set(mode=current_mode)
+        return attr_name
+
+    # --- Optimized: Islands (BMesh C-Extension) ---
+    bm = bmesh.new()
+    try:
+        bm.from_mesh(obj.data)
+        bm.faces.ensure_lookup_table()
+        
+        if len(bm.faces) == 0:
+            bm.free()
+            return None
+        
+        if id_type in {'ELEMENT', 'SEAM', 'UVI'}:
+            # Reset tags for all faces before starting
+            for f in bm.faces: f.tag = 0
+            visited_tag = 1
+            islands = [] # Must be a list of lists of faces
+
+            if id_type == 'ELEMENT':
+                # Try to use fast C-extension for island finding
+                try:
+                    res = bmesh.ops.find_adjacent_mesh_islands(bm, faces=bm.faces[:])
+                    islands = res.get('faces', res.get('regions', []))
+                except Exception as e:
+                    logger.warning(f"BMesh island op failed, falling back to manual: {e}")
+                    islands = []
+            
+            # If ELEMENT op failed to return results, or we are doing SEAM/UVI, use manual traversal
+            if not islands:
+                uv_lay = bm.loops.layers.uv.active if id_type == 'UVI' else None
+                for f in bm.faces:
+                    if f.tag == visited_tag: continue
+                    island_faces = []
+                    stack = [f]
+                    f.tag = visited_tag
+                    while stack:
+                        curr = stack.pop()
+                        island_faces.append(curr)
+                        for edge in curr.edges:
+                            # Seam check for SEAM mode
+                            if id_type == 'SEAM' and edge.seam: continue
+                            for other_f in edge.link_faces:
+                                if other_f.tag == visited_tag: continue
+                                
+                                # UV check for UVI mode
+                                if id_type == 'UVI' and uv_lay:
+                                    is_continuous = True
+                                    for v in edge.verts:
+                                        l1 = next((l for l in curr.loops if l.vert == v), None)
+                                        l2 = next((l for l in other_f.loops if l.vert == v), None)
+                                        if l1 and l2 and (l1[uv_lay].uv - l2[uv_lay].uv).length_squared > 1e-5:
+                                            is_continuous = False; break
+                                    if not is_continuous: continue
+                                    
+                                other_f.tag = visited_tag
+                                stack.append(other_f)
+                    islands.append(island_faces)
+            
+            island_count = len(islands)
+            palette = generate_optimized_colors(max(1, island_count), start_color, iterations, manual_start, seed)
+            
+            # Ensure indices are valid
+            bm.faces.ensure_lookup_table()
+            
+            # Map faces back to color
+            face_to_color_idx = np.zeros(len(bm.faces), dtype=np.int32)
+            for idx, island_faces in enumerate(islands):
+                for f in island_faces:
+                    face_to_color_idx[f.index] = idx
+            
+            loop_totals = np.zeros(len(obj.data.polygons), dtype=np.int32)
+            obj.data.polygons.foreach_get("loop_total", loop_totals)
+            loop_colors = np.repeat(palette[face_to_color_idx], loop_totals, axis=0)
+            
+            obj.data.attributes.new(name=attr_name, type='BYTE_COLOR', domain='CORNER')
+            obj.data.attributes[attr_name].data.foreach_set("color", loop_colors.flatten())
     except Exception as e:
-        logger.error(f"ID Map Gen Failed: {e}")
+        logger.exception("ID Map Gen Failed")
         attr_name = None
     finally:
         bm.free()
@@ -692,16 +790,31 @@ def setup_mesh_attribute(obj, id_type='ELEMENT', start_color=(1,0,0,1), iteratio
     if current_mode != 'OBJECT': 
         try: bpy.ops.object.mode_set(mode=current_mode)
         except: pass
+        
     return attr_name
 
-def process_pbr_numpy(target_img, spec_img, diff_img, map_id, threshold=0.04):
+def process_pbr_numpy(target_img, spec_img, diff_img, map_id, threshold=0.04, array_cache=None):
+    """
+    Optimized PBR conversion using NumPy and optional array caching.
+    array_cache: dict {image_ptr: numpy_array}
+    """
     try:
-        if not target_img.pixels: return False
-        count = len(target_img.pixels)
-        spec_arr = np.empty(count, dtype=np.float32)
-        spec_img.pixels.foreach_get(spec_arr)
-        spec_arr = spec_arr.reshape(-1, 4)
+        def get_pixels(img):
+            if array_cache is not None and img in array_cache:
+                return array_cache[img]
+            
+            count = len(img.pixels)
+            arr = np.empty(count, dtype=np.float32)
+            img.pixels.foreach_get(arr)
+            arr = arr.reshape(-1, 4)
+            
+            if array_cache is not None:
+                array_cache[img] = arr
+            return arr
+
+        spec_arr = get_pixels(spec_img)
         
+        # Specular Max (Luminance check for metallic separation)
         spec_max = np.max(spec_arr[:, :3], axis=1)
         denom = max(1e-5, 1.0 - threshold)
         metal_arr = np.clip((spec_max - threshold) / denom, 0.0, 1.0)
@@ -710,18 +823,21 @@ def process_pbr_numpy(target_img, spec_img, diff_img, map_id, threshold=0.04):
         result[:, 3] = 1.0
         
         if map_id == 'pbr_conv_metal':
-            result[:, 0] = metal_arr; result[:, 1] = metal_arr; result[:, 2] = metal_arr
+            result[:, 0] = metal_arr
+            result[:, 1] = metal_arr
+            result[:, 2] = metal_arr
         elif map_id == 'pbr_conv_base' and diff_img:
-            diff_arr = np.empty(count, dtype=np.float32)
-            diff_img.pixels.foreach_get(diff_arr)
-            diff_arr = diff_arr.reshape(-1, 4)
+            diff_arr = get_pixels(diff_img)
             m = metal_arr[:, np.newaxis]
+            # BaseColor = Diffuse * (1-Metal) + Specular * Metal
             result[:, :3] = diff_arr[:, :3] * (1.0 - m) + spec_arr[:, :3] * m
             result[:, 3] = diff_arr[:, 3]
         
         target_img.pixels.foreach_set(result.flatten())
         return True
-    except: return False
+    except Exception as e:
+        logger.error(f"PBR Conv Failed: {e}")
+        return False
 
 def apply_baked_result(original_obj, task_images, setting, task_base_name):
     if not task_images: return None
@@ -761,21 +877,55 @@ def _create_simple_mat(name, texture_map):
     out = tree.nodes.new('ShaderNodeOutputMaterial'); out.location = (300, 0)
     tree.links.new(bsdf.outputs[0], out.inputs[0])
     y_pos = 0
-    socket_map = {'color': 'Base Color', 'metal': 'Metallic', 'rough': 'Roughness', 'specular': 'Specular IOR Level', 'emi': 'Emission Color', 'alpha': 'Alpha', 'ao': 'Base Color', 'combine': 'Base Color', 'normal': 'Normal'}
+    
+    # Use global compatibility map directly
+    # Map internal channel IDs to BSDF socket names (Key: internal_id, Value: List of possible socket names)
+    channel_to_socket_keys = {
+        'color': 'color', 'metal': 'metal', 'rough': 'rough', 
+        'specular': 'specular', 'emi': 'emi', 'alpha': 'alpha', 
+        'normal': 'normal', 'ao': 'color', 'combine': 'color' # AO and Combine act as Color
+    }
+
     for chan_id, image in texture_map.items():
-        if chan_id not in socket_map: continue
-        target = socket_map[chan_id]
+        # Determine target socket on BSDF
+        target_socket = None
+        
+        # 1. Resolve socket name via compatibility map
+        compat_key = channel_to_socket_keys.get(chan_id)
+        if compat_key and compat_key in BSDF_COMPATIBILITY_MAP:
+            possible_names = BSDF_COMPATIBILITY_MAP[compat_key]
+            for name in possible_names:
+                if name in bsdf.inputs:
+                    target_socket = bsdf.inputs[name]
+                    break
+        
+        # Special handling if not found via map (or special logic)
+        is_normal = (chan_id == 'normal')
+        
+        if not target_socket and not is_normal:
+            continue
+
         tex = tree.nodes.new('ShaderNodeTexImage'); tex.image = image
-        tex.location = (-600 if target == 'Normal' else -300, y_pos); y_pos -= 280
+        tex.location = (-600 if is_normal else -300, y_pos); y_pos -= 280
+        
+        # Set Color Space
         if chan_id in {'metal', 'rough', 'normal', 'specular', 'ao'}:
             try: tex.image.colorspace_settings.name = 'Non-Color'
             except: pass
-        if target == 'Normal':
+            
+        # Link
+        if is_normal:
             nor = tree.nodes.new('ShaderNodeNormalMap'); nor.location = (-300, tex.location.y)
             tree.links.new(tex.outputs[0], nor.inputs['Color'])
-            tree.links.new(nor.outputs['Normal'], bsdf.inputs['Normal'])
-        elif target in bsdf.inputs: tree.links.new(tex.outputs[0], bsdf.inputs[target])
+            # Find Normal socket specifically
+            normal_socket = bsdf.inputs.get('Normal')
+            if normal_socket:
+                tree.links.new(nor.outputs['Normal'], normal_socket)
+        elif target_socket:
+            tree.links.new(tex.outputs[0], target_socket)
+            
         if chan_id == 'alpha': mat.blend_method = 'BLEND'
+            
     return mat
 
 # --- Node Graph Handler ---
@@ -783,21 +933,47 @@ def _create_simple_mat(name, texture_map):
 class NodeGraphHandler:
     def __init__(self, materials):
         self.materials = [m for m in materials if m and m.use_nodes]
-        self.active_nodes = {}
+        # {mat: {'tex': node, 'emi': node}}
+        self.session_nodes = {}
+        # {mat: [nodes]} per-pass nodes
+        self.temp_logic_nodes = {}
         self.temp_attributes = []
         self.original_links = {} # {mat: (from_node, from_socket)}
 
-    def __enter__(self): return self
-    def __exit__(self, exc_type, exc_val, exc_tb): self.cleanup(); return False
+    def __enter__(self): 
+        self._prepare_session_nodes()
+        return self
+        
+    def __exit__(self, exc_type, exc_val, exc_tb): 
+        self.cleanup()
+        return False
+
+    def _prepare_session_nodes(self):
+        """Pre-create essential bake nodes once per session."""
+        for mat in self.materials:
+            tree = mat.node_tree
+            self.session_nodes[mat] = {
+                'tex': tree.nodes.new('ShaderNodeTexImage'),
+                'emi': tree.nodes.new('ShaderNodeEmission')
+            }
+            # Position away from user nodes
+            self.session_nodes[mat]['tex'].location = (-800, 500)
+            self.session_nodes[mat]['emi'].location = (600, 0)
+            self.temp_logic_nodes[mat] = []
 
     def cleanup(self):
-        # 1. Remove Temp Nodes
-        for mat, nodes in self.active_nodes.items():
+        # 1. Remove All Session and Logic Nodes
+        for mat in self.materials:
             if not mat.node_tree: continue
-            for n in nodes:
-                try: mat.node_tree.nodes.remove(n)
-                except: pass
-        self.active_nodes.clear()
+            tree = mat.node_tree
+            if mat in self.session_nodes:
+                for n in self.session_nodes[mat].values():
+                    try: tree.nodes.remove(n)
+                    except: pass
+            if mat in self.temp_logic_nodes:
+                for n in self.temp_logic_nodes[mat]:
+                    try: tree.nodes.remove(n)
+                    except: pass
         
         # 2. Restore Original Links
         for mat, link_info in self.original_links.items():
@@ -806,20 +982,16 @@ class NodeGraphHandler:
                 out_n = self._find_output(mat.node_tree)
                 if out_n and link_info:
                     from_node, from_socket = link_info
-                    # Validate if nodes still exist (user might have deleted them manually, unlikely but safe to check)
-                    if from_node in mat.node_tree.nodes.values():
+                    if from_node and from_node.name in mat.node_tree.nodes:
                         mat.node_tree.links.new(from_socket, out_n.inputs[0])
-            except Exception as e:
-                logger.warning(f"Failed to restore link for {mat.name}: {e}")
-        self.original_links.clear()
-
-        # 3. Cleanup Attributes & Dummy
-        for obj, attr in self.temp_attributes:
-            try: obj.data.attributes.remove(obj.data.attributes[attr])
             except: pass
-        self.temp_attributes.clear()
-        d = bpy.data.images.get("BT_Protection_Dummy")
-        if d: bpy.data.images.remove(d)
+        
+        # 3. Attributes cleanup
+        for obj, attr in self.temp_attributes:
+            try: 
+                if attr in obj.data.attributes:
+                    obj.data.attributes.remove(obj.data.attributes[attr])
+            except: pass
 
     def setup_protection(self, objects, active_materials):
         active_set = set(active_materials)
@@ -830,55 +1002,61 @@ class NodeGraphHandler:
             for s in obj.material_slots:
                 m = s.material
                 if m and m.use_nodes and m not in active_set:
-                    self._add_node(m, 'ShaderNodeTexImage', image=d, select=True)
+                    # Use tracked logic node for protection images too
+                    self._add_node(m, 'ShaderNodeTexImage', image=d)
 
     def setup_for_pass(self, bake_pass, socket_name, image, mesh_type=None, attr_name=None, channel_settings=None):
-        targets = self.materials
-        for mat in targets:
-            # Clean previous pass nodes (specific to this handler)
-            if mat in self.active_nodes:
-                for n in self.active_nodes[mat]:
-                    try: mat.node_tree.nodes.remove(n)
-                    except: pass
-                self.active_nodes[mat] = []
-            
+        for mat in self.materials:
             tree = mat.node_tree
             out_n = self._find_output(tree)
-            if not out_n: continue
+            if not out_n or mat not in self.session_nodes: continue
             
-            # Store Original Link (Only once per session)
+            # Clear previous pass logic nodes
+            for n in self.temp_logic_nodes[mat]:
+                try: tree.nodes.remove(n)
+                except: pass
+            self.temp_logic_nodes[mat] = []
+
+            # Store Original Link (Only once per material)
             if mat not in self.original_links:
                 socket = out_n.inputs[0]
-                if socket.is_linked:
-                    link = socket.links[0]
-                    self.original_links[mat] = (link.from_node, link.from_socket)
-                else:
-                    self.original_links[mat] = None
+                self.original_links[mat] = (socket.links[0].from_node, socket.links[0].from_socket) if socket.is_linked else None
 
-            # Add Target Image
-            img_n = self._add_node(mat, 'ShaderNodeTexImage', image=image, location=(-300,400), select=True)
-            tree.nodes.active = img_n
+            # Setup Persistent Nodes
+            s_nodes = self.session_nodes[mat]
+            tex_n, emi_n = s_nodes['tex'], s_nodes['emi']
             
-            if bake_pass != 'EMIT' and not mesh_type and not socket_name.startswith('pbr_conv'): continue
+            tex_n.image = image
+            tree.nodes.active = tex_n
             
-            # Add Emission Wrapper
-            emi = self._add_node(mat, 'ShaderNodeEmission', location=(out_n.location.x-200, out_n.location.y))
-            tree.links.new(emi.outputs[0], out_n.inputs[0])
+            # Needs wrapper?
+            needs_emit = (bake_pass == 'EMIT' or mesh_type or socket_name.startswith('pbr_conv') or socket_name == 'node_group')
             
-            src = None
-            if mesh_type: src = self._create_mesh_map_logic(mat, mesh_type, attr_name, channel_settings)
-            elif socket_name.startswith('pbr_conv'): src = self._create_extension_logic(mat, socket_name, channel_settings)
-            else: src = self._find_socket_source(mat, socket_name, channel_settings)
-            
-            if src: tree.links.new(src, emi.inputs[0])
+            if needs_emit:
+                tree.links.new(emi_n.outputs[0], out_n.inputs[0])
+                src = None
+                if mesh_type: src = self._create_mesh_map_logic(mat, mesh_type, attr_name, channel_settings)
+                elif socket_name.startswith('pbr_conv'): src = self._create_extension_logic(mat, socket_name, channel_settings)
+                elif socket_name == 'node_group': src = self._create_node_group_logic(mat, channel_settings)
+                else: src = self._find_socket_source(mat, socket_name, channel_settings)
+                
+                if src: tree.links.new(src, emi_n.inputs[0])
+
+    def _create_node_group_logic(self, mat, s):
+        if not s or not s.node_group: return None
+        ng_data = bpy.data.node_groups.get(s.node_group)
+        if not ng_data: return None
+        grp = self._add_node(mat, 'ShaderNodeGroup')
+        grp.node_tree = ng_data
+        out_socket = grp.outputs.get(s.node_group_output) if s.node_group_output else (grp.outputs[0] if grp.outputs else None)
+        return out_socket
 
     def _add_node(self, mat, type, **kwargs):
         n = mat.node_tree.nodes.new(type)
         for k, v in kwargs.items():
-            if k == 'select': n.select = v
-            elif hasattr(n, k): setattr(n, k, v)
-        if mat not in self.active_nodes: self.active_nodes[mat] = []
-        self.active_nodes[mat].append(n)
+            if hasattr(n, k): setattr(n, k, v)
+        if mat not in self.temp_logic_nodes: self.temp_logic_nodes[mat] = []
+        self.temp_logic_nodes[mat].append(n)
         return n
 
     def _find_output(self, tree):
