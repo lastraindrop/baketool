@@ -135,3 +135,4 @@ cython_debug/
 
 # other
 doc/
+logs/
