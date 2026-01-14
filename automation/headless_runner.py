@@ -41,7 +41,12 @@ def run():
             test_crash_recovery,
             test_export_system,
             test_edge_cases,
-            test_refactor
+            test_refactor,
+            test_complex_geometry,
+            test_assets_system,
+            test_performance,
+            test_shading_complexity,
+            test_udim_advanced
         )
         
         loader = unittest.TestLoader()
@@ -49,7 +54,9 @@ def run():
         modules = [
             test_presets, test_state, test_logic, 
             test_core, test_integration, test_crash_recovery, 
-            test_export_system, test_edge_cases, test_refactor
+            test_export_system, test_edge_cases, test_refactor,
+            test_complex_geometry, test_assets_system, test_performance,
+            test_shading_complexity, test_udim_advanced
         ]
         
         for module in modules:

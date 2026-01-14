@@ -124,11 +124,13 @@ def pack_channels_numpy(target_img, channel_map, array_cache=None):
         return False
 
 def generate_optimized_colors(count, start_color=(1,0,0,1), iterations=0, manual_start=True, seed=0) :
-    """Generate distinct colors for ID maps."""
+    """Generate distinct colors for ID maps using vectorized NumPy operations."""
     if count <= 0: return np.zeros((0, 4), dtype=np.float32)
-    indices = np.arange(count, dtype=np.float64)
+    
+    indices = np.arange(count, dtype=np.float32)
     golden_ratio = 0.618033988749895
     
+    # 1. Generate Hues
     if manual_start:
         h_start, _, _ = colorsys.rgb_to_hsv(start_color[0], start_color[1], start_color[2])
         hues = (h_start + indices * golden_ratio) % 1.0
@@ -136,13 +138,35 @@ def generate_optimized_colors(count, start_color=(1,0,0,1), iterations=0, manual
         rng = np.random.default_rng(seed)
         hues = (rng.random() + indices * golden_ratio) % 1.0
 
+    # 2. Generate Saturation and Value
     rng = np.random.default_rng(seed)
-    sats = 0.5 + rng.random(count) * 0.3
-    vals = 0.8 + rng.random(count) * 0.2
+    sats = 0.5 + rng.random(count).astype(np.float32) * 0.3
+    vals = 0.8 + rng.random(count).astype(np.float32) * 0.2
     
-    rgb = np.array([colorsys.hsv_to_rgb(h, s, v) for h, s, v in zip(hues, sats, vals)], dtype=np.float32)
+    # 3. Vectorized HSV to RGB
+    # hsv_to_rgb(h, s, v):
+    # i = floor(h*6); f = h*6-i; p = v*(1-s); q = v*(1-s*f); t = v*(1-s*(1-f))
+    h6 = hues * 6.0
+    i = np.floor(h6).astype(int)
+    f = h6 - i
+    p = vals * (1.0 - sats)
+    q = vals * (1.0 - sats * f)
+    t = vals * (1.0 - sats * (1.0 - f))
+    
+    i = i % 6
+    rgb = np.zeros((count, 3), dtype=np.float32)
+    
+    # Apply conditions vectorized
+    m0 = (i == 0); rgb[m0] = np.stack([vals[m0], t[m0], p[m0]], axis=-1)
+    m1 = (i == 1); rgb[m1] = np.stack([q[m1], vals[m1], p[m1]], axis=-1)
+    m2 = (i == 2); rgb[m2] = np.stack([p[m2], vals[m2], t[m2]], axis=-1)
+    m3 = (i == 3); rgb[m3] = np.stack([p[m3], q[m3], vals[m3]], axis=-1)
+    m4 = (i == 4); rgb[m4] = np.stack([t[m4], p[m4], vals[m4]], axis=-1)
+    m5 = (i == 5); rgb[m5] = np.stack([vals[m5], p[m5], q[m5]], axis=-1)
+    
     colors = np.column_stack((rgb, np.ones(count, dtype=np.float32)))
-    if manual_start: colors[0] = list(start_color)
+    if manual_start: colors[0] = np.array(start_color, dtype=np.float32)
+    
     return colors
 
 def setup_mesh_attribute(obj, id_type='ELEMENT', start_color=(1,0,0,1), iterations=0, manual_start=True, seed=0):

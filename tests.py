@@ -12,7 +12,12 @@ from .test_cases import (
     test_crash_recovery,
     test_export_system,
     test_edge_cases,
-    test_refactor
+    test_refactor,
+    test_complex_geometry,
+    test_assets_system,
+    test_performance,
+    test_shading_complexity,
+    test_udim_advanced
 )
 
 class BAKETOOL_OT_RunTests(bpy.types.Operator):
@@ -26,33 +31,20 @@ class BAKETOOL_OT_RunTests(bpy.types.Operator):
         print("="*60)
         
         # 强制重新加载测试模块，确保修改生效 // Force reload test modules
-        importlib.reload(test_presets)
-        importlib.reload(test_state)
-        importlib.reload(test_logic)
-        importlib.reload(test_core)
-        importlib.reload(test_integration)
-        importlib.reload(test_crash_recovery)
-        importlib.reload(test_export_system)
-        importlib.reload(test_edge_cases)
-        importlib.reload(test_refactor)
+        test_modules = [
+            test_presets, test_state, test_logic, test_core, 
+            test_integration, test_crash_recovery, test_export_system, 
+            test_edge_cases, test_refactor, test_complex_geometry, test_assets_system,
+            test_performance, test_shading_complexity, test_udim_advanced
+        ]
+        
+        for mod in test_modules:
+            importlib.reload(mod)
         
         loader = unittest.TestLoader()
         suite = unittest.TestSuite()
         
-        # 加载所有测试用例 // Load all test cases
-        modules = [
-            test_presets,
-            test_state,
-            test_logic,
-            test_core,
-            test_integration,
-            test_crash_recovery,
-            test_export_system,
-            test_edge_cases,
-            test_refactor
-        ]
-        
-        for module in modules:
+        for module in test_modules:
             suite.addTests(loader.loadTestsFromModule(module))
             
         runner = unittest.TextTestRunner(verbosity=2)

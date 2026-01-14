@@ -1,9 +1,9 @@
 # Simple Bake Tool (SBT) - 用户参考手册
 
-**版本**: 0.9.3 (Beta)
+**版本**: 0.9.4 (Robustness Update)
 **分类**: 3D VIEW > N Panel > Baking
 
-> **📢 项目状态声明**: 本插件目前处于**持续重构与优化测试阶段**。虽然我们已经通过了大量的自动化测试套件，但在某些复杂的生产环境下仍可能遇到未知问题。建议在处理重要工程前先进行备份。
+> **📢 项目状态声明**: 本插件已通过涵盖 56 项测试的跨版本（Blender 3.6 - 5.0）自动化测试套件验证。重构后的架构大幅提升了在复杂着色器和极端 UDIM 布局下的稳定性。
 
 Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动纹理烘焙解决方案。它接管了繁琐的节点连接、图像创建和保存工作，让您专注于参数设置。
 
@@ -34,8 +34,9 @@ Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动
     *   列表显示当前将要参与烘焙的物体。
     *   **Smart Set (Active Bake 专用)**: 一键将当前选中的物体设为高模，最后选中的设为低模（Active），自动配置列表。
 
-### 1.3 UDIM Workflow (UDIM 工作流) *[New]*
-当 **Bake Mode** 选择为 `UDIM Bake` 时，面板会显示专用的 UDIM 设置区域：
+### 1.3 UDIM Workflow (UDIM 工作流)
+*   **智能检测 (Robust Detect)**: *[Improved]* 现在的检测算法支持非标准 UV 范围过滤。即使 UV 坐标超出了 0-10 的标准 UDIM 范围，插件也会智能过滤掉干扰点，准确识别主象限。
+*   **硬件限制保护**: *[New]* 针对 Blender 每个物体最多 8 个 UV 层的硬件限制，插件增加了前置检查。如果层数已满，插件会记录错误并提示用户，防止崩溃。
 
 *   **Method (处理方式)**:
     *   `Use Existing UVs (Detect)`: 默认模式。插件会自动检测每个物体 UV 所在的象限（如 1001, 1002），并烘焙到对应的 Tile 上。**前提**: 你已经手动分好了 UV。
@@ -50,6 +51,8 @@ Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动
 这是 SBT 的核心。在这里勾选你需要输出的贴图类型。
 
 ### 2.1 PBR Data (物理属性)
+*   **高级着色器支持**: *[New]* 除了标准 `Principled BSDF`，现在支持直接使用 `Emission` 或其他基础着色器节点。如果检测不到物理着色器，插件会自动向上寻找发射信息或回退到材质基础色。
+
 基于 Principled BSDF 的输入。
 *   `Base Color`, `Metallic`, `Roughness`, `Normal`, `Emission`, `Alpha` 等。
 *   **注意**: 如果你的材质没有连接某个属性（如 Metallic），插件会自动给出一个默认值（如纯黑）。
@@ -112,6 +115,8 @@ Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动
 5.  解决模型问题后，点击红色框的 `X` 按钮清除记录，重新开始烘焙。
 
 ### 4.2 紧急清理 (Emergency Cleanup)
+*   **清理审计日志**: *[New]* 现在执行 `Clean Up Bake Junk` 不仅会重置 UI，还会在插件目录下的 `logs/cleanup_history.log` 中生成详细的审计清单。你可以查看具体哪个物体被删除了哪些临时层或节点。
+
 如果崩溃后，你发现场景中出现了奇怪的紫色 UV 层（名为 `BT_Bake_Temp_UV`）或无法删除的白色贴图：
 *   这是插件为了保护原始数据创建的临时文件，本应在烘焙结束后自动删除。
 *   **解决方法**:

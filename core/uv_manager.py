@@ -23,9 +23,14 @@ def detect_object_udim_tile(obj):
         u_indices = np.floor(uvs[:, 0]).astype(int)
         v_indices = np.floor(uvs[:, 1]).astype(int)
         
+        # Valid UDIM range is 0-9 for both U and V (Standard 10x10)
         valid = (u_indices >= 0) & (u_indices < 10) & (v_indices >= 0) & (v_indices < 10)
-        if not np.any(valid): return 1001
         
+        if not np.any(valid): 
+            logger.debug(f"No valid UDIM tiles found for {obj.name}, defaulting to 1001")
+            return 1001
+        
+        # Filter only valid indices before counting
         tiles = 1001 + u_indices[valid] + (v_indices[valid] * 10)
         counts = np.bincount(tiles)
         return int(np.argmax(counts))
@@ -91,6 +96,11 @@ class UVLayoutManager:
                 'render': next((i for i, l in enumerate(obj.data.uv_layers) if l.active_render), 0)
             }
             
+            # Check for Blender's 8 UV layer limit
+            if len(obj.data.uv_layers) >= 8:
+                logger.error(f"Cannot create temporary UV layer: Object '{obj.name}' already has 8 UV layers.")
+                continue
+
             src_uv = obj.data.uv_layers.active
             new_uv = obj.data.uv_layers.new(name=self.temp_layer_name)
             if new_uv:

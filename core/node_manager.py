@@ -149,11 +149,18 @@ class NodeGraphHandler:
 
     def _find_socket_source(self, mat, socket_name, settings):
         tree = mat.node_tree
+        # 1. Try to find Principled BSDF
         bsdf = next((n for n in tree.nodes if n.bl_idname=='ShaderNodeBsdfPrincipled'), None)
         found = None
         if bsdf:
             for cand in BSDF_COMPATIBILITY_MAP.get(socket_name, [socket_name]):
                 if cand in bsdf.inputs: found = bsdf.inputs[cand]; break
+        
+        # 2. Fallback: If no BSDF but baking Color/Emit, look for Emission node
+        if not found and socket_name in {'color', 'emi'}:
+            emi = next((n for n in tree.nodes if n.bl_idname=='ShaderNodeEmission'), None)
+            if emi: found = emi.inputs['Color']
+            
         src = None
         if found and found.is_linked: src = found.links[0].from_socket
         else:

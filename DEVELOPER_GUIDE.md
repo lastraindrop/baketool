@@ -2,7 +2,7 @@
 
 本文件旨在为 Simple Bake Tool 的后续开发提供架构说明、技术规范及已知问题的记录。
 
-## 1. 架构概览 (Architecture - v0.9.5+)
+## 1. 架构概览 (Architecture - v0.9.4)
 
 插件遵循 **UI-Engine-Core** 三层解耦原则：
 
@@ -32,16 +32,20 @@
 
 ### 3.1 单元测试用例 (`test_cases/`)
 所有的业务逻辑（命名、任务拆分、NumPy 计算）必须在 `test_cases/` 下有对应的 `test_xxx.py`。
+- **`test_performance.py`**: *[New]* 性能基准测试。用于量化评估 NumPy 算子在不同分辨率下的耗时。
+- **`test_shading_complexity.py`**: *[New]* 压力测试。涵盖非 BSDF 材质、嵌套节点组等极端着色逻辑。
+- **`test_complex_geometry.py`**: *[New]* 网格边缘情况。包含 8 层 UV 限制测试及非法 UV 范围检测。
 
 ### 3.2 UI 快速测试 (`tests.py`)
 - **入口**: 插件面板底部的 "Run Test Suite" 按钮。
 - **用途**: 开发过程中在当前 Blender 窗口快速验证逻辑修改。
+- **注意**: 新增测试模块后，必须在 `tests.py` 的导入列表和 `test_modules` 数组中手动注册。
 
 ### 3.3 跨版本自动化测试 (`automation/`) - **金标准**
 在发布新版本或进行重大重构（如 `BakeStepRunner` 改动）后，**必须**运行此体系。
 - **运行方式**: 外部终端运行 `python automation/multi_version_test.py`。
 - **能力**: 自动调度 D 盘下 3.6 至 5.0 的所有 Blender 版本，并在 Headless 模式下运行全量测试。
-- **注意**: 该系统已解决 Windows 乱码问题，输出结果作为最终验收依据。
+- **注意**: 该系统已解决 Windows 乱码问题，输出结果作为最终验收依据。性能报告会在控制台实时输出。
 
 ## 4. 开发规范与踩坑记录 (Pitfalls)
 

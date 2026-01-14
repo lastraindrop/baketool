@@ -1,25 +1,14 @@
-# Simple Bake Tool (SBT)
+# Simple Bake Tool (SBT) v0.9.4
 
-[![Blender Version](https://img.shields.io/badge/Blender-3.6+-orange.svg)](https://www.blender.org/)
-[![License](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Beta-red.svg)](#status)
+A simplified, high-efficiency baking solution for Blender.
 
-**Simple Bake Tool (SBT)** 是一款为 Blender 设计的简化、高效且非破坏性的纹理烘焙解决方案。它旨在消除繁琐的节点连接与手动图像管理，让烘焙流程变得如同点击一下按钮般简单。
-
-> [!WARNING]
-> ### ⚠️ 项目状态：测试与优化中
-> 本插件目前处于 **Beta (v0.9.3)** 阶段，正在进行深度重构与性能优化。虽然已通过 50+ 项自动化测试，但在生产环境使用前**请务必备份您的文件**。
-（本文档，说明文档。以及多数的编码都是由AI编码的。我个人主要提供了基本的功能设计与架构以及之前版本的原始编码。没有办法，毕竟AI确实很好用）
----
-
-## ✨ 核心特性
-
-- **一键 PBR 烘焙**: 自动接管 Principled BSDF 节点的输入并生成对应的 PBR 贴图。
-- **UDIM 支持**: 自动检测、打包并烘焙至多象限（1001-1099）。
-- **高性能 ID Map**: 利用 NumPy 和 BMesh C-API 快速生成材质、元素或 UV 岛 ID。
-- **PBR 流程转换**: 内置 Specular 转 Metalness 的像素级高速计算。
-- **容错系统**: 实时记录烘焙状态，支持 Blender 崩溃后的灾难恢复与残留数据清理。
-- **自动化测试**: 内置完整的测试套件，确保在不同 Blender 版本下的稳定性。
+### Key Features
+- **UI-Engine-Core Decoupled Architecture**: Robust and easy to maintain.
+- **Blender 5.0 Support**: Full compatibility with the new BakeSettings API.
+- **NumPy Accelerated Workflows**: Vectorized PBR conversion and channel packing.
+- **Robust UDIM System**: Smart tile detection and automatic repacking.
+- **Comprehensive Testing**: 50+ test cases covering edge cases and performance.
+- **Detailed Audit Logs**: Persistent logging for crash recovery and emergency cleanup.
 
 ## 🚀 安装方法
 

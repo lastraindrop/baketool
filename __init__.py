@@ -86,7 +86,7 @@ def load_default_preset(dummy):
 bl_info = {
     "name": "Simple Bake Tool",
     "author": "lastraindrop",
-    "version": (0, 9, 3),
+    "version": (0, 9, 4),
     "blender": (3, 6, 0),
     "location": "3D VIEW > N panel > Baking",
     "description": "A simplified, high-efficiency baking solution for Blender. Current undergoing heavy refactoring and optimization.",
