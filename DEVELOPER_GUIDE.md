@@ -1,109 +1,60 @@
-# Simple Bake Tool (SBT) - 开发者深度指南
+# Simple Bake Tool 开发者指引 (Developer Guide)
 
-本文档提供 Simple Bake Tool 的底层架构深度解析，旨在帮助开发人员理解其执行流程、数据流向及关键算法实现。
+本文件旨在为 Simple Bake Tool 的后续开发提供架构说明、技术规范及已知问题的记录。
 
-## 1. 核心架构与模块职责 (Refactored Architecture)
+## 1. 架构概览 (Architecture)
+插件遵循数据与逻辑分离的原则，主要分为以下模块：
 
-SBT 在 `v0.9.2` 引入了模块化架构，将核心逻辑从 `utils.py` 拆解至 `core/` 包中。
+- **`__init__.py`**: 插件入口，负责类注册、菜单集成、偏好设置定义及应用处理器（Handler）。
+- **`property.py`**: 数据模型。所有用户配置（Job, Channel, Object）均存储在 `bpy.types.Scene.BakeJobs` 下。
+- **`ops.py`**: 逻辑控制。核心是 `BAKETOOL_OT_BakeOperator`，它通过 `JobPreparer` 生成任务流，并由 `BakePassExecutor` 执行单步操作。
+- **`core/`**: 算法与底层。包含图像管理、节点注入、UV 计算等无状态函数。
+- **`preset_handler.py`**: 序列化引擎。基于 PropertyGroup 的递归解析实现 JSON 预设的存取。
 
-| 模块 | 核心类/对象 | 职责详解 |
-| :--- | :--- | :--- |
-| **`__init__.py`** | `register()` | 插件生命周期管理。负责注册 Operator、UI 面板、Keymap 和全局 Scene 属性。 |
-| **`ops.py`** | `BAKETOOL_OT_BakeOperator` | **流程控制器**。使用 Modal Timer 模式调度整个烘焙任务。负责调用 `core` 模块执行具体逻辑。 |
-| **`utils.py`** | (Facade) | **兼容性接口**。重新导出 `core.*` 中的功能，确保旧代码和测试脚本无需修改即可运行。 |
-| **`core/node_manager.py`** | `NodeGraphHandler` | **节点图管理**。负责材质节点的“脏操作”：创建 Emission/Texture 节点，连接逻辑，以及烘焙后的**节点清理**。 |
-| **`core/math_utils.py`** | `Numpy Algorithms` | **高性能计算**。包含 `setup_mesh_attribute` (ID Map 生成) 和 `process_pbr_numpy` (PBR 像素处理)。 |
-| **`core/uv_manager.py`** | `UVLayoutManager` | **UV/UDIM 管理**。负责 Smart UV 生成、UDIM Tile 自动打包 (`UDIMPacker`) 以及临时 UV 层的创建与销毁。 |
-| **`core/image_manager.py`** | `set_image`, `save_image` | **图像 I/O**。负责图像的创建（含 UDIM Tiled Image）、色彩空间管理、以及包含 `<UDIM>` 标记的文件保存。 |
-| **`core/cleanup.py`** | `BAKETOOL_OT_EmergencyCleanup` | **灾难恢复**。提供在 Blender 崩溃后清理残留数据（如 `BT_Bake_Temp_UV`）的工具。 |
-| **`state_manager.py`** | `BakeStateManager` | **容错系统**。负责将烘焙状态实时写入磁盘 JSON，用于崩溃分析。 |
+## 2. 核心逻辑组件
 
----
+### 2.1 任务系统 (The Queue System)
+烘焙任务被拆解为 `BakeStep` 元组。
+- `JobPreparer`: 静态校验器。检查 UV、物体的合法性，并将用户的 Job 配置“展平”为一个个具体的执行步骤。
+- `BakeTask`: 包含执行该步骤所需的所有上下文（物体、材质、基础文件名）。
 
-## 2. 烘焙管线执行流程 (The Baking Pipeline)
+### 2.2 上下文保护 (Context Management)
+为了保证烘焙不破坏用户的原始工程，我们使用了大量的上下文管理器：
+- `BakeContextManager`: 临时修改渲染引擎、采样率、分辨率等全局设置。
+- `NodeGraphHandler`: 负责在材质球中临时注入烘焙所需的 Shader 节点，并在 `__exit__` 时撤销修改。
+- `UVLayoutManager`: 负责临时的 UDIM 偏移或 Smart UV 自动展开。
 
-当用户点击 `START BAKE` 后，系统进入以下严格定义的流水线：
+## 3. 开发规范与踩坑记录 (Pitfalls)
 
-### Phase 1: 初始化与任务构建 (`invoke`)
-位于 `ops.py` -> `BAKETOOL_OT_BakeOperator.invoke`
+### 3.1 动态枚举 (Dynamic Enums)
+- **规则**: 在 `EnumProperty` 的定义中，如果 `items` 是回调函数，其 `default` 必须是**整数索引**（如 `0`），绝对不能是字符串 ID。
+- **示例**: `bake_mode: EnumProperty(items=get_items, default=0)` 是正确的。
 
-1.  **环境检查**: 强制切换到 Object Mode。
-2.  **状态记录**: 初始化 `BakeStateManager`，写入 `STARTED` 状态至 `logs/last_session.json`。
-3.  **任务构建 (`_prepare_job`)**:
-    *   调用 `TaskBuilder.build`。将复杂的选区逻辑（如 Active Bake）拆解为标准化的 `BakeTask`。
-    *   **UDIM 检测**: 如果是 UDIM 模式，预先计算所有物体的 Tile 位置。
-4.  **通道收集**: 根据优先级排序通道（ID Map 优先）。
+### 3.2 节点操作
+- **注意**: 向材质树添加节点后，必须将目标 `ShaderNodeTexImage` 设置为 `active` (`tree.nodes.active = tex_node`)，否则 Blender 的烘焙操作符将不知道向哪张图写入数据。
 
-### Phase 2: 模态执行循环 (`modal`)
-位于 `ops.py` -> `BAKETOOL_OT_BakeOperator.modal`
+### 3.3 属性忽略
+- **注意**: 在 `preset_handler` 中，默认不应忽略 `'name'`。这对于恢复 Job 的 UI 显示至关重要。
 
-1.  **日志更新**: 记录当前 Step 信息。
-2.  **上下文隔离**: `BakeContextManager` 设置渲染参数。
-3.  **UV/UDIM 准备**: `core.uv_manager.UVLayoutManager` 介入。
-    *   如果启用 Smart UV，计算新布局。
-    *   如果启用 UDIM Repack，将物体 UV 偏移到目标 Tile (1002, 1003...)。
-    *   **关键**: 创建临时 UV 层 `BT_Bake_Temp_UV` 保护原始数据。
-4.  **节点图接管**: `core.node_manager.NodeGraphHandler` 介入。
-    *   在材质中注入 Emission 节点和必要的逻辑节点（如 Bevel, Geometry）。
+### 3.4 快速烘焙 (Quick Bake)
+- `BAKETOOL_OT_QuickBake` 是同步执行的。它绕过了 Job 列表，直接捕获 `context.selected_objects`。它旨在提供一键式体验，不应持久化存储物体配置。
 
-### Phase 3: 单通道烘焙逻辑 (`_bake_channel`)
+## 4. 调试与测试
 
-*   **分支 A: Numpy 加速 (core.math_utils)**
-    *   针对 Extension Map (`pbr_conv_*`)。
-    *   直接读取内存中的 Source Image 像素，通过 NumPy 进行矩阵运算（如 Specular -> Metallic），写入 Target Image。**速度比 Cycles 渲染快 10-100 倍**。
+### 4.1 开启开发者模式
+在插件设置中开启 "Debug Mode"，这会降低日志过滤级别并显示测试按钮。
 
-*   **分支 B: 标准烘焙**
-    *   **图像准备**: `core.image_manager.set_image` 处理 Tiled Image (UDIM) 的创建。
-    *   **ID Map 生成**: 调用 `core.math_utils.setup_mesh_attribute`，利用 BMesh C-API 或 Numpy 快速生成 Vertex Color。
-    *   **执行**: `bpy.ops.object.bake(type='EMIT')`。
+### 4.2 单元测试
+测试代码位于 `tests.py`。
+- **添加测试**: 如果添加了新功能，请在 `tests.py` 中新增 `TestCase` 类。
+- **运行测试**: 使用面板底部的 "Run Test Suite" 按钮。测试涵盖了：
+    - 预设序列化逻辑
+    - 状态管理（崩溃记录）
+    - UDIM 逻辑
+    - 任务队列生成
+    - 自动加载 Handler 安全性
 
-*   **清理**: `NodeGraphHandler` 和 `UVLayoutManager` 在 `__exit__` 时自动清理临时节点和 UV 层。
-
----
-
-## 3. 关键算法实现细节
-
-### 3.1 优化的 ID Map 生成 (`core.math_utils`)
-
-*   **策略**: 优先使用 Numpy 处理 Material ID。对于 Geometric ID (Islands)，使用 `bmesh.ops.find_adjacent_mesh_islands` (C-level) 替代 Python 递归。
-*   **色彩生成**: 使用黄金分割率 (`0.618`) 生成色相，确保相邻 ID 颜色差异最大化，避免相近色导致的 Mask 提取困难。
-
-### 3.2 UDIM 打包逻辑 (`core.uv_manager`)
-
-*   **Repack 模式**:
-    1.  检测所有物体的当前 UV Tile。
-    2.  保留已位于 >1001 Tile 的物体。
-    3.  收集所有位于 1001 的物体。
-    4.  按名称排序后，依次分配到下一个可用的空 Tile。
-    5.  使用 Numpy `foreach_set` 批量偏移 UV 坐标。
-
----
-
-## 4. 异常处理与灾难恢复
-
-### 4.1 崩溃日志
-*   系统会在 `%TEMP%/sbt_last_session.json` 记录每一步的状态。
-*   Blender 重启后，插件读取此文件，若上次未正常结束，则在 UI 显示警告。
-
-## 5. 质量保证与测试 (Quality Assurance)
-
-为了确保重构过程中的稳定性，SBT 引入了一套完整的自动化测试套件（位于 `tests.py`）。
-
-### 5.1 测试覆盖范围
-*   **单元测试**: 验证 math_utils 算法、路径处理和预设序列化。
-*   **组件测试**: 模拟 `NodeGraphHandler` 对材质的修改与还原。
-*   **集成测试 (`TestFullBakeIntegration`)**: **核心测试**。在真实的 Blender 环境中模拟从“创建模型”到“点击烘焙”再到“检查磁盘文件”的全流程。
-
-### 5.2 如何运行测试
-1.  在 `__init__.py` 中，确保 `HAS_TESTS` 为 True。
-2.  在 Blender N 面板底部勾选 **Debug Mode**。
-3.  点击 **Run Full Test Suite**。
-4.  检查控制台 (System Console) 输出的详细结果。
-
-### 5.3 贡献准则
-任何新增的功能模块或核心逻辑修改，**必须**在 `tests.py` 中添加对应的测试用例。这对于目前处于“持续优化”阶段的项目至关重要。
-
----
-
-## 6. 当前开发状态 (Current Status)
-目前项目正处于 `v0.9.3` 的重构中后期，重点在于提高大规模场景下的内存效率（通过 NumPy 进一步替代 BMesh 遍历）以及完善跨平台路径的兼容性测试。
+## 5. 未来计划 (Roadmap)
+- **并行烘焙研究**: 探索多 Blender 实例后端烘焙的可能性（绕过 UI 阻塞）。
+- **材质库适配**: 增加对非 Principled BSDF（如第三方渲染器节点）的更好兼容性。
+- **多通道打包**: 一键生成 RGBA 混合图（如将 AO, Roughness, Metallic 合并到一张图中）。

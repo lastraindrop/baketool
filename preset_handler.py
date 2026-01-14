@@ -12,9 +12,9 @@ class PropertyIO:
     自动过滤 Blender ID (Object, Material, Image) 以实现安全的预设保存。
     """
 
-    # 默认忽略的系统属性
+    # 默认忽略的系统属性 (不包括 name，因为配置组通常需要保留名称)
     DEFAULT_EXCLUDE = {
-        'rna_type', 'name', 'is_valid', 
+        'rna_type', 'is_valid', 
         'path_from_id', 'bl_rna'
     }
 

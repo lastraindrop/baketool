@@ -1263,6 +1263,99 @@ class TestFullBakeIntegration(unittest.TestCase):
         bpy.data.images[img_name].pixels.foreach_get(pixels)
         self.assertTrue(np.mean(pixels[0::4]) > 0.5, "Bake result seems to be black (No data)")
 
+# --- New Feature Tests ---
+
+class TestJobInitialization(unittest.TestCase):
+    """Test initialization logic when creating new jobs."""
+    
+    def setUp(self):
+        cleanup_scene()
+        if hasattr(bpy.context.scene, "BakeJobs"):
+            bpy.context.scene.BakeJobs.jobs.clear()
+            
+    def test_add_job_defaults(self):
+        # Trigger the operator
+        bpy.ops.bake.generic_channel_op(action_type='ADD', target='jobs_channel')
+        
+        self.assertEqual(len(bpy.context.scene.BakeJobs.jobs), 1)
+        job = bpy.context.scene.BakeJobs.jobs[0]
+        
+        # Verify Critical Enums (Bug Fix)
+        self.assertEqual(job.setting.bake_type, 'BSDF', "Bake Type not initialized")
+        self.assertEqual(job.setting.bake_mode, 'SINGLE_OBJECT', "Bake Mode not initialized")
+        
+        # Verify Default Channels
+        enabled = [c.id for c in job.setting.channels if c.enabled]
+        self.assertIn('color', enabled)
+        self.assertIn('normal', enabled)
+
+class TestQuickBakeLogic(unittest.TestCase):
+    """Test logic paths for Quick Bake (Ephemeral tasks)."""
+    
+    def setUp(self):
+        cleanup_scene()
+        self.obj = create_test_object("QuickObj")
+        self.s = get_job_setting()
+        
+    def test_ephemeral_task_build(self):
+        # Simulate selection
+        bpy.ops.object.select_all(action='DESELECT')
+        self.obj.select_set(True)
+        bpy.context.view_layer.objects.active = self.obj
+        
+        tasks = ops.TaskBuilder.build(bpy.context, self.s, [self.obj], self.obj)
+        
+        self.assertEqual(len(tasks), 1)
+        self.assertEqual(tasks[0].active_obj, self.obj)
+        # Ensure job setting list was NOT modified
+        self.assertEqual(len(self.s.bake_objects), 0)
+
+class TestAutoLoadPreset(unittest.TestCase):
+    """Test the startup preset loading mechanism."""
+    
+    def setUp(self):
+        cleanup_scene()
+        self.temp_dir = tempfile.mkdtemp()
+        self.preset = os.path.join(self.temp_dir, "test_startup.json")
+        
+        # Mock Addon Preferences
+        # Note: In headless testing, __package__ might vary. We try to find it dynamically.
+        self.prefs = None
+        for mod in bpy.context.preferences.addons.keys():
+            if "baketool" in mod:
+                self.prefs = bpy.context.preferences.addons[mod].preferences
+                break
+        
+        # Create Dummy Preset
+        with open(self.preset, 'w') as f:
+            json.dump({"jobs": [{"name": "StartupJob"}]}, f)
+
+    def tearDown(self):
+        if os.path.exists(self.temp_dir): shutil.rmtree(self.temp_dir)
+        if self.prefs:
+            self.prefs.auto_load = False
+            self.prefs.default_preset_path = ""
+
+    def test_handler_logic(self):
+        if not self.prefs: return # Skip if addon not registered in test env
+        
+        # Correctly import the handler function from the package
+        from . import load_default_preset
+        
+        self.prefs.auto_load = True
+        self.prefs.default_preset_path = self.preset
+        
+        # Case 1: Clean scene -> Load
+        bpy.context.scene.BakeJobs.jobs.clear()
+        load_default_preset(None)
+        self.assertEqual(len(bpy.context.scene.BakeJobs.jobs), 1)
+        self.assertEqual(bpy.context.scene.BakeJobs.jobs[0].name, "StartupJob")
+        
+        # Case 2: Dirty scene -> Skip
+        load_default_preset(None) # Call again
+        # Should NOT duplicate (logic is if len == 0)
+        self.assertEqual(len(bpy.context.scene.BakeJobs.jobs), 1)
+
 class BAKETOOL_OT_RunTests(bpy.types.Operator):
     bl_idname = "bake.run_dev_tests"
     bl_label = "Run Full Test Suite"
@@ -1305,7 +1398,10 @@ class BAKETOOL_OT_RunTests(bpy.types.Operator):
             TestSceneSettingsContext,
             TestApplyBakedResult,
             TestModelExporter_Logic,
-            TestFullBakeIntegration
+            TestFullBakeIntegration,
+            TestJobInitialization,
+            TestQuickBakeLogic,
+            TestAutoLoadPreset
         ]
         
         for tc in test_classes:
