@@ -233,6 +233,19 @@ class UI_UL_ObjectList(bpy.types.UIList):
                     row.prop(item, "udim_height", text="H")
 
 class BAKETOOL_UL_ChannelList(bpy.types.UIList):
+    def filter_items(self, context, data, propname):
+        channels = getattr(data, propname)
+        flt_flags = []
+        flt_neworder = []
+        
+        for i, item in enumerate(channels):
+            if item.valid_for_mode:
+                flt_flags.append(self.bitflag_filter_item)
+            else:
+                flt_flags.append(0)
+                
+        return flt_flags, flt_neworder
+
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         info = CHANNEL_BAKE_INFO.get(item.id, {})
         cat = info.get('cat', 'DATA')
@@ -482,53 +495,54 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         if not bj.open_saves: return
         
         b = l.box()
-        draw_header(b, "Naming", 'SORTALPHA')
-        r = b.row(align=True)
-        r.prop(s, "name_setting", text="")
+        # --- 1. Naming & Global Toggle ---
+        draw_header(b, "Workflows", 'PREFERENCES')
+        row = b.row(align=True)
+        row.prop(s, "bake_texture_apply", text="Apply to Scene", icon='MATERIAL')
+        row.prop(s, "export_model", text="Export Mesh", icon='EXPORT')
         
-        if s.name_setting=='CUSTOM':
-            r.prop(s, "custom_name", text="")
+        if s.export_model:
+            row = b.row(align=True)
+            row.separator()
+            sub = row.row(align=True)
+            sub.prop(s, "export_format", expand=True)
             
         b.separator()
-        b.prop(s, "save_out", icon='DISK_DRIVE', toggle=True)
         
-        if s.save_out:
+        # --- 2. Files & Formats ---
+        draw_header(b, "Output Files", 'DISK_DRIVE')
+        b.prop(s, "save_out", text="External Save", toggle=True)
+        
+        if s.save_out or s.export_model:
             sb = b.box()
+            if s.export_model and not s.save_out:
+                sb.alert = True
+                sb.label(text="Warning: External Save recommended for export", icon='ERROR')
+            
             draw_file_path(sb, s, "save_path", 0)
+            
+            row = sb.row(align=True)
+            row.label(text="Naming:")
+            row.prop(s, "name_setting", text="")
+            if s.name_setting=='CUSTOM':
+                row.prop(s, "custom_name", text="")
+                
             draw_image_format_options(sb, s)
             
+            # --- Channel Packing (ORM) ---
             sb.separator()
-            row = sb.row(align=True)
-            row.prop(s, "bake_motion", text="Bake Image Sequence", icon='RENDER_ANIMATION')
-            
-            if s.bake_motion:
-                if s.use_mesh_map:
-                    sb.label(text="Mesh Maps + Animation might be redundant", icon='INFO')
-                if s.bake_texture_apply:
-                    sb.label(text="Auto-Apply is disabled for sequences", icon='INFO')
-                
-                col = sb.column(align=True)
-                r = col.row(align=True)
-                r.prop(s, "bake_motion_use_custom", text="Custom Frames", toggle=True)
-                
-                if s.bake_motion_use_custom:
-                    r = col.row(align=True)
-                    r.prop(s, "bake_motion_start", text="Start")
-                    r.prop(s, "bake_motion_last", text="Duration")
-                else:
-                    col.label(text=f"Sync Scene: {context.scene.frame_start}-{context.scene.frame_end}", icon='TIME')
-                
-                row = col.row(align=True)
-                row.prop(s, "bake_motion_separator", text="Sep")
-                row.prop(s, "bake_motion_startindex", text="Start#")
-                row.prop(s, "bake_motion_digit", text="Pad")
+            sb.prop(s, "use_packing", text="Auto Pack Channels (ORM)", icon='NODE_COMPOSITING')
+            if s.use_packing:
+                grid = sb.grid_flow(columns=2, align=True)
+                grid.prop(s, "pack_r", text="R")
+                grid.prop(s, "pack_g", text="G")
+                grid.prop(s, "pack_b", text="B")
+                grid.prop(s, "pack_a", text="A")
+                sb.prop(s, "pack_suffix")
 
+            # --- 3. Animation Sequence ---
             sb.separator()
-            sb.prop(s, "export_model", text="Export Mesh", icon='EXPORT', toggle=True)
-            
-            if s.export_model:
-                r = sb.row(align=True)
-                r.prop(s, "export_format", expand=True)
+            sb.prop(s, "bake_motion", text="Bake Image Sequence", icon='RENDER_ANIMATION')
 
     def draw_others(self, context, l, bj, s):
         l.prop(bj, "open_other", text="Custom Maps", icon="DISCLOSURE_TRI_DOWN" if bj.open_other else "DISCLOSURE_TRI_RIGHT", emboss=False)

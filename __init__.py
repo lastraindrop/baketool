@@ -16,7 +16,6 @@ except ImportError:
     traceback.print_exc()
     HAS_TESTS = False
 
-from .utils import *
 from .constants import *
 
 from bpy.app.handlers import persistent

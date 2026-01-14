@@ -25,19 +25,35 @@ class BAKETOOL_OT_EmergencyCleanup(bpy.types.Operator):
                         obj.data.uv_layers.remove(uv)
                         count_layers += 1
         
-        # 2. Clean up protection images
+        # 2. Clean up protection nodes in materials (Fix for stuck nodes)
+        protection_img = bpy.data.images.get("BT_Protection_Dummy")
+        if protection_img:
+            for mat in bpy.data.materials:
+                if not mat.use_nodes or not mat.node_tree: continue
+                nodes_to_remove = [n for n in mat.node_tree.nodes 
+                                  if n.bl_idname == 'ShaderNodeTexImage' and n.image == protection_img]
+                for n in nodes_to_remove:
+                    mat.node_tree.nodes.remove(n)
+                    count_nodes += 1
+
+        # 3. Clean up protection images
         # These are named "BT_Protection_Dummy"
         for img in bpy.data.images:
             if img.name.startswith("BT_Protection_Dummy"):
                 bpy.data.images.remove(img)
                 count_images += 1
                 
-        # 3. Clean up node groups if we created temp ones (future proofing)
+        # 4. Clean up node groups if we created temp ones (future proofing)
         # Currently NodeGraphHandler cleans up mostly, but if we had temp groups:
         # for ng in bpy.data.node_groups:
         #     if ng.name.startswith("BT_Temp"): ...
         
-        msg = f"Cleaned: {count_layers} UV Layers, {count_images} Images."
+        # 5. Reset UI States
+        context.scene.is_baking = False
+        context.scene.bake_status = "Idle"
+        context.scene.bake_progress = 0.0
+        
+        msg = f"Cleaned: {count_layers} UV Layers, {count_nodes} Nodes, {count_images} Images. UI state reset."
         logger.info(msg)
         self.report({'INFO'}, msg)
         return {'FINISHED'}

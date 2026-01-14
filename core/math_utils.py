@@ -74,7 +74,56 @@ def process_pbr_numpy(target_img, spec_img, diff_img, map_id, threshold=0.04, ar
         logger.error(f"PBR Conv Failed: {e}")
         return False
 
-def generate_optimized_colors(count, start_color=(1,0,0,1), iterations=0, manual_start=True, seed=0):
+def pack_channels_numpy(target_img, channel_map, array_cache=None):
+    """
+    Highly optimized channel packing using NumPy.
+    channel_map: {channel_index(0-3): source_image}
+    """
+    if not target_img: return False
+    
+    try:
+        width, height = target_img.size
+        num_pixels = width * height
+        
+        # Pre-allocate RGBA buffer (initialized to 0, Alpha to 1.0)
+        result_arr = np.zeros((num_pixels, 4), dtype=np.float32)
+        result_arr[:, 3] = 1.0 
+        
+        def get_arr(img):
+            if array_cache is not None and img in array_cache:
+                return array_cache[img]
+            arr = get_image_pixels_as_numpy(img)
+            if array_cache is not None and arr is not None:
+                array_cache[img] = arr
+            return arr
+
+        any_packed = False
+        for idx, src_img in channel_map.items():
+            if not src_img or idx < 0 or idx > 3: continue
+            
+            src_arr = get_arr(src_img)
+            if src_arr is None: continue
+            
+            # If source image has different size, we skip or handle (here we assume matching sizes)
+            if src_arr.shape[0] != num_pixels:
+                logger.warning(f"Packing size mismatch: {src_img.name} vs {target_img.name}")
+                continue
+            
+            # Take the luminance or the first channel (R) as data
+            # For grayscale images, R=G=B, so src_arr[:, 0] is enough
+            result_arr[:, idx] = src_arr[:, 0]
+            any_packed = True
+            
+        if any_packed:
+            target_img.pixels.foreach_set(result_arr.ravel())
+            return True
+            
+        return False
+    except Exception as e:
+        logger.error(f"Channel Packing Failed: {e}")
+        return False
+
+def generate_optimized_colors(count, start_color=(1,0,0,1), iterations=0, manual_start=True, seed=0) :
     """Generate distinct colors for ID maps."""
     if count <= 0: return np.zeros((0, 4), dtype=np.float32)
     indices = np.arange(count, dtype=np.float64)

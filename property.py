@@ -1,8 +1,10 @@
 import bpy
 from bpy import props
 from .constants import *
-from .utils import logger, reset_channels_logic
+from .core.common import reset_channels_logic
 import logging
+
+logger = logging.getLogger(__name__)
 
 # --- Helper Functions for Properties ---
 
@@ -81,6 +83,7 @@ class BakeChannelSource(bpy.types.PropertyGroup):
     col_chan: props.EnumProperty(items=CUSTOM_CHANNEL_SEP, name='Channel')
 
 class BakeChannel(bpy.types.PropertyGroup):
+    valid_for_mode: props.BoolProperty(default=True)
     name: props.StringProperty(name="Channel Name")
     id: props.StringProperty(name="Channel ID")
     enabled: props.BoolProperty(name="Enabled", default=False)
@@ -206,6 +209,14 @@ class BakeJobSetting(bpy.types.PropertyGroup):
 
     export_model: bpy.props.BoolProperty(name="Export Model", default=False)
     export_format: props.EnumProperty(items=[('FBX','FBX','',1),('GLB','GLB','',2),('USD','USD','',3)], default='FBX')
+
+    # Channel Packing (ORM etc)
+    use_packing: props.BoolProperty(name="Auto Pack Channels", default=False)
+    pack_r: props.EnumProperty(items=get_channel_source_items, name="Red (R)")
+    pack_g: props.EnumProperty(items=get_channel_source_items, name="Green (G)")
+    pack_b: props.EnumProperty(items=get_channel_source_items, name="Blue (B)")
+    pack_a: props.EnumProperty(items=get_channel_source_items, name="Alpha (A)")
+    pack_suffix: props.StringProperty(name="Suffix", default="_ORM")
     
     channels: props.CollectionProperty(type=BakeChannel)
     active_channel_index: props.IntProperty(name="Active Channel Index")

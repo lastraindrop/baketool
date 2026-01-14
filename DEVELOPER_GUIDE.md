@@ -2,59 +2,58 @@
 
 本文件旨在为 Simple Bake Tool 的后续开发提供架构说明、技术规范及已知问题的记录。
 
-## 1. 架构概览 (Architecture)
-插件遵循数据与逻辑分离的原则，主要分为以下模块：
+## 1. 架构概览 (Architecture - v0.9.5+)
 
-- **`__init__.py`**: 插件入口，负责类注册、菜单集成、偏好设置定义及应用处理器（Handler）。
-- **`property.py`**: 数据模型。所有用户配置（Job, Channel, Object）均存储在 `bpy.types.Scene.BakeJobs` 下。
-- **`ops.py`**: 逻辑控制。核心是 `BAKETOOL_OT_BakeOperator`，它通过 `JobPreparer` 生成任务流，并由 `BakePassExecutor` 执行单步操作。
-- **`core/`**: 算法与底层。包含图像管理、节点注入、UV 计算等无状态函数。
-- **`preset_handler.py`**: 序列化引擎。基于 PropertyGroup 的递归解析实现 JSON 预设的存取。
+插件遵循 **UI-Engine-Core** 三层解耦原则：
 
-## 2. 核心逻辑组件
+- **表现层 (`ui.py` / `__init__.py`)**: 负责 Blender 菜单、面板绘制。
+- **调度层 (`ops.py`)**: 包含 Operator 类。它们仅负责收集 Job，并交由 `BakeStepRunner` 执行。
+- **核心引擎层 (`core/engine.py`)**: 
+    - **`BakeStepRunner`**: **唯一逻辑入口**。封装了上下文管理、UV 处理、节点注入、NumPy 合成及结果应用。
+    - **`BakePassExecutor`**: 负责单次 API 调用及 Blender 5.0 适配。
+- **原子功能层 (`core/`)**: 图像管理、UV 分配、节点计算等无状态函数。
 
-### 2.1 任务系统 (The Queue System)
-烘焙任务被拆解为 `BakeStep` 元组。
-- `JobPreparer`: 静态校验器。检查 UV、物体的合法性，并将用户的 Job 配置“展平”为一个个具体的执行步骤。
-- `BakeTask`: 包含执行该步骤所需的所有上下文（物体、材质、基础文件名）。
+## 2. 核心协议与机制
 
-### 2.2 上下文保护 (Context Management)
-为了保证烘焙不破坏用户的原始工程，我们使用了大量的上下文管理器：
-- `BakeContextManager`: 临时修改渲染引擎、采样率、分辨率等全局设置。
-- `NodeGraphHandler`: 负责在材质球中临时注入烘焙所需的 Shader 节点，并在 `__exit__` 时撤销修改。
-- `UVLayoutManager`: 负责临时的 UDIM 偏移或 Smart UV 自动展开。
+### 2.1 BakeStepRunner (唯一执行闭环)
+所有烘焙任务（包括常规任务和 Quick Bake）必须通过 `BakeStepRunner.run()` 执行。它返回一个结果字典列表，由 Operator 决定如何显示给用户。严禁在 Operator 中手动编写 Context 堆栈。
 
-## 3. 开发规范与踩坑记录 (Pitfalls)
+### 2.2 非破坏性配置 (Non-Destructive Sync)
+- **`valid_for_mode`**: 位于 `BakeChannel` 中。
+- **逻辑**: 当用户切换烘焙类型（如 BSDF -> BASIC）时，不匹配的通道会被隐藏（`valid_for_mode = False`）但**不会被删除**。这确保了用户在不同模式间切换时，自定义的后缀、采样和路径设置得以保留。
 
-### 3.1 动态枚举 (Dynamic Enums)
-- **规则**: 在 `EnumProperty` 的定义中，如果 `items` 是回调函数，其 `default` 必须是**整数索引**（如 `0`），绝对不能是字符串 ID。
-- **示例**: `bake_mode: EnumProperty(items=get_items, default=0)` 是正确的。
+### 2.3 Blender 5.0 适配 (Compatibility)
+- 5.0 中烘焙设置已从 `RenderSettings` 迁移至 `scene.render.bake` (BakeSettings)。
+- 在操作任何烘焙属性前，必须使用 `BakePassExecutor` 提供的兼容性分支，或检查 `bpy.app.version`。
 
-### 3.2 节点操作
-- **注意**: 向材质树添加节点后，必须将目标 `ShaderNodeTexImage` 设置为 `active` (`tree.nodes.active = tex_node`)，否则 Blender 的烘焙操作符将不知道向哪张图写入数据。
+## 3. 测试体系 (Testing System) - **开发必读**
 
-### 3.3 属性忽略
-- **注意**: 在 `preset_handler` 中，默认不应忽略 `'name'`。这对于恢复 Job 的 UI 显示至关重要。
+为了保证跨版本稳定性，本项目严禁未经测试的逻辑提交。
 
-### 3.4 快速烘焙 (Quick Bake)
-- `BAKETOOL_OT_QuickBake` 是同步执行的。它绕过了 Job 列表，直接捕获 `context.selected_objects`。它旨在提供一键式体验，不应持久化存储物体配置。
+### 3.1 单元测试用例 (`test_cases/`)
+所有的业务逻辑（命名、任务拆分、NumPy 计算）必须在 `test_cases/` 下有对应的 `test_xxx.py`。
 
-## 4. 调试与测试
+### 3.2 UI 快速测试 (`tests.py`)
+- **入口**: 插件面板底部的 "Run Test Suite" 按钮。
+- **用途**: 开发过程中在当前 Blender 窗口快速验证逻辑修改。
 
-### 4.1 开启开发者模式
-在插件设置中开启 "Debug Mode"，这会降低日志过滤级别并显示测试按钮。
+### 3.3 跨版本自动化测试 (`automation/`) - **金标准**
+在发布新版本或进行重大重构（如 `BakeStepRunner` 改动）后，**必须**运行此体系。
+- **运行方式**: 外部终端运行 `python automation/multi_version_test.py`。
+- **能力**: 自动调度 D 盘下 3.6 至 5.0 的所有 Blender 版本，并在 Headless 模式下运行全量测试。
+- **注意**: 该系统已解决 Windows 乱码问题，输出结果作为最终验收依据。
 
-### 4.2 单元测试
-测试代码位于 `tests.py`。
-- **添加测试**: 如果添加了新功能，请在 `tests.py` 中新增 `TestCase` 类。
-- **运行测试**: 使用面板底部的 "Run Test Suite" 按钮。测试涵盖了：
-    - 预设序列化逻辑
-    - 状态管理（崩溃记录）
-    - UDIM 逻辑
-    - 任务队列生成
-    - 自动加载 Handler 安全性
+## 4. 开发规范与踩坑记录 (Pitfalls)
 
-## 5. 未来计划 (Roadmap)
-- **并行烘焙研究**: 探索多 Blender 实例后端烘焙的可能性（绕过 UI 阻塞）。
-- **材质库适配**: 增加对非 Principled BSDF（如第三方渲染器节点）的更好兼容性。
-- **多通道打包**: 一键生成 RGBA 混合图（如将 AO, Roughness, Metallic 合并到一张图中）。
+### 4.1 属性类型安全
+- **规范**: 从 `PropertyGroup` 获取数值后，参与数学运算前务必显式转换，例如 `int(setting.res_x)`。
+
+### 4.2 材质保护节点
+- **机制**: 烘焙期间会向非活跃材质注入 `BT_Protection_Dummy` 贴图节点。
+- **清理**: 若发生异常崩溃，用户应运行 `bake.emergency_cleanup`。开发新功能时需确保该操作符能覆盖新的临时数据。
+
+## 5. 迭代计划 (Roadmap)
+- [x] **架构统一**: 完成 `BakeStepRunner` 闭环。
+- [x] **5.0 适配**: 完成 BakeSettings 迁移。
+- [ ] **异步导出**: 优化大规模模型导出时的 UI 响应。
+- [ ] **LOD 链式烘焙**: 支持多级简化模型自动烘焙。

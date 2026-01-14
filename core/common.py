@@ -47,23 +47,28 @@ def reset_channels_logic(setting):
     
     target_ids = {d['id']: d for d in defs}
     
-    for i in range(len(setting.channels)-1, -1, -1):
-        if setting.channels[i].id not in target_ids:
-            setting.channels.remove(i)
-            
-    existing = {c.id: c for c in setting.channels}
+    # Non-destructive sync
+    existing_map = {c.id: c for c in setting.channels}
     
+    # 1. Update existing and mark validity
+    for c in setting.channels:
+        if c.id in target_ids:
+            c.valid_for_mode = True
+            c.name = target_ids[c.id]['name']
+        else:
+            c.valid_for_mode = False
+            
+    # 2. Add missing
     for d in defs:
         d_id = d['id']
-        if d_id not in existing:
+        if d_id not in existing_map:
             new_chan = setting.channels.add()
             new_chan.id = d_id
             new_chan.name = d['name']
+            new_chan.valid_for_mode = True
             defaults = d.get('defaults', {})
             for k, v in defaults.items():
                 if hasattr(new_chan, k): setattr(new_chan, k, v)
-        else:
-            existing[d_id].name = d['name']
 
 @contextmanager
 def safe_context_override(context, active_object=None, selected_objects=None):
@@ -95,6 +100,10 @@ class SceneSettingsContext:
         if self.category == 'cycles': return scene.cycles
         if self.category == 'image': return scene.render.image_settings
         if self.category == 'cm': return scene.view_settings
+        # 兼容 Blender 5.0 的 BakeSettings 迁移 // Blender 5.0 compatibility
+        if self.category == 'bake':
+            if hasattr(scene.render, "bake"): return scene.render.bake # 5.0+
+            return scene.render # Legacy
         return None
 
     def __enter__(self):
@@ -144,37 +153,50 @@ def apply_baked_result(original_obj, task_images, setting, task_base_name):
         tree.links.new(bsdf.outputs[0], out.inputs[0])
         y_pos = 0
         
+        # 扩展映射表：支持标准模式与 BSDF 模式的互补 // Extended mapping
         channel_to_socket_keys = {
-            'color': 'color', 'metal': 'metal', 'rough': 'rough', 
-            'specular': 'specular', 'emi': 'emi', 'alpha': 'alpha', 
-            'normal': 'normal', 'ao': 'color', 'combine': 'color'
+            'color': 'color', 'diff': 'color',      # Base Color
+            'metal': 'metal',                       # Metallic
+            'rough': 'rough', 'gloss': 'rough',     # Roughness (Gloss 需要在节点里处理，暂映射至此)
+            'specular': 'specular', 
+            'emi': 'emi', 
+            'alpha': 'alpha', 
+            'normal': 'normal', 'bevnor': 'normal',
+            'ao': 'color', 'combine': 'color'
         }
 
         for chan_id, image in texture_map.items():
             target_socket = None
             compat_key = channel_to_socket_keys.get(chan_id)
+            
             if compat_key and compat_key in BSDF_COMPATIBILITY_MAP:
                 possible_names = BSDF_COMPATIBILITY_MAP[compat_key]
-                for name in possible_names:
-                    if name in bsdf.inputs:
-                        target_socket = bsdf.inputs[name]
+                for p_name in possible_names:
+                    if p_name in bsdf.inputs:
+                        target_socket = bsdf.inputs[p_name]
                         break
             
-            is_normal = (chan_id == 'normal')
-            if not target_socket and not is_normal: continue
+            if not target_socket and not (chan_id == 'normal'): continue
 
             tex = tree.nodes.new('ShaderNodeTexImage'); tex.image = image
-            tex.location = (-600 if is_normal else -300, y_pos); y_pos -= 280
+            tex.location = (-600 if chan_id == 'normal' else -300, y_pos); y_pos -= 280
             
-            if chan_id in {'metal', 'rough', 'normal', 'specular', 'ao'}:
+            # 自动设置色彩空间 // Auto ColorSpace
+            non_color_channels = {'metal', 'rough', 'normal', 'specular', 'ao', 'height', 'gloss', 'bevnor'}
+            if chan_id in non_color_channels:
                 try: tex.image.colorspace_settings.name = 'Non-Color'
                 except: pass
                 
-            if is_normal:
+            if chan_id == 'normal':
                 nor = tree.nodes.new('ShaderNodeNormalMap'); nor.location = (-300, tex.location.y)
                 tree.links.new(tex.outputs[0], nor.inputs['Color'])
-                normal_socket = bsdf.inputs.get('Normal')
-                if normal_socket: tree.links.new(nor.outputs['Normal'], normal_socket)
+                if 'Normal' in bsdf.inputs: tree.links.new(nor.outputs['Normal'], bsdf.inputs['Normal'])
+            elif chan_id == 'gloss':
+                # Gloss 到 Roughness 的反转逻辑 // Invert Gloss to Roughness
+                inv = tree.nodes.new('ShaderNodeInvert')
+                inv.location = (-150, tex.location.y)
+                tree.links.new(tex.outputs[0], inv.inputs[1])
+                if target_socket: tree.links.new(inv.outputs[0], target_socket)
             elif target_socket:
                 tree.links.new(tex.outputs[0], target_socket)
                 
