@@ -88,7 +88,8 @@ class NodeGraphHandler:
             if obj.type != 'MESH': continue
             for s in obj.material_slots:
                 m = s.material
-                if m and m.use_nodes and m not in active_set:
+                # Skip linked (read-only) materials
+                if m and m.use_nodes and m not in active_set and not m.library:
                     # We add a node to the material's tree. 
                     # The NodeGraphHandler will track this in temp_logic_nodes[m]
                     self._add_node(m, 'ShaderNodeTexImage', image=d)
@@ -191,7 +192,8 @@ class NodeGraphHandler:
         return None
 
     def _create_extension_logic(self, mat, socket_name, settings):
-        threshold = settings.pbr_conv_threshold; tree = mat.node_tree
+        threshold = getattr(settings, 'pbr_conv_threshold', 0.04) if settings else 0.04
+        tree = mat.node_tree
         spec_src = self._find_socket_source(mat, 'specular', None)
         sep = self._add_node(mat, 'ShaderNodeSeparateColor'); tree.links.new(spec_src, sep.inputs[0])
         math1 = self._add_node(mat, 'ShaderNodeMath', operation='MAXIMUM')

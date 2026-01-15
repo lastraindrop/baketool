@@ -86,3 +86,11 @@ class TestComplexGeometry(unittest.TestCase):
         # 虽然共享数据，但在单物体模式下应该是两个独立的任务
         self.assertEqual(len(tasks), 2)
         self.assertIs(tasks[0].objects[0].data, tasks[1].objects[0].data)
+
+    def test_empty_mesh_udim_detection(self):
+        """测试：完全没有任何几何体数据（Loop）的空 Mesh 的 UDIM 检测"""
+        bpy.ops.object.add(type='MESH')
+        obj = bpy.context.active_object
+        # Newly created mesh object has no geometry data
+        tile = uv_manager.detect_object_udim_tile(obj)
+        self.assertEqual(tile, 1001)

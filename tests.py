@@ -1,24 +1,8 @@
 import bpy
 import unittest
 import importlib
-
-# 导入子模块以便重新加载 // Import submodules for reloading
-from .test_cases import (
-    test_presets,
-    test_state,
-    test_logic,
-    test_core,
-    test_integration,
-    test_crash_recovery,
-    test_export_system,
-    test_edge_cases,
-    test_refactor,
-    test_complex_geometry,
-    test_assets_system,
-    test_performance,
-    test_shading_complexity,
-    test_udim_advanced
-)
+import os
+import sys
 
 class BAKETOOL_OT_RunTests(bpy.types.Operator):
     """Run the modularized test suite for BakeTool."""
@@ -27,25 +11,33 @@ class BAKETOOL_OT_RunTests(bpy.types.Operator):
     
     def execute(self, context):
         print("\n" + "="*60)
-        print(f"STARTING BAKETOOL MODULAR TEST SUITE")
+        print(f"STARTING BAKETOOL MODULAR TEST SUITE (AUTO-DISCOVERY)")
         print("="*60)
         
-        # 强制重新加载测试模块，确保修改生效 // Force reload test modules
-        test_modules = [
-            test_presets, test_state, test_logic, test_core, 
-            test_integration, test_crash_recovery, test_export_system, 
-            test_edge_cases, test_refactor, test_complex_geometry, test_assets_system,
-            test_performance, test_shading_complexity, test_udim_advanced
-        ]
+        addon_root = os.path.dirname(__file__)
+        parent_dir = os.path.dirname(addon_root)
+        test_dir = os.path.join(addon_root, "test_cases")
         
-        for mod in test_modules:
-            importlib.reload(mod)
-        
+        # 1. 自动发现并重新加载模块 // Discovery and force reload
         loader = unittest.TestLoader()
-        suite = unittest.TestSuite()
         
-        for module in test_modules:
-            suite.addTests(loader.loadTestsFromModule(module))
+        package_name = __package__
+        for mod_name in list(sys.modules.keys()):
+            if mod_name.startswith(f"{package_name}."):
+                try:
+                    importlib.reload(sys.modules[mod_name])
+                except Exception as e:
+                    pass
+
+        # 2. 执行发现逻辑 // Discover tests
+        # 关键：从父目录开始 discover，以确保 test_cases 被识别为 baketool.test_cases
+        suite = loader.discover(
+            start_dir=test_dir, 
+            pattern='test_*.py', 
+            top_level_dir=parent_dir
+        )
+        
+        print(f">>> Discovered {suite.countTestCases()} tests")
             
         runner = unittest.TextTestRunner(verbosity=2)
         result = runner.run(suite)
@@ -56,5 +48,4 @@ class BAKETOOL_OT_RunTests(bpy.types.Operator):
             return {'FINISHED'}
         else:
             self.report({'ERROR'}, f"TESTS FAILED: {len(result.errors)} Errors, {len(result.failures)} Failures.")
-            # 可以在此处打印详细错误 // Could print detailed errors here if needed
             return {'CANCELLED'}

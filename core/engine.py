@@ -11,7 +11,7 @@ from .common import (
 )
 from .image_manager import set_image, save_image
 from .math_utils import process_pbr_numpy, setup_mesh_attribute, pack_channels_numpy
-from .uv_manager import get_active_uv_udim_tiles, UDIMPacker
+from .uv_manager import get_active_uv_udim_tiles, UDIMPacker, UVLayoutManager
 from .node_manager import NodeGraphHandler
 from ..constants import CHANNEL_BAKE_INFO
 
@@ -186,7 +186,12 @@ class JobPreparer:
                 logger.warning(f"Job '{job.name}' skipped: No objects assigned.")
                 continue
 
-            if missing_uvs := check_objects_uv(objs):
+            # In SELECT_ACTIVE mode, only the active (target) object strictly needs UVs.
+            check_list = objs
+            if s.bake_mode == 'SELECT_ACTIVE' and s.active_object:
+                check_list = [s.active_object]
+
+            if missing_uvs := check_objects_uv(check_list):
                 err = f"Job '{job.name}' skipped: Missing UVs on {', '.join(missing_uvs)}"
                 logger.error(err)
                 # 将错误记录到场景状态中，以便 UI 显示 // Log error to scene for UI feedback

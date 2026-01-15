@@ -77,3 +77,43 @@ def get_job_setting():
     
     job.setting.bake_mode = 'SINGLE_OBJECT' 
     return job.setting
+
+class DataLeakChecker:
+    """Monitors Blender data blocks to ensure no leaks during tests."""
+    def __init__(self):
+        self.initial_counts = self._get_counts()
+
+    def _get_counts(self):
+        return {
+            'images': len(bpy.data.images),
+            'meshes': len(bpy.data.meshes),
+            'materials': len(bpy.data.materials),
+            'textures': len(bpy.data.textures),
+            'node_groups': len(bpy.data.node_groups),
+            'actions': len(bpy.data.actions),
+            'brushes': len(bpy.data.brushes),
+            'curves': len(bpy.data.curves),
+            'worlds': len(bpy.data.worlds),
+            'objects': len(bpy.data.objects),
+            'collections': len(bpy.data.collections)
+        }
+
+    def check(self):
+        current_counts = self._get_counts()
+        leaks = []
+        for key, initial in self.initial_counts.items():
+            current = current_counts[key]
+            if current > initial:
+                leaks.append(f"{key}: {initial} -> {current}")
+        return leaks
+
+from contextlib import contextmanager
+
+@contextmanager
+def assert_no_leak(test_case):
+    """Context manager to fail a test if data leaks are detected."""
+    checker = DataLeakChecker()
+    yield
+    leaks = checker.check()
+    if leaks:
+        test_case.fail(f"Data leak detected after test: {', '.join(leaks)}")

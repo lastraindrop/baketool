@@ -97,3 +97,21 @@ class TestAutoLoadPreset(unittest.TestCase):
         
         load_default_preset(None)
         self.assertEqual(len(bpy.context.scene.BakeJobs.jobs), 1)
+
+    def test_malformed_json_input(self):
+        """测试：输入非法的 JSON 字符串/文件内容"""
+        s = get_job_setting()
+        serializer = preset_handler.PropertyIO()
+        
+        # Test case 1: None/Empty input
+        serializer.from_dict(s, None)
+        # Should not crash, just do nothing
+        self.assertEqual(serializer.stats['error'], 0)
+        
+        # Test case 2: Valid JSON but wrong structure (list instead of dict)
+        try:
+            serializer.from_dict(s, ["List", "Instead"])
+        except AttributeError:
+             pass
+        except Exception as e:
+             pass

@@ -29,7 +29,7 @@ class TestFullBakeIntegration(unittest.TestCase):
         bo.bakeobject = obj
         
         s.bake_mode = 'SINGLE_OBJECT'
-        s.name_setting = 'OBJECT' # 确保使用物体名作为基础名 // Use object name as base
+        s.name_setting = 'OBJECT' 
         s.res_x, s.res_y = 64, 64
         s.save_out = True
         s.save_path = self.temp_dir
@@ -37,38 +37,24 @@ class TestFullBakeIntegration(unittest.TestCase):
         s.bake_type = 'BSDF'
         
         common.reset_channels_logic(s)
-        channels = []
         for c in s.channels:
-            if c.id == 'color':
-                c.enabled = True
-                info = CHANNEL_BAKE_INFO.get(c.id, {})
-                channels.append({
-                    'id': c.id, 'name': c.name, 'prop': c, 
-                    'bake_pass': info.get('bake_pass', 'EMIT'),
-                    'info': info, 'prefix': c.prefix, 'suffix': c.suffix
-                })
-            else:
-                c.enabled = False
+            c.enabled = (c.id == 'color')
 
-        tasks = ops.TaskBuilder.build(bpy.context, s, [obj], obj)
-        self.assertEqual(len(tasks), 1)
-        task = tasks[0]
+        # Use the same logic as BAKETOOL_OT_BakeOperator
+        queue = ops.JobPreparer.prepare_execution_queue(bpy.context, [job])
+        self.assertEqual(len(queue), 1)
+        step = queue[0]
+        
+        # Call the production runner
+        runner = ops.BakeStepRunner(bpy.context)
+        results = runner.run(step)
         
         # 期望的图像名称 // Expected image name
-        expected_img_name = f"{task.base_name}_color"
+        expected_img_name = f"{step.task.base_name}_color"
         
-        baked_images = {}
-        
-        with ops.BakeContextManager(bpy.context, s):
-            with common.safe_context_override(bpy.context, task.active_obj, task.objects):
-                with uv_manager.UVLayoutManager(task.objects, s):
-                    with ops.NodeGraphHandler(task.materials) as handler:
-                        handler.setup_protection(task.objects, task.materials)
-                        for c_config in channels:
-                            img = ops.BakePassExecutor.execute(s, task, c_config, handler, baked_images)
-                            if img:
-                                baked_images[c_config['id']] = img
-                                image_manager.save_image(img, s.save_path, file_format=s.save_format, save=True)
+        self.assertIn(expected_img_name, bpy.data.images)
+        expected_file = os.path.join(self.temp_dir, f"{expected_img_name}.png")
+        self.assertTrue(os.path.exists(expected_file))
 
         self.assertIn(expected_img_name, bpy.data.images)
         expected_file = os.path.join(self.temp_dir, f"{expected_img_name}.png")
@@ -87,4 +73,25 @@ class TestQuickBakeLogic(unittest.TestCase):
         
         tasks = ops.TaskBuilder.build(bpy.context, self.s, [self.obj], self.obj)
         self.assertEqual(len(tasks), 1)
+        self.assertEqual(len(self.s.bake_objects), 0)
+
+    def test_quick_bake_multi_object(self):
+        """测试：Quick Bake 多选物体时的逻辑"""
+        obj2 = create_test_object("QuickObj2")
+        self.obj.select_set(True)
+        obj2.select_set(True)
+        bpy.context.view_layer.objects.active = self.obj
+        
+        # Mode: SINGLE_OBJECT -> Expect 2 tasks
+        self.s.bake_mode = 'SINGLE_OBJECT'
+        tasks = ops.TaskBuilder.build(bpy.context, self.s, [self.obj, obj2], self.obj)
+        self.assertEqual(len(tasks), 2)
+        
+        # Mode: COMBINE_OBJECT -> Expect 1 task
+        self.s.bake_mode = 'COMBINE_OBJECT'
+        tasks = ops.TaskBuilder.build(bpy.context, self.s, [self.obj, obj2], self.obj)
+        self.assertEqual(len(tasks), 1)
+        self.assertEqual(len(tasks[0].objects), 2)
+        
+        # Verify bake_objects list remains empty (ephemeral nature)
         self.assertEqual(len(self.s.bake_objects), 0)

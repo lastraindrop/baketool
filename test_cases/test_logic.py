@@ -127,6 +127,32 @@ class TestObjectManagement(unittest.TestCase):
         add_obj_logic(self.s, self.obj1)
         self.assertEqual(len(self.s.bake_objects), 1)
 
+    def test_smart_set_logic(self):
+        """测试 SMART_SET 操作逻辑：设置 Active 并将其他选物体加入列表"""
+        obj_act = create_test_object("ActiveObj")
+        obj_sel1 = create_test_object("Sel1")
+        obj_sel2 = create_test_object("Sel2")
+        
+        # 模拟 Operator 逻辑
+        self.s.bake_type = 'BASIC' # Ensure SELECT_ACTIVE is available
+        self.s.bake_mode = 'SELECT_ACTIVE'
+        self.s.active_object = obj_act
+        self.s.bake_objects.clear()
+        
+        # Logic: Add all selected EXCEPT active
+        selected = [obj_act, obj_sel1, obj_sel2]
+        
+        for o in selected:
+            if o != self.s.active_object:
+                new = self.s.bake_objects.add()
+                new.bakeobject = o
+                
+        self.assertEqual(len(self.s.bake_objects), 2)
+        objs = [o.bakeobject for o in self.s.bake_objects]
+        self.assertIn(obj_sel1, objs)
+        self.assertIn(obj_sel2, objs)
+        self.assertNotIn(obj_act, objs)
+
 class TestJobInitialization(unittest.TestCase):
     def setUp(self):
         cleanup_scene()

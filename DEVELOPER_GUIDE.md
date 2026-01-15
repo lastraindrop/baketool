@@ -32,20 +32,25 @@
 
 ### 3.1 单元测试用例 (`test_cases/`)
 所有的业务逻辑（命名、任务拆分、NumPy 计算）必须在 `test_cases/` 下有对应的 `test_xxx.py`。
-- **`test_performance.py`**: *[New]* 性能基准测试。用于量化评估 NumPy 算子在不同分辨率下的耗时。
-- **`test_shading_complexity.py`**: *[New]* 压力测试。涵盖非 BSDF 材质、嵌套节点组等极端着色逻辑。
-- **`test_complex_geometry.py`**: *[New]* 网格边缘情况。包含 8 层 UV 限制测试及非法 UV 范围检测。
+- **`test_performance.py`**: 性能基准测试。用于量化评估 NumPy 算子在不同分辨率下的耗时。
+- **`test_shading_complexity.py`**: 压力测试。涵盖非 BSDF 材质、嵌套节点组等极端着色逻辑。
+- **`test_complex_geometry.py`**: 网格边缘情况。包含 8 层 UV 限制测试及非法 UV 范围检测。
+- **`test_versioning.py`**: 跨版本属性兼容性测试。重点验证 Blender 5.0 的 `BakeSettings` 迁移及 `SceneSettingsContext` 的映射。
+- **`test_node_compatibility.py`**: *[New]* 节点系统兼容性测试。验证 4.0+ 及 5.0 下的 ShaderNode 命名与插槽一致性。
+- **`test_advanced_workflows.py`**: 高级工作流测试。包含动画序列烘焙、UDIM 重新分配以及色彩空间完整性验证。
 
-### 3.2 UI 快速测试 (`tests.py`)
-- **入口**: 插件面板底部的 "Run Test Suite" 按钮。
-- **用途**: 开发过程中在当前 Blender 窗口快速验证逻辑修改。
-- **注意**: 新增测试模块后，必须在 `tests.py` 的导入列表和 `test_modules` 数组中手动注册。
+### 3.2 数据泄露检测 (Data Leak Prevention)
+为了保持插件的轻量性，所有新测试应尽可能使用 `helpers.assert_no_leak` 上下文管理器。该工具已增强，会监控图像、网格、材质、节点组、笔刷、曲线及世界环境等 10 余种数据块，确保所有临时数据已被正确清理。
 
-### 3.3 跨版本自动化测试 (`automation/`) - **金标准**
+### 3.3 UI 快速测试 (`tests.py`)
+- **入口**: 插件面板底部的 "Run Test Suite" 按钮（需在开发模式下）。
+- **注意**: 开发模式下，面板会显示 "Developer Zone"，允许在当前窗口运行全量测试。
+
+### 3.4 跨版本自动化测试 (`automation/`) - **金标准**
 在发布新版本或进行重大重构（如 `BakeStepRunner` 改动）后，**必须**运行此体系。
 - **运行方式**: 外部终端运行 `python automation/multi_version_test.py`。
-- **能力**: 自动调度 D 盘下 3.6 至 5.0 的所有 Blender 版本，并在 Headless 模式下运行全量测试。
-- **注意**: 该系统已解决 Windows 乱码问题，输出结果作为最终验收依据。性能报告会在控制台实时输出。
+- **能力**: 自动调度系统已安装的 3.6 至 5.0 所有 Blender 版本，并在 Headless 模式下运行全量测试。
+- **改进**: 脚本现在能更好地处理路径差异，并提供详细的错误堆栈回溯。性能报告会在控制台实时输出。
 
 ## 4. 开发规范与踩坑记录 (Pitfalls)
 

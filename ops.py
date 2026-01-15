@@ -314,7 +314,18 @@ class BAKETOOL_OT_BakeSelectedNode(bpy.types.Operator):
                     if out:
                         emi = h._add_node(mat, 'ShaderNodeEmission', location=(out.location.x-200, out.location.y))
                         tree.links.new(node.outputs[0], emi.inputs[0]); tree.links.new(emi.outputs[0], out.inputs[0])
-                        bpy.ops.object.bake(type='EMIT', margin=nbs.margin)
+                        
+                        # Version safe bake call
+                        if bpy.app.version >= (5, 0, 0):
+                            if hasattr(context.scene.render, "bake"):
+                                b = context.scene.render.bake
+                                b.type = 'EMIT'
+                                b.margin = nbs.margin
+                                b.target = 'IMAGE_TEXTURES'
+                            bpy.ops.object.bake(type='EMIT')
+                        else:
+                            bpy.ops.object.bake(type='EMIT', margin=nbs.margin)
+                            
                         if nbs.save_outside: save_image(img, nbs.save_path, file_format=nbs.image_settings.save_format)
                         else: img.pack()
         except Exception as e: self.report({'ERROR'}, str(e)); return {'CANCELLED'}

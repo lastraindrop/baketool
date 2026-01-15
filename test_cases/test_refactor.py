@@ -55,17 +55,3 @@ class TestRefactorIntegrity(unittest.TestCase):
         # 验证材质收集是否去重
         all_mats = set(tasks[0].materials)
         self.assertEqual(len(all_mats), 3)
-
-class TestVersionCompatibility(unittest.TestCase):
-    def test_scene_context_mapping(self):
-        """测试 SceneSettingsContext 在不同属性路径下的映射安全性"""
-        from ..core.common import SceneSettingsContext
-        
-        # 模拟 5.0 的 BakeSettings 访问（如果环境支持）
-        ctx = SceneSettingsContext('bake', {'margin': 10})
-        target = ctx._get_target()
-        
-        if hasattr(bpy.context.scene.render, "bake"):
-            self.assertEqual(target, bpy.context.scene.render.bake)
-        else:
-            self.assertEqual(target, bpy.context.scene.render)

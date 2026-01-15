@@ -32,45 +32,26 @@ def run():
         baketool.register()
         print(">>> Addon registered successfully.")
         
-        from baketool.test_cases import (
-            test_presets,
-            test_state,
-            test_logic,
-            test_core,
-            test_integration,
-            test_crash_recovery,
-            test_export_system,
-            test_edge_cases,
-            test_refactor,
-            test_complex_geometry,
-            test_assets_system,
-            test_performance,
-            test_shading_complexity,
-            test_udim_advanced
+        # 使用自动发现机制加载测试 // Use auto-discovery
+        # 关键：discover 需要从包所在的父目录开始，以正确处理相对导入
+        loader = unittest.TestLoader()
+        suite = loader.discover(
+            start_dir=os.path.join(addon_root, "test_cases"),
+            pattern='test_*.py',
+            top_level_dir=parent_dir
         )
         
-        loader = unittest.TestLoader()
-        suite = unittest.TestSuite()
-        modules = [
-            test_presets, test_state, test_logic, 
-            test_core, test_integration, test_crash_recovery, 
-            test_export_system, test_edge_cases, test_refactor,
-            test_complex_geometry, test_assets_system, test_performance,
-            test_shading_complexity, test_udim_advanced
-        ]
-        
-        for module in modules:
-            suite.addTests(loader.loadTestsFromModule(module))
+        print(f">>> Discovered {suite.countTestCases()} tests")
             
         runner = unittest.TextTestRunner(verbosity=2)
         result = runner.run(suite)
         
         # 3. 根据结果退出
         if result.wasSuccessful():
-            print(">>> ALL TESTS PASSED")
+            print("\n>>> ALL TESTS PASSED")
             sys.exit(0)
         else:
-            print(">>> TESTS FAILED")
+            print("\n>>> TESTS FAILED")
             sys.exit(1)
             
     except Exception as e:

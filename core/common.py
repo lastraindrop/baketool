@@ -91,8 +91,27 @@ class SceneSettingsContext:
         self.settings = settings
         self.original = {}
         self.attr_map = {
-            'scene': {'res_x': 'resolution_x', 'res_y': 'resolution_y', 'res_pct': 'resolution_percentage'}
+            'scene': {'res_x': 'resolution_x', 'res_y': 'resolution_y', 'res_pct': 'resolution_percentage'},
+            'bake': {} # Will be populated based on version
         }
+        
+        # Populate bake mapping for different versions
+        if bpy.app.version >= (5, 0, 0):
+            self.attr_map['bake'] = {
+                'margin': 'margin',
+                'use_clear': 'use_clear',
+                'type': 'type',
+                'samples': 'samples',
+                'use_selected_to_active': 'use_selected_to_active'
+            }
+        else:
+            self.attr_map['bake'] = {
+                'margin': 'bake_margin',
+                'use_clear': 'use_bake_clear',
+                'type': 'bake_type',
+                'samples': 'bake_samples',
+                'use_selected_to_active': 'use_bake_selected_to_active'
+            }
 
     def _get_target(self):
         scene = bpy.context.scene
@@ -102,7 +121,7 @@ class SceneSettingsContext:
         if self.category == 'cm': return scene.view_settings
         # 兼容 Blender 5.0 的 BakeSettings 迁移 // Blender 5.0 compatibility
         if self.category == 'bake':
-            if hasattr(scene.render, "bake"): return scene.render.bake # 5.0+
+            if bpy.app.version >= (5, 0, 0): return scene.render.bake # 5.0+
             return scene.render # Legacy
         return None
 

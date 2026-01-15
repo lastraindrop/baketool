@@ -35,3 +35,13 @@ class TestStateManager(unittest.TestCase):
         self.assertEqual(data['status'], 'ERROR')
         self.assertEqual(data['last_error'], "Simulated Error")
         self.assertTrue(self.mgr.has_crash_record())
+
+    def test_corrupted_log_file(self):
+        """测试：日志文件损坏（非 JSON 格式）时的处理"""
+        with open(self.mgr.log_file, 'w') as f:
+            f.write("{ invalid json ... ")
+            
+        self.assertTrue(self.mgr.has_crash_record())
+        data = self.mgr.read_log()
+        self.assertIsNone(data)
+
