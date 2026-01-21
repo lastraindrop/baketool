@@ -78,6 +78,67 @@ def get_job_setting():
     job.setting.bake_mode = 'SINGLE_OBJECT' 
     return job.setting
 
+class JobBuilder:
+    """Fluent API for building Bake Jobs in tests."""
+    def __init__(self, name="TestJob"):
+        self.scene = bpy.context.scene
+        if not hasattr(self.scene, "BakeJobs"):
+            raise RuntimeError("BakeTool addon not registered or property missing.")
+        
+        self.scene.BakeJobs.jobs.clear()
+        self.job = self.scene.BakeJobs.jobs.add()
+        self.job.name = name
+        self.setting = self.job.setting
+        self._defaults()
+
+    def _defaults(self):
+        self.setting.bake_mode = 'SINGLE_OBJECT'
+        self.setting.bake_type = 'BSDF'
+        self.setting.res_x = 128
+        self.setting.res_y = 128
+        # Ensure default channels are reset
+        from ..core import common
+        common.reset_channels_logic(self.setting)
+
+    def mode(self, mode):
+        self.setting.bake_mode = mode
+        return self
+
+    def type(self, bake_type):
+        self.setting.bake_type = bake_type
+        # Reset channels when type changes
+        from ..core import common
+        common.reset_channels_logic(self.setting)
+        return self
+
+    def resolution(self, size):
+        self.setting.res_x = size
+        self.setting.res_y = size
+        return self
+
+    def add_objects(self, objects):
+        if not isinstance(objects, (list, tuple)):
+            objects = [objects]
+        for obj in objects:
+            bo = self.setting.bake_objects.add()
+            bo.bakeobject = obj
+        return self
+
+    def save_to(self, path, format='PNG'):
+        self.setting.save_out = True
+        self.setting.save_path = path
+        self.setting.save_format = format
+        return self
+    
+    def enable_channel(self, channel_id):
+        for c in self.setting.channels:
+            if c.id == channel_id:
+                c.enabled = True
+        return self
+
+    def build(self):
+        return self.job
+
 class DataLeakChecker:
     """Monitors Blender data blocks to ensure no leaks during tests."""
     def __init__(self):

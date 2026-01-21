@@ -187,20 +187,31 @@ class JobPreparer:
                 continue
 
             # In SELECT_ACTIVE mode, only the active (target) object strictly needs UVs.
-            check_list = objs
-            if s.bake_mode == 'SELECT_ACTIVE' and s.active_object:
-                check_list = [s.active_object]
-
-            if missing_uvs := check_objects_uv(check_list):
-                err = f"Job '{job.name}' skipped: Missing UVs on {', '.join(missing_uvs)}"
-                logger.error(err)
-                # 将错误记录到场景状态中，以便 UI 显示 // Log error to scene for UI feedback
-                scene.bake_error_log += err + "\n"
-                continue
+            # High-poly source objects do not need UVs.
+            if s.bake_mode == 'SELECT_ACTIVE':
+                if not s.active_object:
+                    logger.error(f"Job '{job.name}' skipped: No active object target for Select-to-Active.")
+                    continue
+                if missing_uvs := check_objects_uv([s.active_object]):
+                    err = f"Job '{job.name}' skipped: Target object {s.active_object.name} missing UVs."
+                    logger.error(err); scene.bake_error_log += err + "\n"
+                    continue
+            else:
+                if missing_uvs := check_objects_uv(objs):
+                    err = f"Job '{job.name}' skipped: Missing UVs on {', '.join(missing_uvs)}"
+                    logger.error(err); scene.bake_error_log += err + "\n"
+                    continue
 
             active = s.active_object if s.active_object else objs[0]
-            if s.bake_mode == 'SELECT_ACTIVE' and active not in objs:
-                 active = objs[0]
+            # Validation: active object must be a Mesh for baking targets
+            if active and active.type != 'MESH':
+                # Try to find a mesh object in the list as fallback
+                mesh_objs = [o for o in objs if o.type == 'MESH']
+                if mesh_objs:
+                    active = mesh_objs[0]
+                else:
+                    logger.error(f"Job '{job.name}' skipped: No valid Mesh target.")
+                    continue
 
             tasks = TaskBuilder.build(context, s, objs, active)
             channels = JobPreparer._collect_channels(job)
@@ -414,7 +425,9 @@ class BakePassExecutor:
             bpy.ops.object.bake(**params)
             return True
         except Exception as e:
-            logger.warning(f"Bake Fail {chan_id}: {e}")
+            logger.warning(f"Bake Operational Error {chan_id}: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
             return False
 
     @staticmethod

@@ -9,7 +9,8 @@ import json
 from .core.common import (
     apply_baked_result,
     safe_context_override, 
-    reset_channels_logic
+    reset_channels_logic,
+    check_objects_uv
 )
 from .core.image_manager import set_image, save_image
 from .core.uv_manager import UVLayoutManager, detect_object_udim_tile
@@ -172,49 +173,60 @@ class BAKETOOL_OT_QuickBake(bpy.types.Operator):
     bl_label = "Quick Bake Selected"
     
     def execute(self, context):
-        if not context.scene.BakeJobs.jobs:
+        bj = context.scene.BakeJobs
+        if not bj.jobs:
             self.report({'WARNING'}, "No Job settings available to use as template.")
             return {'CANCELLED'}
             
-        job = context.scene.BakeJobs.jobs[context.scene.BakeJobs.job_index]
-        s = job.setting
+        job = bj.jobs[bj.job_index]
         sel_objs = [o for o in context.selected_objects if o.type == 'MESH']
         act_obj = context.active_object if (context.active_object and context.active_object.type == 'MESH') else None
         
         if not sel_objs:
             self.report({'WARNING'}, "Select mesh objects to bake.")
             return {'CANCELLED'}
-            
-        if s.bake_mode == 'SELECT_ACTIVE' and not act_obj:
-            self.report({'WARNING'}, "Active object required for Selected to Active.")
-            return {'CANCELLED'}
-
+        
+        # Consolidate: Create a temporary job/setting mock or update JobPreparer to handle direct inputs
         try:
-            tasks = TaskBuilder.build(context, s, sel_objs, act_obj)
-            channels = JobPreparer._collect_channels(job)
-            if not channels: 
-                self.report({'WARNING'}, "No enabled channels in active job.")
+            # We reuse JobPreparer.prepare_execution_queue by temporarily overriding the job's objects
+            # This ensures all validations (UV, Mesh) are identical to a real bake.
+            orig_objs = [(bo.bakeobject, bo.udim_tile) for bo in job.setting.bake_objects]
+            orig_act = job.setting.active_object
+            
+            job.setting.bake_objects.clear()
+            job.setting.active_object = act_obj
+            for o in sel_objs:
+                if job.setting.bake_mode == 'SELECT_ACTIVE' and o == act_obj: continue
+                no = job.setting.bake_objects.add()
+                no.bakeobject = o
+                from .core.uv_manager import detect_object_udim_tile
+                no.udim_tile = detect_object_udim_tile(o)
+
+            queue = JobPreparer.prepare_execution_queue(context, [job])
+            
+            # Restore
+            job.setting.bake_objects.clear()
+            job.setting.active_object = orig_act
+            for o, tile in orig_objs:
+                no = job.setting.bake_objects.add()
+                no.bakeobject, no.udim_tile = o, tile
+
+            if not queue:
+                self.report({'WARNING'}, "Quick Bake preparation failed (check logs).")
                 return {'CANCELLED'}
-                
-            baked_images = {}
-            task = tasks[0]
-            
-            self.report({'INFO'}, f"Quick Baking: {task.base_name}...")
-            
-            # Create a temporary step object
-            step = BakeStep(job, task, channels, None)
+
             runner = BakeStepRunner(context)
-            results = runner.run(step)
-            
-            for res in results:
-                # Add to UI results if not present
-                ui_results = context.scene.baked_image_results
-                if not any(r.image == res['image'] for r in ui_results):
-                    item = ui_results.add()
-                    item.image = res['image']
-                    item.channel_type = res['type']
-                    item.object_name = res['obj']
-                    item.filepath = res['path'] or ""
+            total = len(queue)
+            for i, step in enumerate(queue):
+                context.scene.bake_status = f"Quick Bake [{i+1}/{total}]"
+                results = runner.run(step)
+                for res in results:
+                    # Add to UI results
+                    ui_results = context.scene.baked_image_results
+                    if not any(r.image == res['image'] for r in ui_results):
+                        item = ui_results.add()
+                        item.image, item.channel_type, item.object_name, item.filepath = \
+                            res['image'], res['type'], res['obj'], res['path'] or ""
 
             self.report({'INFO'}, "Quick Bake Finished.")
             return {'FINISHED'}

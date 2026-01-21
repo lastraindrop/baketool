@@ -54,15 +54,8 @@ def update_channels(self, context):
         self.bake_mode = 'SINGLE_OBJECT'
 
 def get_bake_mode_items(self, context):
-    """Dynamic filter for bake modes, with a fallback for registration time."""
-    try:
-        if self.bake_type == 'BSDF':
-            return [i for i in BAKE_MODES if i[0] != 'SELECT_ACTIVE']
-    except (AttributeError, TypeError):
-        # Fallback for registration time when 'self' is not yet fully formed
-        # or when properties are being initialized.
-        pass
-    # Return the full list if bake_type isn't 'BSDF' or on fallback.
+    """Dynamic filter for bake modes."""
+    # We now allow SELECT_ACTIVE in both BASIC and BSDF modes.
     return BAKE_MODES
 
 # --- Property Group Classes ---

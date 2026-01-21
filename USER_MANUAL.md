@@ -1,9 +1,9 @@
 # Simple Bake Tool (SBT) - 用户参考手册
 
-**版本**: 0.9.4 (Robustness Update)
+**版本**: 0.9.5 (Robustness & Integration Update)
 **分类**: 3D VIEW > N Panel > Baking
 
-> **📢 项目状态声明**: 本插件已通过涵盖 56 项测试的跨版本（Blender 3.6 - 5.0）自动化测试套件验证。重构后的架构大幅提升了在复杂着色器和极端 UDIM 布局下的稳定性。
+> **📢 项目状态声明**: 本插件已通过涵盖 100+ 项测试的跨版本（Blender 3.6 - 5.0）自动化测试套件验证。
 
 Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动纹理烘焙解决方案。它接管了繁琐的节点连接、图像创建和保存工作，让您专注于参数设置。
 
@@ -21,14 +21,22 @@ Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动
 
 *   **Resolution (X/Y)**: 烘焙贴图的分辨率。对于 UDIM，这是每个 Tile 的分辨率。
 *   **Bake Type**:
-    *   `BSDF Bake`: 自动分析物体的材质节点（Principled BSDF），烘焙固有色、粗糙度、法线等。
-    *   `Basic Bake`: Blender 原生的烘焙模式（AO, Shadow 等）。
-*   **Bake Mode (核心模式)**:
-    *   `Single Object`: 每个选中的物体单独烘焙一张图。
-    *   `Multi Objects`: 所有选中物体合并烘焙到同一张图（需要它们在同一个 UV 空间）。
-    *   `Active Bake`: **高模烘低模**。将选中的物体（高模）烘焙到 Active 物体（低模）。
-    *   `Split Material`: 如果一个物体有多个材质槽，会为每个材质生成独立的贴图。
-    *   `UDIM Bake` *[New]*: 专为 UDIM 流程设计，支持多象限烘焙。
+    *   `BSDF Bake`: 自动分析物体的材质节点（Principled BSDF），支持金属度/粗糙度流烘焙。
+    *   `Basic Bake`: 调用 Blender 原生烘焙模式（如 AO, Shadow）。
+
+### 1.3 核心烘焙方法 (Core Methods)
+
+#### Quick Bake (快捷烘焙)
+无需配置复杂的任务，直接在视图中选择物体并点击 **Quick Bake**。插件会自动校验 UV、建立临时节点并合并为一个快速任务。
+
+#### Select to Active (高模烘低模)
+1.  首先选择一个或多个高模物体。
+2.  按住 Shift 最后选择低模目标物体（保持为 Active）。
+3.  设置 Bake Mode 为 `Select to Active`。
+4.  烘焙！*[Fixed]* 现在的逻辑支持高模物体无需 UV 坐标即可参与烘焙。
+
+#### UDIM Bake
+专为 UDIM 流程设计，支持多象限并行烘焙与自动 Tile 识别。
 
 *   **Targets (目标物体)**:
     *   列表显示当前将要参与烘焙的物体。

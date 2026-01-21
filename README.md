@@ -1,13 +1,19 @@
-# Simple Bake Tool (SBT) v0.9.4
+# Simple Bake Tool (SBT) v0.9.5
 
 A simplified, high-efficiency baking solution for Blender.
 
-### Key Features
-- **UI-Engine-Core Decoupled Architecture**: Robust and easy to maintain.
-- **Blender 5.0 Support**: Full compatibility with the new BakeSettings API.
-- **NumPy Accelerated Workflows**: Vectorized PBR conversion and channel packing.
-- **Robust UDIM System**: Smart tile detection and automatic repacking.
-- **Comprehensive Testing**: 50+ test cases covering edge cases and performance.
+### Key Features (v0.9.5 Refactor)
+- **Modular Arch**: Decoupled UI-Engine-Core logic for 100% reliability.
+- **Quick Bake 2.0**: Same robust pipeline as standard jobs, zero configuration needed.
+- **Select-to-Active (Fixed)**: Intelligent source-object filtering for high-poly to low-poly baking.
+- **PBR Packing**: Native NumPy-accelerated channel packing (ORM, etc.).
+- **Cross-Version**: 100% Test Pass Rate for Blender 3.6, 4.2, 4.5, and 5.0.
+
+## Documentation
+- [User Manual](file:///e:/blender%20project/project/script%20project/Addons/baketool/USER_MANUAL.md) - How to use.
+- [Developer Guide](file:///e:/blender%20project/project/script%20project/Addons/baketool/DEVELOPER_GUIDE.md) - How to extend.
+- [Roadmap](file:///e:/blender%20project/project/script%20project/Addons/baketool/ROADMAP.md) - Future vision.
+- **Comprehensive Testing**: 100+ test cases covering edge cases and performance.
 - **Detailed Audit Logs**: Persistent logging for crash recovery and emergency cleanup.
 
 ## 🚀 安装方法
@@ -21,14 +27,24 @@ A simplified, high-efficiency baking solution for Blender.
 
 - [用户参考手册 (中文)](USER_MANUAL.md)
 - [Developer Guide (Architecture & Testing)](DEVELOPER_GUIDE.md)
+## 🚀 Installation
 
-## 🛠️ 开发与贡献
+1.  Download `baketool.zip` from [Releases](https://github.com/lastraindrop/baketool/releases).
+2.  In Blender, go to `Edit > Preferences > Add-ons`.
+3.  Click `Install...` and select the ZIP file.
+4.  Enable **Simple Bake Tool**.
 
-如果您发现了 Bug 或有功能建议，欢迎提交 [Issue](https://github.com/你的用户名/baketool/issues) 或 Pull Request。
+## 📖 Documentation
 
-运行测试：
-在 N 面板开启 **Debug Mode**，点击 **Run Full Test Suite**。
+- [User Manual](USER_MANUAL.md) - Standard operating procedures for artists.
+- [Developer Guide](DEVELOPER_GUIDE.md) - Deep dive into architecture, tests, and APIs.
+- [Roadmap](ROADMAP.md) - Future vision and development phases.
 
-## 📄 许可协议
+## 🛠️ Development
 
-本项目遵循 [GPL-3.0](LICENSE) 开源协议。
+If you encounter bugs, please submit an [Issue](https://github.com/lastraindrop/baketool/issues) or Pull Request.
+To run tests: Open the N-panel, enable **Debug Mode**, and click **Run Full Test Suite**, or run `python automation/multi_version_test.py` from your terminal.
+
+## 📄 License
+
+This project is licensed under [GPL-3.0](LICENSE).

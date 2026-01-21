@@ -67,7 +67,11 @@ def main():
                 print(f"{ver_display:<45} | \033[92mPASS\033[0m       | All tests cleared")
                 results.append((ver_display, "PASS", ""))
             else:
-                print(f"{ver_display:<45} | \033[91mFAIL\033[0m       | Check logs")
+                print(f"{ver_display:<45} | \033[91mFAIL\033[0m       | Check details below")
+                print("-" * 40)
+                print(stdout)
+                print(stderr)
+                print("-" * 40)
                 results.append((ver_display, "FAIL", stdout[-1000:] + "\n" + stderr))
                 
         except Exception as e:

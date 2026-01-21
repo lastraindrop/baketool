@@ -4,7 +4,7 @@ import os
 import tempfile
 import shutil
 import numpy as np
-from .helpers import cleanup_scene, create_test_object, get_job_setting
+from .helpers import cleanup_scene, create_test_object, get_job_setting, JobBuilder
 from ..core import common, uv_manager, image_manager
 from .. import ops
 from ..constants import CHANNEL_BAKE_INFO
@@ -18,27 +18,21 @@ class TestFullBakeIntegration(unittest.TestCase):
         if os.path.exists(self.temp_dir): shutil.rmtree(self.temp_dir)
 
     def test_complete_bake_workflow(self):
+        """Test a standard single object bake workflow."""
         obj = create_test_object("Integrate_Obj", color=(1, 0, 0, 1))
-        scene = bpy.context.scene
-        bj = scene.BakeJobs
-        bj.jobs.clear()
-        job = bj.jobs.add()
-        s = job.setting
         
-        bo = s.bake_objects.add()
-        bo.bakeobject = obj
+        # Use Builder for clearer setup
+        job = (JobBuilder("IntegrationJob")
+               .mode('SINGLE_OBJECT')
+               .type('BSDF')
+               .resolution(64)
+               .add_objects(obj)
+               .save_to(self.temp_dir, 'PNG')
+               .enable_channel('color')
+               .build())
         
-        s.bake_mode = 'SINGLE_OBJECT'
-        s.name_setting = 'OBJECT' 
-        s.res_x, s.res_y = 64, 64
-        s.save_out = True
-        s.save_path = self.temp_dir
-        s.save_format = 'PNG'
-        s.bake_type = 'BSDF'
-        
-        common.reset_channels_logic(s)
-        for c in s.channels:
-            c.enabled = (c.id == 'color')
+        # Ensure only color is enabled (Builder enables it, but let's be sure others are off if needed)
+        # The builder reset logic handles defaults.
 
         # Use the same logic as BAKETOOL_OT_BakeOperator
         queue = ops.JobPreparer.prepare_execution_queue(bpy.context, [job])
@@ -47,18 +41,57 @@ class TestFullBakeIntegration(unittest.TestCase):
         
         # Call the production runner
         runner = ops.BakeStepRunner(bpy.context)
-        results = runner.run(step)
+        runner.run(step)
         
-        # 期望的图像名称 // Expected image name
+        # Expected image name
         expected_img_name = f"{step.task.base_name}_color"
         
         self.assertIn(expected_img_name, bpy.data.images)
         expected_file = os.path.join(self.temp_dir, f"{expected_img_name}.png")
         self.assertTrue(os.path.exists(expected_file))
 
-        self.assertIn(expected_img_name, bpy.data.images)
-        expected_file = os.path.join(self.temp_dir, f"{expected_img_name}.png")
-        self.assertTrue(os.path.exists(expected_file))
+    def test_configuration_matrix(self):
+        """Matrix test for various bake configurations to ensure stability."""
+        modes = ['SINGLE_OBJECT', 'COMBINE_OBJECT']
+        types = ['BSDF', 'BASIC']
+        
+        obj = create_test_object("MatrixObj")
+        
+        for mode in modes:
+            for b_type in types:
+                with self.subTest(mode=mode, type=b_type):
+                    # Setup using Builder
+                    builder = (JobBuilder(f"Matrix_{mode}_{b_type}")
+                               .mode(mode)
+                               .type(b_type)
+                               .resolution(32)
+                               .add_objects(obj)
+                               .save_to(self.temp_dir))
+                    
+                    if mode == 'COMBINE_OBJECT':
+                        obj2 = create_test_object(f"MatrixObj2_{mode}_{b_type}")
+                        builder.add_objects(obj2)
+                        
+                    job = builder.build()
+                    
+                    # Execute
+                    try:
+                        queue = ops.JobPreparer.prepare_execution_queue(bpy.context, [job])
+                        if not queue:
+                            self.fail("Queue generation failed")
+                        
+                        runner = ops.BakeStepRunner(bpy.context)
+                        for step in queue:
+                            runner.run(step)
+                            
+                    except Exception as e:
+                        import traceback
+                        traceback.print_exc()
+                        self.fail(f"Crash in configuration {mode}/{b_type}: {e}")
+                    
+                    # Cleanup images to keep memory low
+                    for img in list(bpy.data.images):
+                        if img.users == 0: bpy.data.images.remove(img)
 
 class TestQuickBakeLogic(unittest.TestCase):
     def setUp(self):

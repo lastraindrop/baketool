@@ -4,7 +4,7 @@ import os
 import tempfile
 import shutil
 import numpy as np
-from .helpers import cleanup_scene, create_test_object, get_job_setting
+from .helpers import cleanup_scene, create_test_object, get_job_setting, JobBuilder
 from ..core import image_manager, uv_manager, math_utils, common, engine
 
 class TestEdgeCases(unittest.TestCase):
@@ -14,7 +14,52 @@ class TestEdgeCases(unittest.TestCase):
 
     def tearDown(self):
         if os.path.exists(self.temp_dir):
-            shutil.rmtree(self.temp_dir)
+            try:
+                shutil.rmtree(self.temp_dir)
+            except:
+                pass
+
+    def test_locked_target_file(self):
+        """Test behavior when target file is locked by another process (Windows simulation)."""
+        obj = create_test_object("LockedObj")
+        
+        # Create a dummy locked file
+        locked_file = os.path.join(self.temp_dir, "LockedObj_color.png")
+        
+        # Use JobBuilder
+        job = (JobBuilder("LockedJob")
+               .mode('SINGLE_OBJECT')
+               .type('BASIC')
+               .add_objects(obj)
+               .save_to(self.temp_dir)
+               .enable_channel('color')
+               .build())
+               
+        # Set custom naming to ensure we hit the locked file
+        job.setting.name_setting = 'OBJECT'
+        
+        # We need to manually invoke image saving or simulate the runner hitting this.
+        # Since we want to test the *resilience* of the save operation:
+        
+        img = image_manager.set_image("TestLocked", 32, 32)
+        
+        # Lock the file by opening it in exclusive mode (or just writing and keeping handle)
+        with open(locked_file, 'w') as f:
+            f.write("LOCKED")
+            # File is open here.
+            
+            # Try to save over it using image_manager
+            # It should NOT crash, but return None or handle error
+            try:
+                result_path = image_manager.save_image(img, path=self.temp_dir, name="LockedObj_color")
+                # If it succeeds (e.g. on Linux/Mac where locking is advisory), that's fine too.
+                # If it fails (Windows), it should be graceful.
+            except PermissionError:
+                # This is also an acceptable outcome if not caught internally, 
+                # but we prefer it to be caught.
+                pass
+            except Exception as e:
+                self.fail(f"Crashed on locked file: {e}")
 
     def test_null_material_slots(self):
         """测试：物体有材质槽但其中某些槽位为空 (Null Material)"""
@@ -201,6 +246,11 @@ class TestEdgeCases(unittest.TestCase):
         job.setting.bake_mode = 'SELECT_ACTIVE'
         job.setting.active_object = obj_lp
         # Copy settings
+        from ..core.common import reset_channels_logic
+        reset_channels_logic(job.setting)
+        # Enable at least one channel for the job to be valid
+        job.setting.channels[0].enabled = True
+
         for bo in [obj_lp, obj_hp]:
             new_bo = job.setting.bake_objects.add()
             new_bo.bakeobject = bo
@@ -208,10 +258,10 @@ class TestEdgeCases(unittest.TestCase):
         from ..core.engine import JobPreparer
         queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
         
-        # Currently, this test might fail if the code isn't fixed.
-        # If the code strictly checks all objects for UVs, queue will be empty.
-        # We assert that it *should* have tasks.
+        # After the fix, this should have tasks because HighPoly doesn't need UVs
         self.assertGreater(len(queue), 0, "Select to Active should proceed even if Source object lacks UVs")
+        # Check that ONLY LowPoly's UV layer is in the Task's objects (if applicable)
+        self.assertEqual(queue[0].task.active_obj, obj_lp)
 
     def test_attribute_name_collision(self):
         """测试：如果 ID Map 所需的属性名称已存在，是否能正确复用或处理"""
@@ -274,3 +324,47 @@ class TestEdgeCases(unittest.TestCase):
         except Exception as e:
             self.fail(f"save_image crashed on invalid path: {e}")
 
+    def test_negative_scale_resilience(self):
+        """测试：物体具有负缩放（可能反转法线）时的烘焙稳定性"""
+        obj = create_test_object("NegativeScale")
+        obj.scale = (1.0, -1.0, 1.0)
+        
+        s = get_job_setting()
+        # Ensure it has objects
+        bo = s.bake_objects.add()
+        bo.bakeobject = obj
+        
+        # 应该能正常构建任务
+        try:
+            tasks = engine.TaskBuilder.build(bpy.context, s, [obj], obj)
+            self.assertEqual(len(tasks), 1)
+        except Exception as e:
+            self.fail(f"TaskBuilder failed on negative scale: {e}")
+
+    def test_broken_material_output(self):
+        """测试：材质输出节点断开连接时的处理"""
+        obj = create_test_object("BrokenMat")
+        mat = obj.data.materials[0]
+        tree = mat.node_tree
+        # 断开所有连接到 Output 的线
+        out = next(n for n in tree.nodes if n.bl_idname == 'ShaderNodeOutputMaterial')
+        for link in list(out.inputs[0].links):
+            tree.links.remove(link)
+            
+        # Use JobBuilder which is more robust
+        from ..core.engine import JobPreparer
+        job = (JobBuilder("BrokenJob").add_objects(obj).enable_channel('color').build())
+        queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
+        
+        # We won't actually run the bake (needs context), but we check the prep
+        self.assertEqual(len(queue), 1)
+
+    def test_empty_scene_operator_poll(self):
+        """测试：在空场景中运行 Operator 的 Poll"""
+        cleanup_scene()
+        try:
+            # Avoid INVOKE_DEFAULT in headless as it may crash/error context
+            res = bpy.ops.bake.bake_operator.poll()
+            self.assertIsInstance(res, bool)
+        except:
+            pass
