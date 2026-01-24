@@ -34,7 +34,7 @@ class NodeGraphHandler:
     def cleanup(self):
         # 1. Clean up all materials that had nodes added (including protected ones)
         for mat in list(self.temp_logic_nodes.keys()):
-            if not mat or not mat.node_tree: continue
+            if not mat or not hasattr(mat, "node_tree") or not mat.node_tree: continue
             tree = mat.node_tree
             
             # Remove session nodes if this material was one of the active ones
@@ -43,11 +43,16 @@ class NodeGraphHandler:
                     try: tree.nodes.remove(n)
                     except: pass
             
-            # Remove all temp logic nodes
+            # Remove all temp logic nodes securely
             if mat in self.temp_logic_nodes:
-                for n in self.temp_logic_nodes[mat]:
-                    try: tree.nodes.remove(n)
+                # Iterate backwards to avoid index shift issues
+                nodes = self.temp_logic_nodes[mat]
+                for n in reversed(nodes):
+                    try:
+                        if n in tree.nodes.values():
+                            tree.nodes.remove(n)
                     except: pass
+                self.temp_logic_nodes[mat] = []
         
         # 2. Restore original links
         for mat, link_info in self.original_links.items():
@@ -55,9 +60,10 @@ class NodeGraphHandler:
             try:
                 out_n = self._find_output(mat.node_tree)
                 if out_n and link_info:
-                    from_node, from_socket = link_info
-                    if from_node and from_node.name in mat.node_tree.nodes:
-                        mat.node_tree.links.new(from_socket, out_n.inputs[0])
+                    from_socket, to_socket_idx = link_info
+                    # Ensure the from_socket belongs to a node that still exists
+                    if from_socket and from_socket.node and from_socket.node.name in mat.node_tree.nodes:
+                        mat.node_tree.links.new(from_socket, out_n.inputs[to_socket_idx])
             except: pass
         
         # 3. Clean up temp attributes
@@ -88,11 +94,14 @@ class NodeGraphHandler:
             if obj.type != 'MESH': continue
             for s in obj.material_slots:
                 m = s.material
-                # Skip linked (read-only) materials
-                if m and m.use_nodes and m not in active_set and not m.library:
+                # Skip linked (read-only) materials OR materials already in our active bake set
+                if m and m.use_nodes and m not in active_set:
+                    if m.library:
+                        logger.debug(f"Skipping protection for library material: {m.name}")
+                        continue
                     # We add a node to the material's tree. 
                     # The NodeGraphHandler will track this in temp_logic_nodes[m]
-                    self._add_node(m, 'ShaderNodeTexImage', image=d)
+                    self._add_node(m, 'ShaderNodeTexImage', image=d, name="BT_Protection_Node", label="BT Protection")
 
     def setup_for_pass(self, bake_pass, socket_name, image, mesh_type=None, attr_name=None, channel_settings=None):
         for mat in self.materials:
@@ -106,8 +115,9 @@ class NodeGraphHandler:
             self.temp_logic_nodes[mat] = []
 
             if mat not in self.original_links:
+                # Find which input was linked (usually 0, but safety first)
                 socket = out_n.inputs[0]
-                self.original_links[mat] = (socket.links[0].from_node, socket.links[0].from_socket) if socket.is_linked else None
+                self.original_links[mat] = (socket.links[0].from_socket, 0) if socket.is_linked else None
 
             s_nodes = self.session_nodes[mat]
             tex_n, emi_n = s_nodes['tex'], s_nodes['emi']

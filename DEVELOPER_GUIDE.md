@@ -6,69 +6,54 @@
 
 The project follows a strict **UI-Engine-Core** three-layer decoupling principle:
 
-1.  **UI/Operator Layer** (`ops.py`, `ui.py`): Defined by properties and UI layout. Minimal logic, delegates execution to the Engine layer.
+1.  **UI/Operator Layer** (`ops.py`, `ui.py`): 
+    *   **BakeModalOperator**: 抽象混合类，统一了模态执行逻辑、进度管理、序列追踪及崩溃日志记录。
+    *   **RuntimeProxy**: 为 Quick Bake 提供内存代理，确保实时执行不修改 `Scene` 的持久化预设。
 2.  **Engine Layer** (`core/engine.py`): The orchestrator.
-    *   `JobPreparer`: Validates inputs, calculates image resolutions, and prepares the execution queue.
-    *   `TaskBuilder`: Abstracts complex Blender object selections into atomic bake tasks.
-    *   `BakeStepRunner`: Manages the iterative execution of `bpy.ops.object.bake` within a secured context.
-3.  **Core Layer** (`core/`): stateless utility modules for UVs, Math, and Image management.
+    *   `JobPreparer`: 验证输入并准备执行队列。支持 Proxy 模式。
+    *   `TaskBuilder`: 将复杂的 Blender 选择抽象为原子烘焙任务。
+    *   `BakeStepRunner`: 核心执行核心。管理 `bpy.ops.object.bake` 的迭代执行，并提供实时状态反馈。
+3.  **Core Layer** (`core/`): 无状态工具模块（UV, Math, Image, Node）。
 
 ---
 
 ## 2. Technical Feature Breakdown
 
 ### 2.1 Principled BSDF Analysis
-The `NodeGraphHandler` automatically identifies the Principled BSDF node in materials. It maps physical sockets (Base Color, Metallic, etc.) to bake passes. If no target BSDF is found, it falls back to analyzing the emission output.
+`NodeGraphHandler` 自动识别 Principled BSDF 节点。支持 4.0+ 的插槽更名适配。
 
 ### 2.2 NumPy Acceleration
-Critical paths like **PBR Conversion** and **Channel Packing** are vectorized using NumPy. This allows BakeTool to process 8K images with minimal CPU overhead.
+PBR 转换和通道打包使用 NumPy 向量化计算。支持在 8K 分辨率下保持极低 CPU 开销。
 
-### 2.3 Select to Active (High-to-Low)
-The `SELECT_ACTIVE` workflow is handled intelligently in `JobPreparer`. It only validates UVs on the active target object, allowing high-poly source objects to be UV-less. 
+### 2.3 Smart Object Reuse (Post-Bake)
+`apply_baked_result` 会检测现有的 `_Baked` 结果物体并执行 `refresh_mesh` 原地更新材质，而非创建重复的 Object 容器。
+
+### 2.4 Select to Active (High-to-Low)
+`SELECT_ACTIVE` 工作流由 `JobPreparer` 智能处理。仅验证 Active 物体的 UV，允许高模源物体无需 UV 坐标。
+
+---
+
+## 3. Testing Suite
 ### 3.1 单元测试用例 (`test_cases/`)
-所有的业务逻辑（命名、任务拆分、NumPy 计算）必须在 `test_cases/` 下有对应的 `test_xxx.py`。
-- **`test_stress_scenarios.py`**: 压力测试。验证 100+ 物体、深层材质槽及极限目录深度的导出稳定性。
-- **`test_production_hazards.py`**: *[New]* 生产环境风险测试。验证只读路径、外部链接数据及损坏网格（NaN）的韧性。
-- **`test_ui_poll.py`**: UI 上下文测试。验证 Operator 的 `poll()` 逻辑在不同场景下的正确性。
-...
-### 3.5 测试辅助工具 (`helpers.py`)
-- **`JobBuilder`**: *[New]* 链式辅助类。推荐在编写新测试时使用它来快速构建 Job 场景。
-    ```python
-    job = JobBuilder("MyTest").mode('UDIM').resolution(2048).add_objects(objs).build()
-    ```
-
-
-
-### 3.2 数据泄露检测 (Data Leak Prevention)
-为了保持插件的轻量性，所有新测试应尽可能使用 `helpers.assert_no_leak` 上下文管理器。该工具已增强，会监控图像、网格、材质、节点组、笔刷、曲线及世界环境等 10 余种数据块，确保所有临时数据已被正确清理。
-
-### 3.3 UI 快速测试 (`tests.py`)
-- **入口**: 插件面板底部的 "Run Test Suite" 按钮（需在开发模式下）。
-- **注意**: 开发模式下，面板会显示 "Developer Zone"，允许在当前窗口运行全量测试。
+- **`test_quick_bake.py`**: 验证代理模式。确保 Quick Bake 运行后 `Scene.BakeJobs` 无任何残留修改。
+- **`test_versioning.py`**: 验证 3.6 - 5.0 的属性映射逻辑。
 
 ### 3.4 跨版本自动化测试 (`automation/`) - **金标准**
-在发布新版本或进行重大重构（如 `BakeStepRunner` 改动）后，**必须**运行此体系。
-- **运行方式**: 外部终端运行 `python automation/multi_version_test.py`。
-- **能力**: 自动调度系统已安装的 3.6 至 5.0 所有 Blender 版本，并在 Headless 模式下运行全量测试。
-- **改进**: 脚本现在能更好地处理路径差异，并提供详细的错误堆栈回溯。性能报告会在控制台实时输出。
-- **[New] Reports**: 自动化脚本现在会在 `reports/` 目录下生成 ASCII 格式的测试报告，方便导出参考。
+- **要求**: 在发布重构（如 `BakeModalOperator` 改动）后，必须运行全量跨版本测试。
+- **报告**: 脚本在 `reports/` 目录下生成 ASCII 测试报告。
 
 ## 4. 开发规范与踩坑记录 (Pitfalls)
 
 ### 4.1 属性类型安全
-- **规范**: 从 `PropertyGroup` 获取数值后，参与数学运算前务必显式转换，例如 `int(setting.res_x)`。
+- **EnumProperty**: 当 `items` 参数使用函数回调时，`default` **必须是整数索引**。若使用静态列表，可直接使用标识符字符串。
 
 ### 4.2 材质保护节点
-- **机制**: 烘焙期间会向非活跃材质注入 `BT_Protection_Dummy` 贴图节点。
-- **清理**: 若发生异常崩溃，用户应运行 `bake.emergency_cleanup`。开发新功能时需确保该操作符能覆盖新的临时数据。
+- **库链接材质**: `NodeGraphHandler` 在注入保护节点前会检查 `mat.library`。如果是链接资产，则自动跳过以防止权限崩溃。
 
 ## 5. Iteration Plan & Roadmap
 
-Our development is now moving from "Refactoring" to "Feature Expansion".
-
 - [x] **Modular Engine**: Unified `BakeStepRunner` pipeline.
-- [x] **Cross-Version Suite**: Headless automation for Blender 3.6 - 5.0.
+- [x] **Zero-Side-Effect Quick Bake**: Implemented via Runtime Proxies.
+- [x] **Smart Object Reuse**: Reduce scene clutter and memory usage.
 - [ ] **Interactive Preview**: Live viewport feedback for packing results.
 - [ ] **Auto-Cage 2.0**: Smart proximity-based cage generation.
-
-For the full architectural vision, see the [Roadmap](ROADMAP.md).

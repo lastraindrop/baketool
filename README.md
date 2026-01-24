@@ -1,20 +1,20 @@
 # Simple Bake Tool (SBT) v0.9.5
 
-A simplified, high-efficiency baking solution for Blender.
+A simplified, high-efficiency baking solution for Blender. 
 
 ### Key Features (v0.9.5 Refactor)
-- **Modular Arch**: Decoupled UI-Engine-Core logic for 100% reliability.
-- **Quick Bake 2.0**: Same robust pipeline as standard jobs, zero configuration needed.
-- **Select-to-Active (Fixed)**: Intelligent source-object filtering for high-poly to low-poly baking.
-- **PBR Packing**: Native NumPy-accelerated channel packing (ORM, etc.).
+- **Modular Arch**: Decoupled UI-Engine-Core logic using `BakeModalOperator`.
+- **Zero-Side-Effect Quick Bake**: Powered by Runtime Proxies—bake selected objects without modifying your scene presets.
+- **Smart Object Reuse**: Automatically updates existing `_Baked` objects instead of duplicating mesh data.
+- **Production Resilience**: Intelligent handling of Library Linked assets and NaN mesh data.
 - **Cross-Version**: 100% Test Pass Rate for Blender 3.6, 4.2, 4.5, and 5.0.
 
 ## Documentation
-- [User Manual](file:///e:/blender%20project/project/script%20project/Addons/baketool/USER_MANUAL.md) - How to use.
-- [Developer Guide](file:///e:/blender%20project/project/script%20project/Addons/baketool/DEVELOPER_GUIDE.md) - How to extend.
-- [Roadmap](file:///e:/blender%20project/project/script%20project/Addons/baketool/ROADMAP.md) - Future vision.
-- **Comprehensive Testing**: 100+ test cases covering edge cases and performance.
-- **Detailed Audit Logs**: Persistent logging for crash recovery and emergency cleanup.
+- [User Manual](USER_MANUAL.md) - How to use.
+- [Developer Guide](DEVELOPER_GUIDE.md) - How to extend.
+- [Roadmap](ROADMAP.md) - Future vision.
+- **Comprehensive Testing**: 110+ test cases covering edge cases and multi-version APIs.
+- **Detailed Audit Logs**: Persistent logging for emergency cleanup actions.
 
 ## 🚀 安装方法
 

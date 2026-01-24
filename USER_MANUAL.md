@@ -27,112 +27,46 @@ Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动
 ### 1.3 核心烘焙方法 (Core Methods)
 
 #### Quick Bake (快捷烘焙)
-无需配置复杂的任务，直接在视图中选择物体并点击 **Quick Bake**。插件会自动校验 UV、建立临时节点并合并为一个快速任务。
+无需配置复杂的任务，直接在视图中选择物体并点击 **Quick Bake**。
+*   **零副作用**: *[New]* 现在的 Quick Bake 使用内存代理执行，不会修改你当前面板上的 Job 设置或场景预设。
 
 #### Select to Active (高模烘低模)
 1.  首先选择一个或多个高模物体。
 2.  按住 Shift 最后选择低模目标物体（保持为 Active）。
 3.  设置 Bake Mode 为 `Select to Active`。
-4.  烘焙！*[Fixed]* 现在的逻辑支持高模物体无需 UV 坐标即可参与烘焙。
+4.  烘焙！现在支持高模物体无需 UV 坐标即可参与烘焙。
 
 #### UDIM Bake
 专为 UDIM 流程设计，支持多象限并行烘焙与自动 Tile 识别。
-
-*   **Targets (目标物体)**:
-    *   列表显示当前将要参与烘焙的物体。
-    *   **Smart Set (Active Bake 专用)**: 一键将当前选中的物体设为高模，最后选中的设为低模（Active），自动配置列表。
-
-### 1.3 UDIM Workflow (UDIM 工作流)
-*   **智能检测 (Robust Detect)**: *[Improved]* 现在的检测算法支持非标准 UV 范围过滤。即使 UV 坐标超出了 0-10 的标准 UDIM 范围，插件也会智能过滤掉干扰点，准确识别主象限。
-*   **硬件限制保护**: *[New]* 针对 Blender 每个物体最多 8 个 UV 层的硬件限制，插件增加了前置检查。如果层数已满，插件会记录错误并提示用户，防止崩溃。
-
-*   **Method (处理方式)**:
-    *   `Use Existing UVs (Detect)`: 默认模式。插件会自动检测每个物体 UV 所在的象限（如 1001, 1002），并烘焙到对应的 Tile 上。**前提**: 你已经手动分好了 UV。
-    *   `Auto Repack 0-1`: 自动打包模式。如果你的物体 UV 都在 0-1 (1001) 空间重叠，选择此模式会自动将它们分配到 1001, 1002, 1003... 等空闲 Tile 上。
-    *   `Custom List`: 手动模式。你可以在上方的物体列表中，手动指定每个物体应该去哪个 Tile (1001-1099)。
-*   **Output**: 烘焙结果会自动保存为带 `<UDIM>` 标记的文件序列（如 `Color.1001.png`, `Color.1002.png`）。
 
 ---
 
 ## 2. Channel List (通道列表)
 
-这是 SBT 的核心。在这里勾选你需要输出的贴图类型。
-
-### 2.1 PBR Data (物理属性)
-*   **高级着色器支持**: *[New]* 除了标准 `Principled BSDF`，现在支持直接使用 `Emission` 或其他基础着色器节点。如果检测不到物理着色器，插件会自动向上寻找发射信息或回退到材质基础色。
-
-基于 Principled BSDF 的输入。
-*   `Base Color`, `Metallic`, `Roughness`, `Normal`, `Emission`, `Alpha` 等。
-*   **注意**: 如果你的材质没有连接某个属性（如 Metallic），插件会自动给出一个默认值（如纯黑）。
-
-### 2.2 Light / Render (光照结果)
-需要 Cycles 渲染计算。
-*   `Diffuse`, `Glossy`, `Transmission`: 包含光照影响的最终渲染结果。
-*   `AO (Ambient Occlusion)`: 环境光遮蔽。
-*   `Shadow`: 阴影通道。
-
-### 2.3 Mesh Maps (网格数据)
-不依赖材质，只依赖模型几何结构。常用于贴图制作软件（如 Substance Painter）。
-
-*   **Curvature (曲率图)**:
-    *   检测模型的边缘和缝隙。
-    *   **Samples**: 采样数。越高越平滑，噪点越少（推荐 6-12）。
-    *   **Radius**: 边缘检测范围。值越大，白边越宽。
-    *   **Contrast**: 对比度。值越大，边缘越锐利。
-*   **ID Map (蒙版图)**:
-    *   用于区分模型的不同部分。
-    *   **Type**: 可按 Material（材质）、Element（独立的网格块）、UV Island（UV 岛）或 Seam（缝合线）着色。
-    *   **Random Seed (随机种子)**: *[重要]* 指定一个整数。**只要种子不变，生成的 ID 颜色永远固定**。建议设置为非 0 值以保证流程可复现。
-*   **Thickness**: 厚度图（基于 SSS 原理）。
-*   **Bevel**: 仅烘焙倒角法线。
-
-### 2.4 Extension Maps (PBR 流程转换)
-用于将 **Specular/Glossiness** 流程的材质转换为 **Metal/Roughness** 流程。
-
-*   `Conv: Metallic`: 从 Specular 贴图计算金属度。
-*   `Conv: Base Color`: 混合 Diffuse 和 Specular。
-*   **F0 Threshold (介电阈值)**:
-    *   默认 `0.04`。
-    *   用于区分“非金属”和“金属”。如果你的金属贴图出来太黑，尝试降低此值；如果塑料变成了金属，尝试提高此值。
-*   **Numpy 加速**: 如果你同时烘焙了源通道（Color + Specular）和转换通道，插件会使用内存计算，**速度提升 100 倍**。
+这是 SBT 的核心。在这里勾选你需要输出的贴图类型。支持 PBR 数据、光照结果、网格地图（Curvature, ID Map, Thickness 等）以及 PBR 流程转换。
 
 ---
 
 ## 3. Save & Export (保存与输出)
 
-*   **Save Output**: 勾选后，烘焙结果会自动保存到磁盘。如果不勾选，结果只保存在 Blender 内部内存中（未打包，关闭软件会丢失）。
+*   **Apply to Scene (应用到场景)**: 勾选后，插件会创建一个带有 `_Baked` 后缀的新物体并赋予烘焙好的材质。
+    *   **智能更新**: *[New]* 如果场景中已经存在该结果物体，插件会直接更新其材质和网格，而不会重复创建新的物体，保持场景整洁并节省内存。
+*   **External Save**: 勾选后，烘焙结果会自动保存到磁盘。支持 PNG, JPG, EXR, TIFF 等格式。
 *   **Path**: 输出目录。支持相对路径 `//`。
-*   **Format**: 支持 PNG, JPG, EXR (32bit), TIFF 等。
-*   **Folder Naming**: 自动创建子文件夹的规则（如按材质名建文件夹）。
-*   **Base Name**: 文件名规则。
-    *   例如选 `Object_Mat`，输出文件名为 `Cube_MaterialA_BaseColor.png`。
-    *   你可以在通道设置中自定义每个通道的后缀（Suffix）。
 
 ---
 
 ## 4. 故障排查 (Troubleshooting)
 
 ### 4.1 崩溃恢复 (Crash Recovery)
-如果 Blender 在烘焙过程中意外关闭或崩溃：
-1.  **不要惊慌**。数据已经实时记录。
-2.  重新打开 Blender，加载工程。
-3.  SBT 面板顶部会出现一个**红色警告框**。
-4.  查看警告信息：它会精确告诉你是在处理**哪个物体**的**哪个通道**时崩溃的。
-    *   *案例*: 如果卡在 `Curvature`，可能是 `Samples` 设置过高导致内存溢出。
-    *   *案例*: 如果卡在 `ID Map`，可能是模型拓扑有严重错误导致死循环。
-5.  解决模型问题后，点击红色框的 `X` 按钮清除记录，重新开始烘焙。
+如果 Blender 在烘焙过程中意外关闭或崩溃，重新打开后 SBT 面板顶部会出现红色警告框，显示最后一次处理的物体和通道，帮助您排查模型问题。
 
 ### 4.2 紧急清理 (Emergency Cleanup)
-*   **清理审计日志**: *[New]* 现在执行 `Clean Up Bake Junk` 不仅会重置 UI，还会在插件目录下的 `logs/cleanup_history.log` 中生成详细的审计清单。你可以查看具体哪个物体被删除了哪些临时层或节点。
-
-如果崩溃后，你发现场景中出现了奇怪的紫色 UV 层（名为 `BT_Bake_Temp_UV`）或无法删除的白色贴图：
-*   这是插件为了保护原始数据创建的临时文件，本应在烘焙结束后自动删除。
-*   **解决方法**:
-    1.  按 `F3` (搜索)。
-    2.  输入 `Clean Up Bake Junk` 并回车。
-    3.  插件会自动扫描并删除所有残留的临时数据。
+如果发生异常，场景中出现了名为 `BT_Bake_Temp_UV` 的临时层或 `BT_Protection_Dummy` 贴图：
+1.  按 `F3` (搜索)。
+2.  输入 `Clean Up Bake Junk` 并回车。
+3.  **审计日志**: *[New]* 清理过程会记录在插件目录或系统临时目录下的 `logs/cleanup_history.log` 中。
 
 ### 4.3 常见问题
-*   **法线贴图有奇怪的接缝**: 确保 `Image Settings` 中的 `Color Space` 设为 `Non-Color`（插件会自动设置，但请勿手动更改）。
-*   **ID Map 颜色每次都不一样**: 请在 ID Map 设置中将 `Random Seed` 从 0 改为任意固定整数（如 1）。
-*   **PBR 转换无效**: 确保你的材质中有连接 Specular 相关的节点或属性。
+*   **法线贴图有奇怪的接缝**: 确保 `Image Settings` 中的 `Color Space` 设为 `Non-Color`（插件会自动设置）。
+*   **链接资产崩溃**: *[Fixed]* 插件现在会自动跳过 Library 链接材质的节点注入，确保处理外部资产时的稳定性。

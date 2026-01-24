@@ -283,7 +283,7 @@ class BAKE_PT_NodePanel(bpy.types.Panel):
     bl_idname = "BAKE_PT_NodePanel"
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
-    bl_category = 'Bake'
+    bl_category = 'Baking'
     
     @classmethod
     def poll(cls, context): 
@@ -313,7 +313,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
     bl_idname = "BAKE_PT_BakePanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'Bake'
+    bl_category = 'Baking'
     
     def draw(self, context):
         l = self.layout
@@ -348,8 +348,9 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             box.label(text="Bake Errors:", icon='ERROR')
             for line in scene.bake_error_log.split('\n')[-5:]:
                 if line: box.label(text=line)
-            if l.operator("wm.context_set_string", text="Clear Errors", icon='TRASH'):
-                pass
+            op = box.operator("wm.context_set_string", text="Clear Errors", icon='TRASH')
+            op.data_path = "scene.bake_error_log"
+            op.value = ""
 
         b = l.box()
         r = b.row()
@@ -499,7 +500,11 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         draw_header(b, "Workflows", 'PREFERENCES')
         row = b.row(align=True)
         row.prop(s, "bake_texture_apply", text="Apply to Scene", icon='MATERIAL')
-        row.prop(s, "export_model", text="Export Mesh", icon='EXPORT')
+        
+        # Constraint: Export Mesh requires Apply to Scene AND External Save
+        sub = row.row(align=True)
+        sub.active = s.bake_texture_apply and s.save_out
+        sub.prop(s, "export_model", text="Export Mesh", icon='EXPORT')
         
         if s.export_model:
             row = b.row(align=True)

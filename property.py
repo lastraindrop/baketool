@@ -49,14 +49,6 @@ def update_debug_mode(self, context):
 def update_channels(self, context):
     """Trigger channel sync when map categories are toggled."""
     reset_channels_logic(self)
-    # Ensure invalid modes are corrected
-    if self.bake_type == 'BSDF' and self.bake_mode == 'SELECT_ACTIVE':
-        self.bake_mode = 'SINGLE_OBJECT'
-
-def get_bake_mode_items(self, context):
-    """Dynamic filter for bake modes."""
-    # We now allow SELECT_ACTIVE in both BASIC and BSDF modes.
-    return BAKE_MODES
 
 # --- Property Group Classes ---
 
@@ -83,7 +75,7 @@ class BakeChannel(bpy.types.PropertyGroup):
     prefix: props.StringProperty(name="Prefix")
     suffix: props.StringProperty(name="Suffix")
     
-    override_defaults: props.BoolProperty(name="Override Color Settings", default=False)
+    override_defaults: props.BoolProperty(name="Override Global Color Settings", default=False, description="Use specific color space and depth for this channel instead of job defaults")
     custom_cs: props.EnumProperty(items=COLOR_SPACES, name="Color Space", default='SRGB')
     custom_mode: props.EnumProperty(items=COLOR_MODES, name="Color Mode", default='RGB')
     
@@ -171,7 +163,7 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     device: props.EnumProperty(name='Device', items=DEVICES, default="GPU") 
     
     bake_type: props.EnumProperty(items=BAKE_TYPES, name='Bake Type', default="BSDF", update=update_channels)
-    bake_mode: props.EnumProperty(items=get_bake_mode_items, name='Bake Mode', default=0)
+    bake_mode: props.EnumProperty(items=BAKE_MODES, name='Bake Mode', default='SINGLE_OBJECT')
     
     extrusion: props.FloatProperty(name='Extrude', min=0)
     float32: props.BoolProperty(default=False, name='32 Bit')

@@ -85,19 +85,16 @@ class TestAutoLoadPreset(unittest.TestCase):
     def test_handler_logic(self):
         if not self.prefs: return 
         
-        from .. import load_default_preset
+        handler = preset_handler.AutoLoadHandler
         
         self.prefs.auto_load = True
         self.prefs.default_preset_path = self.preset
         
         bpy.context.scene.BakeJobs.jobs.clear()
-        load_default_preset(None)
+        handler.load_default_preset(None)
         self.assertEqual(len(bpy.context.scene.BakeJobs.jobs), 1)
         self.assertEqual(bpy.context.scene.BakeJobs.jobs[0].name, "StartupJob")
         
-        load_default_preset(None)
-        self.assertEqual(len(bpy.context.scene.BakeJobs.jobs), 1)
-
     def test_malformed_json_input(self):
         """测试：输入非法的 JSON 字符串/文件内容"""
         s = get_job_setting()

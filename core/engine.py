@@ -11,7 +11,7 @@ from .common import (
 )
 from .image_manager import set_image, save_image
 from .math_utils import process_pbr_numpy, setup_mesh_attribute, pack_channels_numpy
-from .uv_manager import get_active_uv_udim_tiles, UDIMPacker, UVLayoutManager
+from .uv_manager import get_active_uv_udim_tiles, UDIMPacker, UVLayoutManager, detect_object_udim_tile
 from .node_manager import NodeGraphHandler
 from ..constants import CHANNEL_BAKE_INFO
 
@@ -20,6 +20,34 @@ logger = logging.getLogger(__name__)
 # --- Data Structures ---
 BakeStep = namedtuple('BakeStep', ['job', 'task', 'channels', 'frame_info'])
 BakeTask = namedtuple('BakeTask', ['objects', 'materials', 'active_obj', 'base_name', 'folder_name'])
+
+# --- Runtime Proxies (For Quick Bake) ---
+class RuntimeBakeObject:
+    def __init__(self, obj, tile=1001):
+        self.bakeobject = obj
+        self.udim_tile = tile
+        self.override_size = False
+        self.udim_width = 1024
+        self.udim_height = 1024
+
+class RuntimeJobSettingProxy:
+    def __init__(self, original_setting, override_objects, override_active):
+        self._orig = original_setting
+        self.bake_objects = [RuntimeBakeObject(o, detect_object_udim_tile(o)) for o in override_objects]
+        self.active_object = override_active
+
+    def __getattr__(self, name):
+        return getattr(self._orig, name)
+
+class RuntimeJobProxy:
+    def __init__(self, original_job, setting_proxy):
+        self._orig = original_job
+        self.setting = setting_proxy
+        self.name = original_job.name + " (Quick)"
+        self.custom_bake_channels = original_job.custom_bake_channels
+    
+    def __getattr__(self, name):
+        return getattr(self._orig, name)
 
 # --- Logic Classes ---
 
@@ -37,6 +65,7 @@ class BakeStepRunner:
         Returns: List of dicts {'image': bpy.types.Image, 'type': str, 'path': str, 'obj': str}
         """
         job, task, channels, f_info = step.job, step.task, step.channels, step.frame_info
+        scene = self.context.scene
         
         results = [] 
         baked_images = {}
@@ -50,12 +79,14 @@ class BakeStepRunner:
                     with NodeGraphHandler(task.materials) as handler:
                         handler.setup_protection(task.objects, task.materials)
                         
-                        for c in channels:
+                        total_ch = len(channels)
+                        for i, c in enumerate(channels):
+                            # Update UI status with channel info
+                            scene.bake_status = f"[{i+1}/{total_ch}] Baking {c['name']} - {task.base_name}"
+                            
                             if state_mgr: 
-                                # Safely try to read current step from log, strictly optional
                                 try:
-                                    cur = state_mgr.read_log().get('current_step', 0)
-                                    state_mgr.update_step(cur, task.active_obj.name, c['name'])
+                                    state_mgr.update_step(i, task.active_obj.name, c['name'])
                                 except: pass
                             
                             img = BakePassExecutor.execute(job.setting, task, c, handler, baked_images, udim_tiles, array_cache)
@@ -73,18 +104,20 @@ class BakeStepRunner:
                                 })
 
                         if job.setting.use_packing:
+                            scene.bake_status = f"Packing Channels... - {task.base_name}"
                             packed_res = self._handle_channel_packing(job.setting, task, baked_images, f_info, array_cache)
                             if packed_res:
                                 results.append(packed_res)
 
         # --- Post-Bake Logic: Apply & Export ---
-        if not f_info: # Only run on static bakes or last frame
+        if not f_info: # Static bake
             if job.setting.bake_texture_apply:
+                scene.bake_status = f"Applying Result... - {task.base_name}"
                 res_obj = apply_baked_result(task.active_obj, baked_images, job.setting, task.base_name)
-                if res_obj and job.setting.export_model:
+                
+                if res_obj and job.setting.export_model and job.setting.save_out:
+                    scene.bake_status = f"Exporting Model... - {task.base_name}"
                     ModelExporter.export(self.context, res_obj, job.setting, folder_name=task.folder_name)
-                elif job.setting.export_model:
-                    ModelExporter.export(self.context, task.active_obj, job.setting, folder_name=task.folder_name)
                                 
         return results
 
@@ -142,7 +175,7 @@ class TaskBuilder:
             mats = set()
             for obj in obj_list:
                 mats.update(ms.material for ms in obj.material_slots if ms.material)
-            return list(mats)
+            return sorted(list(mats), key=lambda m: m.name)
 
         if mode == 'SINGLE_OBJECT':
             is_batch = len(objects) > 1
@@ -231,6 +264,50 @@ class JobPreparer:
                 for task in tasks:
                     queue.append(BakeStep(job, task, channels, f_info))
                     
+        return queue
+
+    @staticmethod
+    def prepare_quick_bake_queue(context: bpy.types.Context, reference_job: Any, selected_objects: List[bpy.types.Object], active_object: Optional[bpy.types.Object]) -> List[BakeStep]:
+        """
+        Dynamically construct a temporary execution queue based on current selection.
+        Uses the provided reference_job as a template for settings, using Runtime Proxies
+        to avoid modifying the actual scene data.
+        """
+        if not reference_job:
+            return []
+            
+        # Create Runtime Proxies
+        # Filter selected objects to remove active if mode is SELECT_ACTIVE (as it is the target)
+        bake_objs = []
+        for o in selected_objects:
+            if reference_job.setting.bake_mode == 'SELECT_ACTIVE' and o == active_object:
+                continue
+            bake_objs.append(o)
+            
+        runtime_setting = RuntimeJobSettingProxy(reference_job.setting, bake_objs, active_object)
+        runtime_job = RuntimeJobProxy(reference_job, runtime_setting)
+        
+        # Build Tasks
+        tasks = TaskBuilder.build(context, runtime_setting, bake_objs, active_object)
+        channels = JobPreparer._collect_channels(reference_job) # Channels are same as ref
+        
+        queue = []
+        # Support Animation for Quick Bake if enabled in template
+        frames = [None]
+        if runtime_setting.bake_motion and runtime_setting.save_out:
+            scene = context.scene
+            start = runtime_setting.bake_motion_start if runtime_setting.bake_motion_use_custom else scene.frame_start
+            dur = runtime_setting.bake_motion_last if runtime_setting.bake_motion_use_custom else (scene.frame_end - start + 1)
+            frames = [{
+                'frame': start + i, 
+                'save_idx': runtime_setting.bake_motion_startindex + i, 
+                'digits': runtime_setting.bake_motion_digit
+            } for i in range(dur)]
+            
+        for f_info in frames:
+            for task in tasks:
+                queue.append(BakeStep(runtime_job, task, channels, f_info))
+                
         return queue
 
     @staticmethod

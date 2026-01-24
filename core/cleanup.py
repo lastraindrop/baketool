@@ -6,9 +6,10 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 def log_cleanup_detail(message):
-    """Log details to a persistent file in the addon directory."""
+    """Log details to a persistent file in the system temp directory."""
     try:
-        log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
+        # Use system temp directory to avoid permission issues
+        log_dir = os.path.join(bpy.app.tempdir, "baketool_logs")
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         log_path = os.path.join(log_dir, "cleanup_history.log")
@@ -46,16 +47,26 @@ class BAKETOOL_OT_EmergencyCleanup(bpy.types.Operator):
         
         # 2. Clean up protection nodes in materials
         protection_img = bpy.data.images.get("BT_Protection_Dummy")
-        if protection_img:
-            for mat in bpy.data.materials:
-                if not mat.use_nodes or not mat.node_tree: continue
-                nodes_to_remove = [n for n in mat.node_tree.nodes 
-                                  if n.bl_idname == 'ShaderNodeTexImage' and n.image == protection_img]
-                for n in nodes_to_remove:
-                    mat_name = mat.name
+        for mat in bpy.data.materials:
+            if not mat.use_nodes or not mat.node_tree: continue
+            
+            nodes_to_remove = []
+            for n in mat.node_tree.nodes:
+                # Check by Image reference
+                if n.bl_idname == 'ShaderNodeTexImage' and protection_img and n.image == protection_img:
+                    nodes_to_remove.append(n)
+                # Check by Name/Label (Fallback if image is already gone)
+                elif n.name == "BT_Protection_Node" or n.label == "BT Protection":
+                    nodes_to_remove.append(n)
+            
+            for n in nodes_to_remove:
+                mat_name = mat.name
+                try:
                     mat.node_tree.nodes.remove(n)
                     count_nodes += 1
                     details.append(f"Removed Protection Node from Material '{mat_name}'")
+                except:
+                    pass
 
         # 3. Clean up protection images and other bake-temp images
         for img in list(bpy.data.images):

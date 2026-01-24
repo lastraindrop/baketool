@@ -5,10 +5,10 @@ import os
 from pathlib import Path
 import json
 
-# 本地模块引用
+# Local Modules
 from .core.common import (
     apply_baked_result,
-    safe_context_override, 
+    safe_context_override,
     reset_channels_logic,
     check_objects_uv
 )
@@ -17,7 +17,7 @@ from .core.uv_manager import UVLayoutManager, detect_object_udim_tile
 from .core.node_manager import NodeGraphHandler
 from .core.math_utils import pack_channels_numpy
 from .core.engine import (
-    BakeStep, BakeTask, TaskBuilder, JobPreparer, 
+    BakeStep, BakeTask, TaskBuilder, JobPreparer,
     BakeContextManager, BakePassExecutor, ModelExporter, BakeStepRunner
 )
 from . import preset_handler
@@ -26,39 +26,34 @@ from .state_manager import BakeStateManager
 import logging
 logger = logging.getLogger(__name__)
 
-# --- Operators ---
+# --- Base Modal Operator ---
 
-class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
-    bl_label = "Bake"
-    bl_idname = "bake.bake_operator"
+class BakeModalOperator:
+    """
+    Mixin class providing robust modal execution logic, progress tracking,
+    and crash recovery for any bake operation.
+    Subclasses must populate `self.bake_queue` in `invoke`.
+    """
     _timer = None
     state_mgr = None
     bake_queue = []
     
-    def invoke(self, context, event):
+    def init_modal(self, context):
+        """Initialize state and start modal timer."""
         self.state_mgr = BakeStateManager()
-        if context.object and context.object.mode != 'OBJECT': 
-            bpy.ops.object.mode_set(mode='OBJECT')
-        try:
-            enabled_jobs = [j for j in context.scene.BakeJobs.jobs if j.enabled]
-            if not enabled_jobs:
-                self.report({'WARNING'}, "No enabled jobs.")
-                return {'CANCELLED'}
-            self.bake_queue = JobPreparer.prepare_execution_queue(context, enabled_jobs)
-            if not self.bake_queue:
-                self.report({'WARNING'}, "Nothing to bake.")
-                return {'CANCELLED'}
-        except Exception as e: self.report({'ERROR'}, str(e)); traceback.print_exc()
-
         self.total_steps = len(self.bake_queue)
         self.current_step_idx = 0
         self.sequence_tracking = {}
+        
         context.scene.is_baking = True
         context.scene.bake_progress = 0.0
         context.scene.bake_status = "Initializing..."
         context.scene.bake_error_log = ""
         
-        self.state_mgr.start_session(self.total_steps, ",".join([s.job.name for s in self.bake_queue]))
+        # Extract job names for logging
+        job_names = list(set(step.job.name for step in self.bake_queue))
+        self.state_mgr.start_session(self.total_steps, ",".join(job_names))
+        
         self._timer = context.window_manager.event_timer_add(0.1, window=context.window)
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
@@ -66,24 +61,39 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
     def modal(self, context, event):
         if event.type == 'TIMER':
             if self.current_step_idx >= self.total_steps: 
-                self.finish(context); return {'FINISHED'}
-            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+                self.finish(context)
+                return {'FINISHED'}
+            
+            # Force UI update
+            # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1) # Can cause flicker, optional
+            
             try: 
+                # Check cancellation flag
+                if not context.scene.is_baking: 
+                    self.cancel(context)
+                    return {'CANCELLED'}
+                
                 step = self.bake_queue[self.current_step_idx]
-                if not context.scene.is_baking: self.cancel(context); return {'CANCELLED'}
                 self._process_single_step(context, step)
+                
             except Exception as e:
                 self._handle_step_error(context, e)
+            
             self.current_step_idx += 1
             context.scene.bake_progress = (self.current_step_idx / self.total_steps) * 100.0
+            
         elif event.type == 'ESC': 
-            self.cancel(context); return {'CANCELLED'}
+            self.cancel(context)
+            return {'CANCELLED'}
+            
         return {'RUNNING_MODAL'}
 
     def _process_single_step(self, context, step: BakeStep):
         job, task, f_info = step.job, step.task, step.frame_info
         context.scene.bake_status = f"[{self.current_step_idx+1}/{self.total_steps}] {task.base_name}"
-        if f_info: context.scene.frame_set(f_info['frame'])
+        
+        if f_info: 
+            context.scene.frame_set(f_info['frame'])
         
         runner = BakeStepRunner(context)
         results = runner.run(step, self.state_mgr)
@@ -94,42 +104,129 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator):
                 self._track_sequence(res['image'], res['path'], f_info['save_idx'])
 
     def _track_sequence(self, img, path, idx):
-        if img not in self.sequence_tracking: self.sequence_tracking[img] = {'count': 0, 'first_path': path, 'min_frame': idx}
+        if img not in self.sequence_tracking: 
+            self.sequence_tracking[img] = {'count': 0, 'first_path': path, 'min_frame': idx}
         t = self.sequence_tracking[img]
         t['count'] += 1
-        if idx < t['min_frame']: t['min_frame'] = idx; t['first_path'] = path
+        if idx < t['min_frame']: 
+            t['min_frame'] = idx
+            t['first_path'] = path
 
     def _add_ui_result(self, context, img, type_name, obj_name, path):
         results = context.scene.baked_image_results
         if any(r.image == img for r in results): return
         item = results.add()
-        item.image, item.channel_type, item.object_name, item.filepath = img, type_name, obj_name, path or ""
+        item.image = img
+        item.channel_type = type_name 
+        item.object_name = obj_name
+        item.filepath = path or ""
 
     def _handle_step_error(self, context, e):
         err_msg = f"[Error] Step {self.current_step_idx+1}: {str(e)}"
         context.scene.bake_error_log += err_msg + "\n"
         logger.error(f"{err_msg}\n{traceback.format_exc()}")
-        if self.state_mgr: self.state_mgr.log_error(err_msg)
+        if self.state_mgr: 
+            self.state_mgr.log_error(err_msg)
+
+    def _cleanup_state(self, context, status="Finished"):
+        context.scene.is_baking = False
+        context.scene.bake_status = status
+        if self.state_mgr: 
+            self.state_mgr.finish_session()
+        self._remove_timer(context)
 
     def finish(self, context):
-        context.scene.is_baking = False
-        context.scene.bake_status = "Finished"
-        if self.state_mgr: self.state_mgr.finish_session()
+        self._cleanup_state(context, "Finished")
+        # Reload sequences if any
         for img, info in self.sequence_tracking.items():
             try:
                 img.source, img.filepath, img.frame_duration = 'SEQUENCE', info['first_path'], info['count']
                 img.reload()
             except: pass
-        self.sequence_tracking.clear(); self._remove_timer(context)
-        if self.bake_queue and self.bake_queue[0].job.setting.save_and_quit: bpy.ops.wm.save_mainfile(exit=True)
+        self.sequence_tracking.clear()
+        
+        # Auto-Save logic (Only for standard jobs, checked via first step)
+        if self.bake_queue and hasattr(self.bake_queue[0].job, 'setting'):
+             if getattr(self.bake_queue[0].job.setting, 'save_and_quit', False): 
+                bpy.ops.wm.save_mainfile(exit=True)
 
     def cancel(self, context):
-        context.scene.is_baking = False; context.scene.bake_status = "Cancelled"
-        if self.state_mgr: self.state_mgr.finish_session()
-        self._remove_timer(context)
+        self._cleanup_state(context, "Cancelled")
 
     def _remove_timer(self, context):
-        if self._timer: context.window_manager.event_timer_remove(self._timer); self._timer = None
+        if self._timer: 
+            try: context.window_manager.event_timer_remove(self._timer)
+            except: pass
+            self._timer = None
+
+# --- Operators ---
+
+class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
+    bl_label = "Bake"
+    bl_idname = "bake.bake_operator"
+    
+    @classmethod
+    def poll(cls, context):
+        return not context.scene.is_baking
+    
+    def invoke(self, context, event):
+        if context.object and context.object.mode != 'OBJECT': 
+            bpy.ops.object.mode_set(mode='OBJECT')
+        try:
+            enabled_jobs = [j for j in context.scene.BakeJobs.jobs if j.enabled]
+            if not enabled_jobs:
+                self.report({'WARNING'}, "No enabled jobs.")
+                return {'CANCELLED'}
+                
+            self.bake_queue = JobPreparer.prepare_execution_queue(context, enabled_jobs)
+            
+            if not self.bake_queue:
+                self.report({'WARNING'}, "Nothing to bake (Check logs/setup).")
+                return {'CANCELLED'}
+                
+        except Exception as e: 
+            self.report({'ERROR'}, str(e))
+            traceback.print_exc()
+            return {'CANCELLED'}
+
+        return self.init_modal(context)
+
+class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
+    """Bake current selection using active job settings immediately"""
+    bl_idname = "bake.quick_bake"
+    bl_label = "Quick Bake Selected"
+    
+    def execute(self, context):
+        # We redirect execute to invoke for script usage, though usually not recommended for modal
+        return self.invoke(context, None)
+
+    def invoke(self, context, event):
+        bj = context.scene.BakeJobs
+        if not bj.jobs:
+            self.report({'WARNING'}, "No Job settings available to use as template.")
+            return {'CANCELLED'}
+            
+        job = bj.jobs[bj.job_index]
+        sel_objs = [o for o in context.selected_objects if o.type == 'MESH']
+        act_obj = context.active_object if (context.active_object and context.active_object.type == 'MESH') else None
+        
+        if not sel_objs:
+            self.report({'WARNING'}, "Select mesh objects to bake.")
+            return {'CANCELLED'}
+        
+        try:
+            self.bake_queue = JobPreparer.prepare_quick_bake_queue(context, job, sel_objs, act_obj)
+            
+            if not self.bake_queue:
+                self.report({'WARNING'}, "Quick Bake preparation failed (check logs).")
+                return {'CANCELLED'}
+            
+        except Exception as e:
+            self.report({'ERROR'}, f"Quick Bake Prep Failed: {e}")
+            traceback.print_exc()
+            return {'CANCELLED'}
+            
+        return self.init_modal(context)
 
 class BAKETOOL_OT_ResetChannels(bpy.types.Operator):
     bl_idname = "bake.reset_channels"; bl_label = "Reset"
@@ -144,97 +241,54 @@ class BAKETOOL_OT_GenericChannelOperator(bpy.types.Operator):
     def execute(self, context):
         bj = context.scene.BakeJobs
         job = bj.jobs[bj.job_index] if bj.jobs else None
-        c_map = {"jobs_channel": (bj.jobs, 'job_index', bj), "job_custom_channel": (job.custom_bake_channels, 'custom_bake_channels_index', job) if job else None, "bake_objects": (job.setting.bake_objects, 'active_object_index', job.setting) if job else None}
-        if self.target not in c_map or not c_map[self.target]: return {'CANCELLED'}
-        coll, attr, parent = c_map[self.target]; idx = getattr(parent, attr)
+        
+        dispatch = {
+            "jobs_channel": (bj.jobs, 'job_index', bj),
+            "job_custom_channel": (job.custom_bake_channels, 'custom_bake_channels_index', job) if job else None,
+            "bake_objects": (job.setting.bake_objects, 'active_object_index', job.setting) if job else None
+        }
+
+        entry = dispatch.get(self.target)
+        if not entry: return {'CANCELLED'}
+            
+        coll, attr, parent = entry
+        idx = getattr(parent, attr)
         
         if self.action_type == 'ADD':
-            new_item = coll.add()
-            if self.target == "jobs_channel": 
-                new_item.name = f"Job {len(coll)}"
-                new_item.setting.bake_type = 'BSDF'
-                new_item.setting.bake_mode = 'SINGLE_OBJECT'
-                reset_channels_logic(new_item.setting)
-                for c in new_item.setting.channels:
-                    if c.id in {'color', 'combine', 'normal'}: c.enabled = True
-        elif self.action_type == 'DELETE': coll.remove(idx); setattr(parent, attr, max(0, idx-1))
-        elif self.action_type == 'CLEAR': coll.clear(); setattr(parent, attr, 0)
-        elif self.action_type == 'UP' and idx > 0:
-            coll.move(idx, idx-1); setattr(parent, attr, idx-1)
-            if self.target=="jobs_channel": bj.job_index = idx-1
-        elif self.action_type == 'DOWN' and idx < len(coll)-1:
-            coll.move(idx, idx+1); setattr(parent, attr, idx+1)
-            if self.target=="jobs_channel": bj.job_index = idx+1
+            self._handle_add(coll, bj)
+        elif self.action_type == 'DELETE':
+            if len(coll) > 0:
+                coll.remove(idx)
+                setattr(parent, attr, max(0, idx - 1))
+        elif self.action_type == 'CLEAR':
+            coll.clear()
+            setattr(parent, attr, 0)
+        elif self.action_type in {'UP', 'DOWN'}:
+            self._handle_move(coll, parent, attr, idx)
+            
         return {'FINISHED'}
 
-class BAKETOOL_OT_QuickBake(bpy.types.Operator):
-    """Bake current selection using active job settings immediately"""
-    bl_idname = "bake.quick_bake"
-    bl_label = "Quick Bake Selected"
-    
-    def execute(self, context):
-        bj = context.scene.BakeJobs
-        if not bj.jobs:
-            self.report({'WARNING'}, "No Job settings available to use as template.")
-            return {'CANCELLED'}
-            
-        job = bj.jobs[bj.job_index]
-        sel_objs = [o for o in context.selected_objects if o.type == 'MESH']
-        act_obj = context.active_object if (context.active_object and context.active_object.type == 'MESH') else None
-        
-        if not sel_objs:
-            self.report({'WARNING'}, "Select mesh objects to bake.")
-            return {'CANCELLED'}
-        
-        # Consolidate: Create a temporary job/setting mock or update JobPreparer to handle direct inputs
-        try:
-            # We reuse JobPreparer.prepare_execution_queue by temporarily overriding the job's objects
-            # This ensures all validations (UV, Mesh) are identical to a real bake.
-            orig_objs = [(bo.bakeobject, bo.udim_tile) for bo in job.setting.bake_objects]
-            orig_act = job.setting.active_object
-            
-            job.setting.bake_objects.clear()
-            job.setting.active_object = act_obj
-            for o in sel_objs:
-                if job.setting.bake_mode == 'SELECT_ACTIVE' and o == act_obj: continue
-                no = job.setting.bake_objects.add()
-                no.bakeobject = o
-                from .core.uv_manager import detect_object_udim_tile
-                no.udim_tile = detect_object_udim_tile(o)
+    def _handle_add(self, coll, bj):
+        new_item = coll.add()
+        if self.target == "jobs_channel": 
+            new_item.name = f"Job {len(coll)}"
+            s = new_item.setting
+            s.bake_type = 'BSDF'
+            s.bake_mode = 'SINGLE_OBJECT'
+            reset_channels_logic(s)
+            for c in s.channels:
+                if c.id in {'color', 'combine', 'normal'}:
+                    c.enabled = True
 
-            queue = JobPreparer.prepare_execution_queue(context, [job])
-            
-            # Restore
-            job.setting.bake_objects.clear()
-            job.setting.active_object = orig_act
-            for o, tile in orig_objs:
-                no = job.setting.bake_objects.add()
-                no.bakeobject, no.udim_tile = o, tile
-
-            if not queue:
-                self.report({'WARNING'}, "Quick Bake preparation failed (check logs).")
-                return {'CANCELLED'}
-
-            runner = BakeStepRunner(context)
-            total = len(queue)
-            for i, step in enumerate(queue):
-                context.scene.bake_status = f"Quick Bake [{i+1}/{total}]"
-                results = runner.run(step)
-                for res in results:
-                    # Add to UI results
-                    ui_results = context.scene.baked_image_results
-                    if not any(r.image == res['image'] for r in ui_results):
-                        item = ui_results.add()
-                        item.image, item.channel_type, item.object_name, item.filepath = \
-                            res['image'], res['type'], res['obj'], res['path'] or ""
-
-            self.report({'INFO'}, "Quick Bake Finished.")
-            return {'FINISHED'}
-            
-        except Exception as e:
-            self.report({'ERROR'}, f"Quick Bake Failed: {e}")
-            traceback.print_exc()
-            return {'CANCELLED'}
+    def _handle_move(self, coll, parent, attr, idx):
+        if self.action_type == 'UP' and idx > 0:
+            target_idx = idx - 1
+        elif self.action_type == 'DOWN' and idx < len(coll) - 1:
+            target_idx = idx + 1
+        else:
+            return
+        coll.move(idx, target_idx)
+        setattr(parent, attr, target_idx)
 
 class BAKETOOL_OT_SetSaveLocal(bpy.types.Operator):
     bl_idname="bake.set_save_local"; bl_label="Local"; save_location: props.IntProperty(default=0)
@@ -318,6 +372,11 @@ class BAKETOOL_OT_BakeSelectedNode(bpy.types.Operator):
         mat, node = context.active_object.active_material, context.active_node
         if not (mat and node): return {'CANCELLED'}
         img = set_image(f"{mat.name}_{node.name}", nbs.res_x, nbs.res_y)
+        
+        # Store original engine
+        orig_engine = context.scene.render.engine
+        context.scene.render.engine = 'CYCLES'
+        
         try:
             with safe_context_override(context, context.active_object):
                 with NodeGraphHandler([mat]) as h:
@@ -333,6 +392,7 @@ class BAKETOOL_OT_BakeSelectedNode(bpy.types.Operator):
                                 b = context.scene.render.bake
                                 b.type = 'EMIT'
                                 b.margin = nbs.margin
+                                b.use_clear = True
                                 b.target = 'IMAGE_TEXTURES'
                             bpy.ops.object.bake(type='EMIT')
                         else:
@@ -340,7 +400,11 @@ class BAKETOOL_OT_BakeSelectedNode(bpy.types.Operator):
                             
                         if nbs.save_outside: save_image(img, nbs.save_path, file_format=nbs.image_settings.save_format)
                         else: img.pack()
-        except Exception as e: self.report({'ERROR'}, str(e)); return {'CANCELLED'}
+        except Exception as e: 
+            self.report({'ERROR'}, str(e))
+            return {'CANCELLED'}
+        finally:
+            context.scene.render.engine = orig_engine
         return {'FINISHED'}
 
 class BAKETOOL_OT_DeleteResult(bpy.types.Operator):

@@ -48,7 +48,7 @@ def robust_image_editor_context(context, image):
 
 def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basiccolor=(0,0,0,0), clear=True, 
               use_udim=False, udim_tiles=None, tile_resolutions=None):
-    """Get or create an image with specified settings."""
+    """Get or create an image with specified settings and ensure it's cleared if requested."""
     image = bpy.data.images.get(name)
     
     if image:
@@ -82,6 +82,16 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
     
     if alpha: image.alpha_mode = 'STRAIGHT'
     
+    # 物理清除像素数据 // Physical Clear if requested
+    if clear:
+        image.generated_color = basiccolor
+        # For non-tiled images, we can force clear pixels
+        if image.source != 'TILED':
+            try:
+                pixels = [c for c in basiccolor] * (image.size[0] * image.size[1])
+                image.pixels.foreach_set(pixels)
+            except: pass
+
     if use_udim and image.source == 'TILED':
         target_tiles = set(udim_tiles) if udim_tiles else {1001}
         existing_tiles = {t.number for t in image.tiles}
@@ -94,19 +104,20 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
         missing_tiles = target_tiles - existing_tiles
         if missing_tiles:
             with robust_image_editor_context(bpy.context, image) as valid:
-                if valid:
-                    for t_idx in missing_tiles:
-                        t_w, t_h = x, y
-                        if tile_resolutions and t_idx in tile_resolutions: t_w, t_h = tile_resolutions[t_idx]
-                        try: 
+                for t_idx in missing_tiles:
+                    t_w, t_h = x, y
+                    if tile_resolutions and t_idx in tile_resolutions: t_w, t_h = tile_resolutions[t_idx]
+                    try: 
+                        if valid:
                             bpy.ops.image.tile_add(
                                 number=t_idx, count=1, label=str(t_idx), fill=True, 
                                 width=t_w, height=t_h, float=full, alpha=alpha,
                                 generated_type='BLANK', color=basiccolor
                             )
-                        except Exception: pass
-                else:
-                    for t_idx in missing_tiles: image.tiles.new(tile_number=t_idx)
+                        else:
+                            # Fallback if no valid context for operators
+                            image.tiles.new(tile_number=t_idx)
+                    except Exception: pass
 
         extra_tiles = existing_tiles - target_tiles
         for t_idx in extra_tiles:
@@ -115,7 +126,6 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
                 try: image.tiles.remove(tile_to_remove)
                 except: pass
 
-    if clear: image.generated_color = basiccolor
     return image
 
 def save_image(image, path='//', folder=False, folder_name='folder', file_format='PNG', motion=False, frame=0, reload=False, fillnum=4, save=True, separator="_", **kwargs):

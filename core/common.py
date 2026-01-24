@@ -148,22 +148,32 @@ class SceneSettingsContext:
             except: pass
 
 def apply_baked_result(original_obj, task_images, setting, task_base_name):
-    """Create a new object with baked textures applied."""
+    """Create a new object or update existing one with baked textures applied."""
     if not task_images: return None
     col = bpy.data.collections.get("Baked_Results") or bpy.data.collections.new("Baked_Results")
     if col.name not in bpy.context.scene.collection.children:
         try: bpy.context.scene.collection.children.link(col)
         except: pass
 
-    new_obj = original_obj.copy()
-    new_obj.data = original_obj.data.copy()
-    new_obj.name = f"{task_base_name}_Baked"
-    for c in new_obj.users_collection: c.objects.unlink(new_obj)
-    col.objects.link(new_obj)
+    # 1. Reuse existing baked object if possible to save memory
+    target_name = f"{task_base_name}_Baked"
+    new_obj = bpy.data.objects.get(target_name)
+    
+    if new_obj:
+        # If it exists, ensure it uses the same mesh data type or refresh it
+        # Note: We still refresh the mesh data to match current source state
+        new_obj.data = original_obj.data.copy()
+    else:
+        new_obj = original_obj.copy()
+        new_obj.data = original_obj.data.copy()
+        new_obj.name = target_name
+        for c in new_obj.users_collection: c.objects.unlink(new_obj)
+        col.objects.link(new_obj)
 
     # Helper to create simple material
     def _create_simple_mat(name, texture_map):
-        mat = bpy.data.materials.new(name=name)
+        # reuse material if exists
+        mat = bpy.data.materials.get(name) or bpy.data.materials.new(name=name)
         mat.use_nodes = True
         tree = mat.node_tree
         tree.nodes.clear()
@@ -176,7 +186,7 @@ def apply_baked_result(original_obj, task_images, setting, task_base_name):
         channel_to_socket_keys = {
             'color': 'color', 'diff': 'color',      # Base Color
             'metal': 'metal',                       # Metallic
-            'rough': 'rough', 'gloss': 'rough',     # Roughness (Gloss 需要在节点里处理，暂映射至此)
+            'rough': 'rough', 'gloss': 'rough',     # Roughness
             'specular': 'specular', 
             'emi': 'emi', 
             'alpha': 'alpha', 
