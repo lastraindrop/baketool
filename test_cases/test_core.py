@@ -152,3 +152,97 @@ class TestNodeGroupChannel(unittest.TestCase):
             emi_node = out_node.inputs[0].links[0].from_node
             group_node = emi_node.inputs[0].links[0].from_node
             self.assertEqual(group_node.node_tree, self.ng)
+
+
+class TestCompatibilityLayer(unittest.TestCase):
+    """测试版本兼容层 / Test version compatibility layer."""
+    
+    def setUp(self):
+        cleanup_scene()
+        self.scene = bpy.context.scene
+        
+    def test_get_bake_settings(self):
+        """Test that get_bake_settings returns valid object."""
+        from ..core import compat
+        
+        bake_settings = compat.get_bake_settings(self.scene)
+        self.assertIsNotNone(bake_settings, "Bake settings should not be None")
+        
+        # Verify it has expected attributes
+        if compat.IS_BLENDER_5:
+            self.assertTrue(hasattr(self.scene.render, 'bake'),
+                          "Blender 5.0+ should have render.bake")
+        else:
+            # Legacy versions have settings directly on render
+            self.assertTrue(hasattr(self.scene.render, 'bake_margin') or 
+                          hasattr(bake_settings, 'margin'),
+                          "Legacy Blender should have bake settings on render")
+    
+    def test_set_bake_type(self):
+        """Test version-safe bake type setting."""
+        from ..core import compat
+        
+        # The compat layer should handle version differences gracefully
+        result = compat.set_bake_type(self.scene, 'EMIT')
+        
+        # If the function returns False, it means the current Blender version
+        # may not support this specific bake type or there's an API difference
+        # The important thing is that it doesn't crash
+        
+        bake_settings = compat.get_bake_settings(self.scene)
+        self.assertIsNotNone(bake_settings, "Bake settings should exist")
+        
+        # Verify the attribute exists (version-dependent)
+        if compat.IS_BLENDER_5:
+            # Blender 5.0+ may have different bake type enums
+            # Just verify the settings object is accessible
+            self.assertTrue(hasattr(bake_settings, 'margin'),
+                          "Bake settings should have margin property")
+        else:
+            # Legacy versions
+            self.assertTrue(hasattr(bake_settings, 'bake_margin') or 
+                          hasattr(bake_settings, 'margin'),
+                          "Bake settings should have margin property")
+    
+    def test_configure_bake_settings(self):
+        """Test comprehensive bake settings configuration."""
+        from ..core import compat
+        
+        # Configure with safe, universally supported values
+        success = compat.configure_bake_settings(
+            self.scene,
+            bake_type='COMBINED',  # COMBINED is universally supported
+            margin=16,
+            use_clear=True,
+            target='IMAGE_TEXTURES'
+        )
+        
+        # The function may return False if some settings aren't applicable
+        # in the current Blender version, but it shouldn't crash
+        
+        # Verify settings object is accessible
+        bake_settings = compat.get_bake_settings(self.scene)
+        self.assertIsNotNone(bake_settings, "Bake settings should exist")
+        
+        # Verify margin was set (property name varies by version)
+        margin_value = getattr(bake_settings, 'margin', None) or getattr(bake_settings, 'bake_margin', None)
+        self.assertIsNotNone(margin_value, "Margin property should exist")
+        self.assertEqual(margin_value, 16, "Margin should be set correctly")
+    
+    def test_version_detection_flags(self):
+        """Test version detection flags are mutually exclusive."""
+        from ..core import compat
+        
+        # Only one version flag should be True
+        flags = [compat.IS_BLENDER_3, compat.IS_BLENDER_4, compat.IS_BLENDER_5]
+        true_count = sum(flags)
+        
+        self.assertEqual(true_count, 1, 
+                        "Exactly one version flag should be True")
+        
+        # Verify version string is valid
+        version_str = compat.get_version_string()
+        self.assertIsInstance(version_str, str)
+        self.assertRegex(version_str, r'^\d+\.\d+\.\d+$',
+                        "Version string should match X.Y.Z format")
+

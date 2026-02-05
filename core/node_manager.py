@@ -1,8 +1,70 @@
 import bpy
 import logging
 from ..constants import BSDF_COMPATIBILITY_MAP, SOCKET_DEFAULT_TYPE
+from . import compat
 
 logger = logging.getLogger(__name__)
+
+def bake_node_to_image(context, material, node, settings):
+    """
+    Bake a specific node output to an image.
+    
+    Args:
+        context: Blender context
+        material: Material containing the node
+        node: Node to bake
+        settings: BakeNodeSettings with resolution, margin, etc.
+    
+    Returns:
+        bpy.types.Image: The baked image, or None on failure
+    """
+    from .image_manager import set_image, save_image
+    from .common import safe_context_override
+    
+    if not (material and node):
+        logger.warning("bake_node_to_image: Invalid material or node")
+        return None
+        
+    img = set_image(f"{material.name}_{node.name}", settings.res_x, settings.res_y)
+    
+    # Store original engine
+    orig_engine = context.scene.render.engine
+    context.scene.render.engine = 'CYCLES'
+    
+    try:
+        with safe_context_override(context, context.active_object):
+            with NodeGraphHandler([material]) as h:
+                tree = material.node_tree
+                out = next((n for n in tree.nodes if n.bl_idname=='ShaderNodeOutputMaterial' and n.is_active_output), None)
+                if out:
+                    emi = h._add_node(material, 'ShaderNodeEmission', location=(out.location.x-200, out.location.y))
+                    tree.links.new(node.outputs[0], emi.inputs[0])
+                    tree.links.new(emi.outputs[0], out.inputs[0])
+                    
+                    # Use compatibility layer for bake settings
+                    compat.configure_bake_settings(
+                        context.scene,
+                        bake_type='EMIT',
+                        margin=settings.margin,
+                        use_clear=True,
+                        target='IMAGE_TEXTURES'
+                    )
+                    
+                    bpy.ops.object.bake(type='EMIT')
+                    
+                    if settings.save_outside:
+                        save_image(img, settings.save_path, file_format=settings.image_settings.save_format)
+                    else:
+                        img.pack()
+                        
+        return img
+    except Exception as e:
+        logger.error(f"Node baking failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+    finally:
+        context.scene.render.engine = orig_engine
 
 class NodeGraphHandler:
     def __init__(self, materials):

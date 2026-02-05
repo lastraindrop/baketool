@@ -6,9 +6,6 @@ import sys
 # You can add your local blender paths here. 
 # The script will automatically skip missing ones.
 BLENDER_PATHS = [
-    r"C:\Program Files\Blender Foundation\Blender 3.6\blender.exe",
-    r"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe",
-    r"C:\Program Files\Blender Foundation\Blender 5.0\blender.exe",
     r"D:\Program Files\Blender-3.6\blender.exe",
     r"D:\Program Files\Blender-4.2\blender.exe",
     r"D:\Program Files\Blender-4.5\blender.exe",

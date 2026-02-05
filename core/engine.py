@@ -1,6 +1,7 @@
 import bpy
 import logging
 import traceback
+import time
 from collections import namedtuple
 from typing import List, Dict, Optional, Any
 from pathlib import Path
@@ -84,6 +85,8 @@ class BakeStepRunner:
                             # Update UI status with channel info
                             scene.bake_status = f"[{i+1}/{total_ch}] Baking {c['name']} - {task.base_name}"
                             
+                            start_time = time.time()
+                            
                             if state_mgr: 
                                 try:
                                     state_mgr.update_step(i, task.active_obj.name, c['name'])
@@ -92,15 +95,26 @@ class BakeStepRunner:
                             img = BakePassExecutor.execute(job.setting, task, c, handler, baked_images, udim_tiles, array_cache)
                             
                             if img:
+                                duration = time.time() - start_time
                                 key = c['name'] if c['id'] == 'CUSTOM' else c['id']
                                 baked_images[key] = img
                                 
                                 path = self._handle_save(job.setting, task, img, f_info)
+                                
+                                # Package metadata
                                 results.append({
                                     'image': img,
                                     'type': c['name'],
                                     'obj': task.active_obj.name,
-                                    'path': path
+                                    'path': path,
+                                    'meta': {
+                                        'res_x': img.size[0],
+                                        'res_y': img.size[1],
+                                        'samples': int(job.setting.sample),
+                                        'duration': duration,
+                                        'bake_type': str(job.setting.bake_type),
+                                        'device': str(job.setting.device)
+                                    }
                                 })
 
                         if job.setting.use_packing:
@@ -147,17 +161,27 @@ class BakeStepRunner:
         
         if not pack_map: return None
         
+        start_time = time.time()
         pack_name = f"{task.base_name}{s.pack_suffix}"
         pack_img = set_image(pack_name, s.res_x, s.res_y, alpha=True, space='Non-Color')
         
         if pack_channels_numpy(pack_img, pack_map, array_cache):
+            duration = time.time() - start_time
             path = self._handle_save(s, task, pack_img, f_info)
             baked_images['PACKED'] = pack_img
             return {
                 'image': pack_img,
                 'type': "Packed",
                 'obj': task.active_obj.name,
-                'path': path
+                'path': path,
+                'meta': {
+                    'res_x': pack_img.size[0],
+                    'res_y': pack_img.size[1],
+                    'samples': 0, # Packing doesn't use samples
+                    'duration': duration,
+                    'bake_type': "NUMPY_PACK",
+                    'device': "CPU"
+                }
             }
         return None
 
@@ -453,32 +477,20 @@ class BakePassExecutor:
 
     @staticmethod
     def _run_blender_bake(setting, prop, bake_pass, mesh_type, chan_id):
+        from . import compat
         scene = bpy.context.scene
         try:
             is_special = (mesh_type is not None) or (chan_id == 'CUSTOM')
             bake_type = 'EMIT' if is_special else bake_pass
             
-            # --- Version Specific Bake Settings ---
-            if bpy.app.version >= (5, 0, 0):
-                # Blender 5.0+ path
-                if hasattr(scene.render, "bake"):
-                    bset = scene.render.bake
-                    if hasattr(bset, "use_multires"): bset.use_multires = False
-                    try: bset.type = bake_type
-                    except: logger.debug(f"5.0: Could not set bake.type to {bake_type}")
-                    bset.margin = setting.margin
-                    bset.use_clear = setting.clearimage
-                    bset.target = 'IMAGE_TEXTURES'
-            else:
-                # Legacy path (Pre-5.0)
-                if hasattr(scene.render, "use_bake_multires"):
-                    scene.render.use_bake_multires = False
-                
-                if hasattr(scene.render, "bake_type"):
-                    try: scene.render.bake_type = bake_type
-                    except: logger.debug(f"Legacy: Could not set bake_type to {bake_type}")
-                    scene.render.bake_margin = setting.margin
-                    scene.render.use_bake_clear = setting.clearimage
+            # --- Use Compatibility Layer ---
+            compat.configure_bake_settings(
+                scene, 
+                bake_type=bake_type,
+                margin=setting.margin,
+                use_clear=setting.clearimage,
+                target='IMAGE_TEXTURES'
+            )
             
             params = {
                 'type': bake_type, 

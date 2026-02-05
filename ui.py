@@ -79,16 +79,32 @@ def _draw_combine(layout, channel):
     grid.prop(channel, "com_tran")
     grid.prop(channel, "com_emi")
 
-def _draw_ao_bevel(layout, channel):
+def _draw_property_group(layout, channel, props_config):
+    """通用属性绘制辅助函数 / Generic property drawer helper.
+    
+    Args:
+        layout: UI layout
+        channel: Channel property group
+        props_config: List of tuples (prop_name, display_name)
+    """
     col = layout.column(align=True)
-    col.prop(channel, f"{channel.id}_sample", text="Samples")
-    col.prop(channel, f"{channel.id}_rad" if channel.id!='ao' else "ao_dis", text="Rad/Dist")
+    for prop_name, display_name in props_config:
+        col.prop(channel, prop_name, text=display_name)
+
+def _draw_ao_bevel(layout, channel):
+    props = [
+        (f"{channel.id}_sample", "Samples"),
+        (f"{channel.id}_rad" if channel.id != 'ao' else "ao_dis", "Rad/Dist")
+    ]
+    _draw_property_group(layout, channel, props)
 
 def _draw_curvature(layout, channel):
-    col = layout.column(align=True)
-    col.prop(channel, "curvature_sample", text="Samples")
-    col.prop(channel, "curvature_rad", text="Radius")
-    col.prop(channel, "curvature_contrast", text="Contrast")
+    props = [
+        ("curvature_sample", "Samples"),
+        ("curvature_rad", "Radius"),
+        ("curvature_contrast", "Contrast")
+    ]
+    _draw_property_group(layout, channel, props)
 
 def _draw_wireframe(layout, channel):
     layout.prop(channel, "wireframe_dis", text="Size")
@@ -123,22 +139,18 @@ CHANNEL_UI_MAP = {
     'node_group': _draw_node_group,
 }
 
-def draw_active_channel_properties(layout, channel, setting):
-    if not channel: return
-    
-    box = layout.box()
-    row = box.row()
-    row.label(text=f"{channel.name} Settings", icon='PREFERENCES')
-    
-    col = box.column(align=True)
+def _draw_naming_section(layout, channel):
+    """绘制命名配置区域 / Draw naming configuration section."""
+    col = layout.column(align=True)
     row = col.split(factor=0.3)
     row.label(text="Naming:")
     sub = row.row(align=True)
     sub.prop(channel, "prefix", text="Pre")
     sub.prop(channel, "suffix", text="Suf")
-    
-    box.separator()
-    col = box.column()
+
+def _draw_color_override_section(layout, channel):
+    """绘制颜色覆盖配置区域 / Draw color override section."""
+    col = layout.column()
     col.prop(channel, "override_defaults", toggle=True)
     
     if channel.override_defaults:
@@ -146,6 +158,18 @@ def draw_active_channel_properties(layout, channel, setting):
         sub.label(text="Advanced Color Override", icon='COLOR')
         sub.prop(channel, "custom_cs", text="Space")
         sub.prop(channel, "custom_mode", text="Export Mode")
+
+def draw_active_channel_properties(layout, channel, setting):
+    if not channel: return
+    
+    box = layout.box()
+    row = box.row()
+    row.label(text=f"{channel.name} Settings", icon='PREFERENCES')
+    
+    _draw_naming_section(box, channel)
+    
+    box.separator()
+    _draw_color_override_section(box, channel)
         
     box.separator()
     
@@ -171,6 +195,34 @@ def draw_results(scene, layout, bj):
     col.operator("baketool.export_result", text="", icon="EXPORT")
     col.operator("baketool.export_all_results", text="", icon="FILE_FOLDER")
     
+    # --- Detailed Metadata Inspector ---
+    if scene.baked_image_results and scene.baked_image_results_index >= 0:
+        res = scene.baked_image_results[scene.baked_image_results_index]
+        box = layout.box()
+        
+        # Header with Channel and Object info
+        row = box.row()
+        row.label(text=f"Detail: {res.channel_type}", icon='INFO')
+        row.label(text=f"Obj: {res.object_name}", icon='OBJECT_DATA')
+        
+        inner = box.column(align=True)
+        
+        # Row 1: File Info
+        r = inner.row(align=True)
+        r.label(text=res.file_size, icon='DISK_DRIVE')
+        r.prop(res, "filepath", text="") # Read-only view
+        
+        # Row 2: Performance & Quality
+        split = inner.split(factor=0.4)
+        c1 = split.column()
+        c1.label(text=f"{res.res_x} x {res.res_y}", icon='FULLSCREEN_ENTER')
+        c1.label(text=f"{res.duration:.2f} s", icon='TIME')
+        
+        c2 = split.column()
+        c2.label(text=f"Samples: {res.samples}", icon='MOD_PARTICLES')
+        c2.label(text=f"{res.bake_type} ({res.device})", icon='NODE_COMPOSITING')
+
+    layout.separator()
     box = layout.box()
     draw_header(box, "Export Settings", 'OUTPUT')
     col = box.column(align=True)
@@ -275,8 +327,13 @@ class LIST_UL_CustomBakeChannelList(bpy.types.UIList):
 class BAKETOOL_UL_BakedImageResults(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         row = layout.row(align=True)
+        # Use split to align resolution to the right or show it subtly
         row.prop(item, "image", text="", emboss=False, icon='IMAGE_DATA')
         row.label(text=item.channel_type)
+        
+        # Display resolution subtly on the right
+        if item.res_x > 0:
+            row.label(text=f"{item.res_x}x{item.res_y}", icon='NONE')
 
 class BAKE_PT_NodePanel(bpy.types.Panel):
     bl_label = "Node Bake"

@@ -268,3 +268,12 @@ class BakedImageResult(bpy.types.PropertyGroup):
     filepath: props.StringProperty()
     object_name: props.StringProperty()
     channel_type: props.StringProperty()
+    
+    # --- Metadata Fields ---
+    res_x: props.IntProperty(name="Width")
+    res_y: props.IntProperty(name="Height")
+    samples: props.IntProperty(name="Samples")
+    duration: props.FloatProperty(name="Duration", precision=2)
+    bake_type: props.StringProperty(name="Method")
+    device: props.StringProperty(name="Device")
+    file_size: props.StringProperty(name="File Size") # Formatted e.g. "1.2 MB"
