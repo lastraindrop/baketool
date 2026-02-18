@@ -149,7 +149,8 @@ class UVLayoutManager:
             uv_layer.data.foreach_set("uv", uvs_2d.flatten())
 
     def _apply_smart_uv(self):
-        if bpy.context.object.mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
+        if bpy.context.object and bpy.context.object.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action='DESELECT')
         for o in self.objects: o.select_set(True)
         bpy.context.view_layer.objects.active = self.objects[0]

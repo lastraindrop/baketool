@@ -4,13 +4,14 @@ import os
 import tempfile
 import shutil
 import numpy as np
-from .helpers import cleanup_scene, create_test_object, get_job_setting, JobBuilder
+from .helpers import cleanup_scene, create_test_object, get_job_setting, JobBuilder, ensure_cycles
 from ..core import common, uv_manager, image_manager
 from .. import ops
 from ..constants import CHANNEL_BAKE_INFO
 
 class TestFullBakeIntegration(unittest.TestCase):
     def setUp(self):
+        ensure_cycles()
         cleanup_scene()
         self.temp_dir = tempfile.mkdtemp()
         

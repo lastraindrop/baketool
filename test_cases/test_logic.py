@@ -3,10 +3,10 @@ import bpy
 import os
 from pathlib import Path
 from .helpers import cleanup_scene, create_test_object, get_job_setting
-from ..core import common, uv_manager
-from .. import ops
+from ..core import common, uv_manager, engine
+from ..core.engine import TaskBuilder
 from .. import property
-
+ 
 class TestNamingConvention(unittest.TestCase):
     """Test file naming logic."""
     
@@ -57,14 +57,14 @@ class TestTaskGeneration(unittest.TestCase):
             
     def test_single_object_mode(self):
         self.setting.bake_mode = 'SINGLE_OBJECT'
-        tasks = ops.TaskBuilder.build(bpy.context, self.setting, [self.obj1, self.obj2], self.obj1)
+        tasks = TaskBuilder.build(bpy.context, self.setting, [self.obj1, self.obj2], self.obj1)
         self.assertEqual(len(tasks), 2)
         self.assertEqual(tasks[0].objects, [self.obj1])
         self.assertEqual(tasks[1].objects, [self.obj2])
         
     def test_combine_object_mode(self):
         self.setting.bake_mode = 'COMBINE_OBJECT'
-        tasks = ops.TaskBuilder.build(bpy.context, self.setting, [self.obj1, self.obj2], self.obj1)
+        tasks = TaskBuilder.build(bpy.context, self.setting, [self.obj1, self.obj2], self.obj1)
         self.assertEqual(len(tasks), 1)
         self.assertEqual(set(tasks[0].objects), {self.obj1, self.obj2})
         self.assertEqual(tasks[0].active_obj, self.obj1)
@@ -81,7 +81,7 @@ class TestTaskBuilder_Logic(unittest.TestCase):
     def test_selected_to_active_grouping(self):
         self.setting.bake_type = 'BASIC'
         self.setting.bake_mode = 'SELECT_ACTIVE'
-        tasks = ops.TaskBuilder.build(
+        tasks = TaskBuilder.build(
             bpy.context, 
             self.setting, 
             objects=[self.high, self.low], 

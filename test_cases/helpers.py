@@ -10,6 +10,14 @@ def ensure_object_mode():
     except:
         pass
 
+def ensure_cycles():
+    """Idempotent enable of Cycles addon."""
+    try:
+        import addon_utils
+        addon_utils.enable("cycles")
+    except:
+        pass
+
 def cleanup_scene():
     """Deep cleanup of the current scene."""
     ensure_object_mode()

@@ -287,7 +287,13 @@ class NodeGraphHandler:
         elif socket_name == 'pbr_conv_base':
             diff_src = self._find_socket_source(mat, 'color', None)
             mix = self._add_node(mat, 'ShaderNodeMix', data_type='RGBA')
-            tree.links.new(metallic_out, mix.inputs[0])
-            tree.links.new(diff_src, mix.inputs[6]); tree.links.new(spec_src, mix.inputs[7])
-            return mix.outputs[2]
+            tree.links.new(metallic_out, mix.inputs[0]) # Factor
+            
+            # Use socket names 'A' and 'B' for robustness (Blender 3.4+ ShaderNodeMix)
+            sock_a = mix.inputs.get('A') or mix.inputs[6]
+            sock_b = mix.inputs.get('B') or mix.inputs[7]
+            
+            tree.links.new(diff_src, sock_a)
+            tree.links.new(spec_src, sock_b)
+            return mix.outputs[2] # Result
         return None

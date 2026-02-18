@@ -4,16 +4,20 @@ import os
 import tempfile
 import shutil
 import numpy as np
-from .helpers import cleanup_scene, create_test_object, get_job_setting
+from .helpers import cleanup_scene, create_test_object, get_job_setting, ensure_cycles
 from ..core import image_manager, uv_manager, math_utils, common
-from .. import ops
+from ..core.node_manager import NodeGraphHandler
+from ..core.uv_manager import UVLayoutManager
+from ..core.image_manager import set_image
+from ..core import math_utils, common
 
 class TestNodeGraphLogic(unittest.TestCase):
     def setUp(self):
+        ensure_cycles()
         cleanup_scene()
         self.obj = create_test_object("NodeTestObj")
         self.mat = self.obj.data.materials[0]
-        self.handler = ops.NodeGraphHandler([self.mat])
+        self.handler = NodeGraphHandler([self.mat])
         self.handler.__enter__()
         self.img = image_manager.set_image("TestImg", 128, 128)
         
@@ -95,7 +99,7 @@ class TestUVDataManipulation(unittest.TestCase):
     def test_smart_uv_creation(self):
         s = get_job_setting()
         s.use_auto_uv = True
-        with ops.UVLayoutManager([self.obj], s):
+        with UVLayoutManager([self.obj], s):
             self.assertEqual(self.obj.data.uv_layers.active.name, "BT_Bake_Temp_UV")
         self.assertNotEqual(self.obj.data.uv_layers.active.name, "BT_Bake_Temp_UV")
 
@@ -118,7 +122,7 @@ class TestApplyBakedResult(unittest.TestCase):
     def setUp(self):
         cleanup_scene()
         self.obj = create_test_object("Original")
-        self.img = image_manager.set_image("Baked_Color", 32, 32)
+        self.img = set_image("Baked_Color", 32, 32)
         
     def test_apply_single_object(self):
         baked_images = {'color': self.img}
@@ -143,9 +147,9 @@ class TestNodeGroupChannel(unittest.TestCase):
         c = s.channels.add()
         c.id = 'node_group'; c.enabled = True
         c.extension_settings.node_group = self.ng.name; c.extension_settings.output_name = "MyOutput"
-        img = image_manager.set_image("NG_Bake", 64, 64)
+        img = set_image("NG_Bake", 64, 64)
         
-        with ops.NodeGraphHandler([self.mat]) as h:
+        with NodeGraphHandler([self.mat]) as h:
             h.setup_for_pass('EMIT', 'node_group', img, channel_settings=c)
             tree = self.mat.node_tree
             out_node = next(n for n in tree.nodes if n.bl_idname == 'ShaderNodeOutputMaterial' and n.is_active_output)
@@ -182,27 +186,21 @@ class TestCompatibilityLayer(unittest.TestCase):
         """Test version-safe bake type setting."""
         from ..core import compat
         
+        # Ensure Cycles is active for consistent testing of passes like EMIT
+        self.scene.render.engine = 'CYCLES'
+        
         # The compat layer should handle version differences gracefully
         result = compat.set_bake_type(self.scene, 'EMIT')
+        self.assertTrue(result, "set_bake_type should return True for valid type")
         
-        # If the function returns False, it means the current Blender version
-        # may not support this specific bake type or there's an API difference
-        # The important thing is that it doesn't crash
-        
-        bake_settings = compat.get_bake_settings(self.scene)
-        self.assertIsNotNone(bake_settings, "Bake settings should exist")
-        
-        # Verify the attribute exists (version-dependent)
-        if compat.IS_BLENDER_5:
-            # Blender 5.0+ may have different bake type enums
-            # Just verify the settings object is accessible
-            self.assertTrue(hasattr(bake_settings, 'margin'),
-                          "Bake settings should have margin property")
+        # Verify the change reached the correct property
+        if self.scene.render.engine == 'CYCLES' and hasattr(self.scene, "cycles"):
+            self.assertEqual(self.scene.cycles.bake_type, 'EMIT')
         else:
-            # Legacy versions
-            self.assertTrue(hasattr(bake_settings, 'bake_margin') or 
-                          hasattr(bake_settings, 'margin'),
-                          "Bake settings should have margin property")
+            bake_settings = compat.get_bake_settings(self.scene)
+            self.assertIsNotNone(bake_settings, "Bake settings should exist")
+            prop = "type" if hasattr(bake_settings, "type") else "bake_type"
+            self.assertEqual(getattr(bake_settings, prop), 'EMIT')
     
     def test_configure_bake_settings(self):
         """Test comprehensive bake settings configuration."""

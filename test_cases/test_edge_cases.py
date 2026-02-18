@@ -42,6 +42,7 @@ class TestEdgeCases(unittest.TestCase):
         # Since we want to test the *resilience* of the save operation:
         
         img = image_manager.set_image("TestLocked", 32, 32)
+        img.name = "LockedObj_color" # Rename to match target
         
         # Lock the file by opening it in exclusive mode (or just writing and keeping handle)
         with open(locked_file, 'w') as f:
@@ -51,7 +52,7 @@ class TestEdgeCases(unittest.TestCase):
             # Try to save over it using image_manager
             # It should NOT crash, but return None or handle error
             try:
-                result_path = image_manager.save_image(img, path=self.temp_dir, name="LockedObj_color")
+                result_path = image_manager.save_image(img, path=self.temp_dir)
                 # If it succeeds (e.g. on Linux/Mac where locking is advisory), that's fine too.
                 # If it fails (Windows), it should be graceful.
             except PermissionError:
@@ -368,3 +369,27 @@ class TestEdgeCases(unittest.TestCase):
             self.assertIsInstance(res, bool)
         except:
             pass
+
+    def test_udim_tile_sync(self):
+        """Test: ensure UDIM tiles are correctly added/removed in sync with requests."""
+        # 1. Create image with 1001
+        img = image_manager.set_image("UDIM_Sync_Test", 1024, 1024, use_udim=True)
+        self.assertEqual(len(img.tiles), 1)
+        self.assertEqual(img.tiles[0].number, 1001)
+
+        # 2. Update to 1001, 1002 (should add 1002)
+        img = image_manager.set_image("UDIM_Sync_Test", 1024, 1024, use_udim=True, udim_tiles={1001, 1002})
+        self.assertEqual(len(img.tiles), 2)
+        tile_nums = {t.number for t in img.tiles}
+        self.assertIn(1001, tile_nums)
+        self.assertIn(1002, tile_nums)
+
+        # 3. Update to 1003 only (should add 1003, remove 1001, 1002)
+        # Note: image_manager implementation might just add/remove. 
+        # set_image implementation:
+        #   missing_tiles = target - existing -> ADD
+        #   extra_tiles = existing - target -> REMOVE
+        img = image_manager.set_image("UDIM_Sync_Test", 1024, 1024, use_udim=True, udim_tiles={1003})
+        self.assertEqual(len(img.tiles), 1)
+        self.assertEqual(img.tiles[0].number, 1003)
+

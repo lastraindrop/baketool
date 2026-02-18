@@ -34,7 +34,8 @@ def main():
     # Force UTF-8 environment variables to prevent encoding issues on Windows
     test_env = os.environ.copy()
     test_env["PYTHONIOENCODING"] = "utf-8"
-    test_env["LANG"] = "en_US.UTF-8"
+    test_env["PYTHONIOENCODING"] = "utf-8"
+    # test_env["LANG"] = "en_US.UTF-8" # Might cause issues on Windows
 
     valid_paths = [p for p in BLENDER_PATHS if os.path.exists(p)]
     

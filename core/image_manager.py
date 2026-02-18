@@ -14,6 +14,11 @@ def robust_image_editor_context(context, image):
     window = context.window
     if not window and context.window_manager.windows:
         window = context.window_manager.windows[0]
+
+    if not window:
+        yield False
+        return
+
     screen = window.screen
     
     area = None

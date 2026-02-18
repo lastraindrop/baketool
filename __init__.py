@@ -12,7 +12,7 @@ try:
     from . import tests
     HAS_TESTS = True
 except ImportError:
-    logger.error("Failed to load test module", exc_info=True)
+    logging.getLogger(__name__).warning("Failed to load test module", exc_info=True)
     HAS_TESTS = False
 
 from .constants import *
