@@ -170,7 +170,7 @@ class UVLayoutManager:
             try:
                 if obj and layer and layer.name in obj.data.uv_layers:
                     obj.data.uv_layers.remove(layer)
-            except: pass
+            except Exception: pass
 
         for obj_name, state in self.original_states.items():
             obj = bpy.data.objects.get(obj_name)
@@ -180,4 +180,4 @@ class UVLayoutManager:
                     obj.data.uv_layers.active_index = state['active']
                 if state['render'] < len(obj.data.uv_layers):
                     obj.data.uv_layers[state['render']].active_render = True
-            except: pass
+            except Exception: pass

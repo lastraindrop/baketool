@@ -1,6 +1,6 @@
 import bpy
 import json
-import os
+from pathlib import Path
 import logging
 
 logger = logging.getLogger(__name__)
@@ -11,8 +11,8 @@ def load_translations():
     Returns a dictionary formatted for bpy.app.translations.register.
     Format: {locale: {src_key: translated_str, ...}}
     """
-    json_path = os.path.join(os.path.dirname(__file__), "translations.json")
-    if not os.path.exists(json_path):
+    json_path = Path(__file__).parent / "translations.json"
+    if not json_path.exists():
         logger.warning(f"Translation file not found at: {json_path}")
         return {}
 

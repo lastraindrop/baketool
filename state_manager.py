@@ -61,7 +61,7 @@ class BakeStateManager:
         if self.log_file.exists():
             try:
                 os.remove(self.log_file)
-            except:
+            except Exception:
                 pass
         
         if context:
@@ -85,7 +85,7 @@ class BakeStateManager:
                 f.flush()
                 try:
                     os.fsync(f.fileno())
-                except:
+                except Exception:
                     pass # Some systems/mounts don't support fsync
         except Exception as e:
             logger.error(f"BakeTool Log Error: {e}")
@@ -97,7 +97,7 @@ class BakeStateManager:
         try:
             with open(self.log_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        except:
+        except Exception:
             return None
             
     def has_crash_record(self):

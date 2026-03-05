@@ -20,6 +20,15 @@ def get_image_pixels_as_numpy(image):
     
     return raw_pixels.reshape(-1, 4)
 
+def _get_cached_array(img, cache=None):
+    """Get image pixels as a NumPy array, with optional caching to avoid redundant reads."""
+    if cache is not None and img in cache:
+        return cache[img]
+    arr = get_image_pixels_as_numpy(img)
+    if cache is not None and arr is not None:
+        cache[img] = arr
+    return arr
+
 def process_pbr_numpy(target_img, spec_img, diff_img, map_id, threshold=0.04, array_cache=None):
     """
     Optimized PBR conversion (Specular -> Metallic/BaseColor) using NumPy.
@@ -27,12 +36,7 @@ def process_pbr_numpy(target_img, spec_img, diff_img, map_id, threshold=0.04, ar
     try:
         # Helper to get cached array
         def get_arr(img):
-            if array_cache is not None and img in array_cache:
-                return array_cache[img]
-            arr = get_image_pixels_as_numpy(img)
-            if array_cache is not None and arr is not None:
-                array_cache[img] = arr
-            return arr
+            return _get_cached_array(img, array_cache)
 
         spec_arr = get_arr(spec_img)
         if spec_arr is None: return False
@@ -90,12 +94,8 @@ def pack_channels_numpy(target_img, channel_map, array_cache=None):
         result_arr[:, 3] = 1.0 
         
         def get_arr(img):
-            if array_cache is not None and img in array_cache:
-                return array_cache[img]
-            arr = get_image_pixels_as_numpy(img)
-            if array_cache is not None and arr is not None:
-                array_cache[img] = arr
-            return arr
+            return _get_cached_array(img, array_cache)
+
 
         any_packed = False
         for idx, src_img in channel_map.items():
@@ -283,6 +283,6 @@ def setup_mesh_attribute(obj, id_type='ELEMENT', start_color=(1,0,0,1), iteratio
     
     if current_mode != 'OBJECT': 
         try: bpy.ops.object.mode_set(mode=current_mode)
-        except: pass
+        except Exception: pass
         
     return attr_name

@@ -1,6 +1,6 @@
 import ast
 import json
-import os
+from pathlib import Path
 import re
 import sys
 import argparse
@@ -128,11 +128,13 @@ class UniversalExtractor(ast.NodeVisitor):
 
 def get_files(root):
     res = []
-    for dp, dn, fn in os.walk(root):
-        dn[:] = [d for d in dn if d not in IGNORE_DIRS]
-        for f in fn:
-            if f.endswith(".py") and f not in IGNORE_FILES:
-                res.append(os.path.join(dp, f))
+    root_path = Path(root)
+    for p in root_path.rglob("*.py"):
+        if p.name in IGNORE_FILES:
+            continue
+        if any(part in IGNORE_DIRS for part in p.parts):
+            continue
+        res.append(str(p))
     return res
 
 def sync_json(found_keys, json_path, mode='update'):
@@ -145,9 +147,10 @@ def sync_json(found_keys, json_path, mode='update'):
     """
     data = {"header": {"system": "Extracted by Universal Tool"}, "data": {}}
     
-    if os.path.exists(json_path):
+    json_file = Path(json_path)
+    if json_file.exists():
         try:
-            with open(json_path, 'r', encoding='utf-8') as f:
+            with open(json_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
         except Exception as e:
             print(f"[!] Error reading JSON: {e}")
@@ -204,8 +207,8 @@ def main():
     parser.add_argument("--path", default=".", help="Root directory to scan")
     args = parser.parse_args()
 
-    root_dir = os.path.abspath(args.path)
-    json_path = os.path.join(root_dir, DEFAULT_JSON)
+    root_dir = Path(args.path).resolve()
+    json_path = root_dir / DEFAULT_JSON
     
     print(f"--- Universal Translation Extractor ---")
     print(f"Root: {root_dir}")
@@ -220,7 +223,7 @@ def main():
             with open(f, 'r', encoding='utf-8') as fp:
                 extractor.visit(ast.parse(fp.read()))
         except Exception as e:
-            print(f"[!] Failed to parse {os.path.basename(f)}: {e}")
+            print(f"[!] Failed to parse {Path(f).name}: {e}")
             
     added, removed, total = sync_json(extractor.found_strings, json_path, args.mode)
     

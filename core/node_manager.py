@@ -59,9 +59,7 @@ def bake_node_to_image(context, material, node, settings):
                         
         return img
     except Exception as e:
-        logger.error(f"Node baking failed: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.exception(f"Node baking failed: {e}")
         return None
     finally:
         context.scene.render.engine = orig_engine
@@ -103,7 +101,7 @@ class NodeGraphHandler:
             if mat in self.session_nodes:
                 for n in self.session_nodes[mat].values():
                     try: tree.nodes.remove(n)
-                    except: pass
+                    except Exception: pass
             
             # Remove all temp logic nodes securely
             if mat in self.temp_logic_nodes:
@@ -113,7 +111,7 @@ class NodeGraphHandler:
                     try:
                         if n in tree.nodes.values():
                             tree.nodes.remove(n)
-                    except: pass
+                    except Exception: pass
                 self.temp_logic_nodes[mat] = []
         
         # 2. Restore original links
@@ -126,20 +124,20 @@ class NodeGraphHandler:
                     # Ensure the from_socket belongs to a node that still exists
                     if from_socket and from_socket.node and from_socket.node.name in mat.node_tree.nodes:
                         mat.node_tree.links.new(from_socket, out_n.inputs[to_socket_idx])
-            except: pass
+            except Exception: pass
         
         # 3. Clean up temp attributes
         for obj, attr in self.temp_attributes:
             try: 
                 if attr in obj.data.attributes:
                     obj.data.attributes.remove(obj.data.attributes[attr])
-            except: pass
+            except Exception: pass
 
         # 4. Explicitly remove the protection dummy image if it has no users left
         d = bpy.data.images.get("BT_Protection_Dummy")
         if d and d.users == 0:
             try: bpy.data.images.remove(d)
-            except: pass
+            except Exception: pass
 
     def setup_protection(self, objects, active_materials):
         """
@@ -173,7 +171,7 @@ class NodeGraphHandler:
             
             for n in self.temp_logic_nodes[mat]:
                 try: tree.nodes.remove(n)
-                except: pass
+                except Exception: pass
             self.temp_logic_nodes[mat] = []
 
             if mat not in self.original_links:

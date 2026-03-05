@@ -1,12 +1,12 @@
 import sys
-import os
+from pathlib import Path
 import unittest
 import bpy
 
 # 1. 获取插件根目录的父目录并加入 Python 路径
-current_dir = os.path.dirname(os.path.realpath(__file__))
-addon_root = os.path.dirname(current_dir)
-parent_dir = os.path.dirname(addon_root)
+current_dir = str(Path(__file__).resolve().parent)
+addon_root = str(Path(current_dir).parent)
+parent_dir = str(Path(addon_root).parent)
 addon_name = "baketool" # 显式指定包名
 
 # 强制将开发目录放在最前面，防止加载已安装在 Blender 目录下的插件
@@ -36,7 +36,7 @@ def run():
         # 关键：discover 需要从包所在的父目录开始，以正确处理相对导入
         loader = unittest.TestLoader()
         suite = loader.discover(
-            start_dir=os.path.join(addon_root, "test_cases"),
+            start_dir=str(Path(addon_root) / "test_cases"),
             pattern='test_*.py',
             top_level_dir=parent_dir
         )

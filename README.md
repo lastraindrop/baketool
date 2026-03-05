@@ -5,6 +5,8 @@ A simplified, high-efficiency baking solution for Blender.
 ### Key Features (v0.9.8 Refactor)
 - **Hardened Architecture**: Standardized snake_case properties, UI dispatch patterns, and unified logging across all modules.
 - **Modular Engine**: Decoupled UI-Engine-Core logic with 100% test coverage for Blender 3.6 - 5.0.
+- **Dynamic Parameter Alignment**: Fully dynamic property evaluation ensures exact sync between UI configuration and engine execution, without hardcoded fragility.
+- **Cross-Platform Rock-Solid Paths**: Core migrated to `pathlib.Path` with normalized exceptions to fully eradicate silent runtime crashes.
 - **Zero-Side-Effect Quick Bake**: Powered by Runtime Proxies—bake selected objects without modifying your scene presets.
 - **Smart Object Reuse**: Automatically updates existing `_Baked` objects instead of duplicating mesh data.
 - **Production Resilience**: Intelligent handling of Library Linked assets and NaN mesh data.

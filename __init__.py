@@ -1,7 +1,7 @@
 import bpy
 import logging
 from bpy import (props, types)
-from bpy.props import PointerProperty, StringProperty, IntProperty, CollectionProperty
+from bpy.props import IntProperty, CollectionProperty, StringProperty, PointerProperty
 from . import translations
 from . import ui
 from . import ops
@@ -15,7 +15,7 @@ except ImportError:
     logging.getLogger(__name__).warning("Failed to load test module", exc_info=True)
     HAS_TESTS = False
 
-from .constants import *
+from .constants import CHANNEL_BAKE_INFO
 
 from bpy.app.handlers import persistent
 from bpy.types import AddonPreferences
@@ -59,6 +59,7 @@ bl_info = {
     "doc_url": "",
     "category": "Bake",
 }
+
 
 # Define lists of classes for registration
 property_classes = [

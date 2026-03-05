@@ -1,7 +1,7 @@
 import bpy
 import unittest
 import importlib
-import os
+from pathlib import Path
 import sys
 
 class BAKETOOL_OT_RunTests(bpy.types.Operator):
@@ -14,9 +14,9 @@ class BAKETOOL_OT_RunTests(bpy.types.Operator):
         print(f"STARTING BAKETOOL MODULAR TEST SUITE (AUTO-DISCOVERY)")
         print("="*60)
         
-        addon_root = os.path.dirname(__file__)
-        parent_dir = os.path.dirname(addon_root)
-        test_dir = os.path.join(addon_root, "test_cases")
+        addon_root = Path(__file__).parent
+        parent_dir = str(addon_root.parent)
+        test_dir = str(addon_root / "test_cases")
         
         # 1. 自动发现并重新加载模块 // Discovery and force reload
         loader = unittest.TestLoader()

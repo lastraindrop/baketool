@@ -3,11 +3,12 @@ import os
 import unittest
 import bpy
 import addon_utils
+from pathlib import Path
 
 # 1. Setup path
-current_dir = os.path.dirname(os.path.realpath(__file__))
-addon_root = os.path.dirname(current_dir)
-parent_dir = os.path.dirname(addon_root)
+current_dir = str(Path(__file__).resolve().parent)
+addon_root = str(Path(current_dir).parent)
+parent_dir = str(Path(addon_root).parent)
 addon_name = "baketool"
 
 if parent_dir in sys.path:

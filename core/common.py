@@ -24,7 +24,7 @@ def log_error(context, message, state_mgr=None, include_traceback=False):
     # 3. Persistence Log (Crash recovery)
     if state_mgr:
         try: state_mgr.log_error(message)
-        except: pass
+        except Exception: pass
 
 def get_safe_base_name(setting, obj, mat=None, is_batch=False):
     """Naming convention logic."""
@@ -144,26 +144,8 @@ class SceneSettingsContext:
         self.original = {}
         self.attr_map = {
             'scene': {'res_x': 'resolution_x', 'res_y': 'resolution_y', 'res_pct': 'resolution_percentage'},
-            'bake': {} # Will be populated based on version
+            'bake': {'margin': 'bake_margin', 'type': 'bake_type', 'use_clear': 'bake_clear'} if bpy.app.version < (5, 0, 0) else {},
         }
-        
-        # Populate bake mapping for different versions
-        if bpy.app.version >= (5, 0, 0):
-            self.attr_map['bake'] = {
-                'margin': 'margin',
-                'use_clear': 'use_clear',
-                'type': 'type',
-                'samples': 'samples',
-                'use_selected_to_active': 'use_selected_to_active'
-            }
-        else:
-            self.attr_map['bake'] = {
-                'margin': 'bake_margin',
-                'use_clear': 'use_bake_clear',
-                'type': 'bake_type',
-                'samples': 'bake_samples',
-                'use_selected_to_active': 'use_bake_selected_to_active'
-            }
 
     def _get_target(self):
         scene = bpy.context.scene
@@ -171,10 +153,7 @@ class SceneSettingsContext:
         if self.category == 'cycles': return scene.cycles
         if self.category == 'image': return scene.render.image_settings
         if self.category == 'cm': return scene.view_settings
-        # 兼容 Blender 5.0 的 BakeSettings 迁移 // Blender 5.0 compatibility
-        if self.category == 'bake':
-            if bpy.app.version >= (5, 0, 0): return scene.render.bake # 5.0+
-            return scene.render # Legacy
+        if self.category == 'bake': return scene.render.bake if bpy.app.version >= (5, 0, 0) and hasattr(scene.render, "bake") else scene.render
         return None
 
     def __enter__(self):
@@ -197,7 +176,7 @@ class SceneSettingsContext:
         if not target: return
         for k, v in self.original.items():
             try: setattr(target, k, v)
-            except: pass
+            except Exception: pass
 
 def apply_baked_result(original_obj, task_images, setting, task_base_name):
     """Create a new object or update existing one with baked textures applied."""
@@ -205,7 +184,7 @@ def apply_baked_result(original_obj, task_images, setting, task_base_name):
     col = bpy.data.collections.get("Baked_Results") or bpy.data.collections.new("Baked_Results")
     if col.name not in bpy.context.scene.collection.children:
         try: bpy.context.scene.collection.children.link(col)
-        except: pass
+        except Exception: pass
 
     # 1. Reuse existing baked object if possible to save memory
     target_name = f"{task_base_name}_Baked"
@@ -266,7 +245,7 @@ def apply_baked_result(original_obj, task_images, setting, task_base_name):
             non_color_channels = {'metal', 'rough', 'normal', 'specular', 'ao', 'height', 'gloss', 'bevnor'}
             if chan_id in non_color_channels:
                 try: tex.image.colorspace_settings.name = 'Non-Color'
-                except: pass
+                except Exception: pass
                 
             if chan_id == 'normal':
                 nor = tree.nodes.new('ShaderNodeNormalMap'); nor.location = (-300, tex.location.y)
@@ -281,7 +260,8 @@ def apply_baked_result(original_obj, task_images, setting, task_base_name):
             elif target_socket:
                 tree.links.new(tex.outputs[0], target_socket)
                 
-            if chan_id == 'alpha': mat.blend_method = 'BLEND'
+            if chan_id == 'alpha' and hasattr(mat, 'blend_method'):  # blend_method removed in Blender 4.0+ EEVEE Next
+                mat.blend_method = 'BLEND'
         return mat
 
     first_val = next(iter(task_images.values()))

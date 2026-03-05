@@ -83,7 +83,7 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
     
     if not full:
         try: image.colorspace_settings.name = space
-        except: pass 
+        except Exception: pass 
     
     if alpha: image.alpha_mode = 'STRAIGHT'
     
@@ -95,7 +95,7 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
             try:
                 pixels = [c for c in basiccolor] * (image.size[0] * image.size[1])
                 image.pixels.foreach_set(pixels)
-            except: pass
+            except Exception: pass
 
     if use_udim and image.source == 'TILED':
         target_tiles = set(udim_tiles) if udim_tiles else {1001}
@@ -129,11 +129,11 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
             tile_to_remove = next((t for t in image.tiles if t.number == t_idx), None)
             if tile_to_remove:
                 try: image.tiles.remove(tile_to_remove)
-                except: pass
+                except Exception: pass
 
     return image
 
-def save_image(image, path='//', folder=False, folder_name='folder', file_format='PNG', motion=False, frame=0, reload=False, fillnum=4, save=True, separator="_", **kwargs):
+def save_image(image, path='//', folder=False, folder_name='folder', file_format='PNG', motion=False, frame=0, reload=False, fillnum=4, save=True, separator="_"):
     """Safe image saving wrapper."""
     if not save or not image: return None
     
@@ -171,6 +171,6 @@ def save_image(image, path='//', folder=False, folder_name='folder', file_format
     if not motion and reload:
         try: 
             image.source = 'FILE'; image.reload()
-        except: pass
+        except Exception: pass
         
     return abs_path

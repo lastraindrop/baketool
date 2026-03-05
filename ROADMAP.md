@@ -75,7 +75,28 @@ This document outlines the long-term strategic vision for Simple Bake Tool (SBT)
 
 ---
 
+## 🛡️ Phase 5: Deep Quality Assurance & Architecture Alignment (Current Focus)
+*Goal: Ensure enterprise-grade stability, dynamic alignment, and robust error prevention.*
+
+### 5.1 Dynamic Parameter Alignment & API Consistency
+- **Concept**: Ensure all dynamic system lookups and references (such as `getattr` and UI parameters) are strictly typed and consistently evaluated without hardcoding.
+- **Tech**: Emphasize unified data access patterns over manual dictionary/list management.
+
+### 5.2 Strict Code Standard Enforcement
+- **Concept**: Prevent silent failures through rigorous error handling and path management.
+- **Tech**:
+  - Adopt strict `except Exception:` instead of bare `except:` to prevent swallowing fatal system signals (completed in v0.9.9).
+  - Adopt fully object-oriented `pathlib.Path` structures instead of legacy `os.path` for bullet-proof cross-platform execution (completed in v0.9.9).
+  - Adopt unified standard tracing with `logger.exception()`.
+
+### 5.3 Universal Headless Pipeline Automation
+- **Concept**: Maintain a robust CI-friendly pipeline ensuring zero regressions.
+- **Goal**: Continually optimize `automation/multi_version_test.py` against Blender 3.6, 4.2 LTS, 4.5 LTS, and 5.0.
+
+---
+
 ## ✅ Completed Milestones (Archive)
+- [x] **v0.9.9**: Code Quality Audit, Pathlib Migration, Core Except Normalization.
 - [x] **v0.9.8**: Architecture Hardening (Standardized properties, UI dispatch, unified logging).
 - [x] **v0.9.7**: Modular Architecture (UI-Engine-Core separation).
 - [x] **v0.9.6**: Cross-Version Compatibility (Blender 3.6 - 5.0).

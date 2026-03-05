@@ -1,5 +1,4 @@
 import bpy
-from ..constants import *
 
 def ensure_object_mode():
     """Safely ensure Object Mode."""
@@ -7,7 +6,7 @@ def ensure_object_mode():
         if hasattr(bpy.context, "active_object") and bpy.context.active_object:
             if bpy.context.active_object.mode != 'OBJECT':
                 bpy.ops.object.mode_set(mode='OBJECT')
-    except:
+    except Exception:
         pass
 
 def ensure_cycles():
@@ -15,7 +14,7 @@ def ensure_cycles():
     try:
         import addon_utils
         addon_utils.enable("cycles")
-    except:
+    except Exception:
         pass
 
 def cleanup_scene():

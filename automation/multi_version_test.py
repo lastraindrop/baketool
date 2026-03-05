@@ -1,6 +1,7 @@
 import subprocess
 import os
 import sys
+from pathlib import Path
 
 # Define Blender execution paths
 # You can add your local blender paths here. 
@@ -12,8 +13,8 @@ BLENDER_PATHS = [
     r"D:\Program Files\Blender-5.0\blender.exe",
 ]
 
-current_dir = os.path.dirname(os.path.realpath(__file__))
-runner_script = os.path.join(current_dir, "headless_runner.py")
+current_dir = str(Path(__file__).resolve().parent)
+runner_script = str(Path(current_dir) / "headless_runner.py")
 
 def get_blender_version(path):
     try:
@@ -37,7 +38,7 @@ def main():
     test_env["PYTHONIOENCODING"] = "utf-8"
     # test_env["LANG"] = "en_US.UTF-8" # Might cause issues on Windows
 
-    valid_paths = [p for p in BLENDER_PATHS if os.path.exists(p)]
+    valid_paths = [p for p in BLENDER_PATHS if Path(p).exists()]
     
     if not valid_paths:
         print("\033[91mERROR: No valid Blender executables found in BLENDER_PATHS.\033[0m")
@@ -89,11 +90,10 @@ def main():
     print("-" * 80)
     
     # Save report
-    report_dir = os.path.join(current_dir, "..", "reports")
-    if not os.path.exists(report_dir):
-        os.makedirs(report_dir)
+    report_dir = Path(current_dir).parent / "reports"
+    report_dir.mkdir(parents=True, exist_ok=True)
     
-    report_path = os.path.join(report_dir, "test_report.txt")
+    report_path = report_dir / "test_report.txt"
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("BAKETOOL CROSS-VERSION TEST REPORT\n")
         f.write("="*40 + "\n")
@@ -103,7 +103,7 @@ def main():
                 f.write(f"Details:\n{detail}\n")
             f.write("-" * 20 + "\n")
             
-    print(f"\nDetailed report saved to: {os.path.abspath(report_path)}")
+    print(f"\nDetailed report saved to: {report_path.resolve()}")
     print("="*80 + "\n")
 
 if __name__ == "__main__":

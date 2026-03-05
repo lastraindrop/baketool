@@ -184,7 +184,7 @@ class PropertyIO:
         try:
             setattr(target, parts[-1], val)
             self.stats['loaded'] += 1
-        except:
+        except Exception:
             pass
 
     def report_stats(self):

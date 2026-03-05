@@ -65,7 +65,7 @@ class BAKETOOL_OT_EmergencyCleanup(bpy.types.Operator):
                     mat.node_tree.nodes.remove(n)
                     count_nodes += 1
                     details.append(f"Removed Protection Node from Material '{mat_name}'")
-                except:
+                except Exception:
                     pass
 
         # 3. Clean up protection images and other bake-temp images
@@ -76,7 +76,7 @@ class BAKETOOL_OT_EmergencyCleanup(bpy.types.Operator):
                     bpy.data.images.remove(img)
                     count_images += 1
                     details.append(f"Removed Temp/Protection Image '{img_name}'")
-                except:
+                except Exception:
                     pass
 
         # 4. Clean up temporary attributes (ID Maps)

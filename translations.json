@@ -5,6 +5,42 @@
         "description": "Finalized translations for Simple Bake Tool"
     },
     "data": {
+        "+X": {
+            "zh_CN": "+X",
+            "fr_FR": "+X",
+            "ru_RU": "+X",
+            "ja_JP": "+X"
+        },
+        "+Y": {
+            "zh_CN": "+Y",
+            "fr_FR": "+Y",
+            "ru_RU": "+Y",
+            "ja_JP": "+Y"
+        },
+        "+Z": {
+            "zh_CN": "+Z",
+            "fr_FR": "+Z",
+            "ru_RU": "+Z",
+            "ja_JP": "+Z"
+        },
+        "-X": {
+            "zh_CN": "-X",
+            "fr_FR": "-X",
+            "ru_RU": "-X",
+            "ja_JP": "-X"
+        },
+        "-Y": {
+            "zh_CN": "-Y",
+            "fr_FR": "-Y",
+            "ru_RU": "-Y",
+            "ja_JP": "-Y"
+        },
+        "-Z": {
+            "zh_CN": "-Z",
+            "fr_FR": "-Z",
+            "ru_RU": "-Z",
+            "ja_JP": "-Z"
+        },
         "10 Bits": {
             "zh_CN": "10 位",
             "fr_FR": "10 bits",
@@ -77,12 +113,6 @@
             "ru_RU": "Индекс активного объекта",
             "ja_JP": "アクティブオブジェクトインデックス"
         },
-        "Add": {
-            "zh_CN": "添加",
-            "fr_FR": "Ajouter",
-            "ru_RU": "Добавить",
-            "ja_JP": "追加"
-        },
         "Add job to start": {
             "zh_CN": "添加任务以开始",
             "fr_FR": "Ajouter une tâche pour commencer",
@@ -107,6 +137,12 @@
             "ru_RU": "Альфа",
             "ja_JP": "アルファ"
         },
+        "Alpha (A)": {
+            "zh_CN": "Alpha (A)",
+            "fr_FR": "Alpha (A)",
+            "ru_RU": "Alpha (A)",
+            "ja_JP": "Alpha (A)"
+        },
         "Angle Limit": {
             "zh_CN": "角度限制",
             "fr_FR": "Limite d'angle",
@@ -125,17 +161,41 @@
             "ru_RU": "Применить запекание",
             "ja_JP": "ベイクを適用"
         },
+        "Apply to Scene": {
+            "zh_CN": "Apply to Scene",
+            "fr_FR": "Apply to Scene",
+            "ru_RU": "Apply to Scene",
+            "ja_JP": "Apply to Scene"
+        },
         "Assign tiles in the object list above": {
             "zh_CN": "在上面的物体列表中分配瓦片",
             "fr_FR": "Assigner des tuiles dans la liste d'objets ci-dessus",
             "ru_RU": "Назначьте плитки в списке объектов выше",
             "ja_JP": "上のオブジェクトリストでタイルを割り当てます"
         },
-        "Auto Repack 0-1": {
-            "zh_CN": "自动重排 0-1",
-            "fr_FR": "Réempaquetage auto 0-1",
-            "ru_RU": "Автоперепаковка 0-1",
-            "ja_JP": "自動再パッキング 0-1"
+        "Auto Load on Startup/New File": {
+            "zh_CN": "Auto Load on Startup/New File",
+            "fr_FR": "Auto Load on Startup/New File",
+            "ru_RU": "Auto Load on Startup/New File",
+            "ja_JP": "Auto Load on Startup/New File"
+        },
+        "Auto Pack Channels": {
+            "zh_CN": "Auto Pack Channels",
+            "fr_FR": "Auto Pack Channels",
+            "ru_RU": "Auto Pack Channels",
+            "ja_JP": "Auto Pack Channels"
+        },
+        "Auto Pack Channels (ORM)": {
+            "zh_CN": "Auto Pack Channels (ORM)",
+            "fr_FR": "Auto Pack Channels (ORM)",
+            "ru_RU": "Auto Pack Channels (ORM)",
+            "ja_JP": "Auto Pack Channels (ORM)"
+        },
+        "Auto Repack": {
+            "zh_CN": "Auto Repack",
+            "fr_FR": "Auto Repack",
+            "ru_RU": "Auto Repack",
+            "ja_JP": "Auto Repack"
         },
         "Auto Smart UV": {
             "zh_CN": "自动智能 UV",
@@ -143,29 +203,59 @@
             "ru_RU": "Авто-Smart UV",
             "ja_JP": "自動スマートUV"
         },
-        "Auto-Apply is disabled for sequences": {
-            "zh_CN": "序列模式下自动应用已禁用",
-            "fr_FR": "L'application auto est désactivée pour les séquences",
-            "ru_RU": "Автоприменение отключено для последовательностей",
-            "ja_JP": "シーケンスでは自動適用が無効です"
-        },
         "Auto-detects tiles from object UVs": {
             "zh_CN": "从物体 UV 自动检测瓦片",
             "fr_FR": "Détecte auto les tuiles à partir des UV d'objet",
             "ru_RU": "Автоопределение плиток из UV объекта",
             "ja_JP": "オブジェクトのUVからタイルを自動検出します"
         },
-        "Automatically create and unwrap a new UV map for baking": {
-            "zh_CN": "自动为烘焙创建并展开新的 UV 映射",
-            "fr_FR": "Créer et déplier auto une nouvelle carte UV pour la cuisson",
-            "ru_RU": "Автоматически создавать новую UV-карту для запекания",
-            "ja_JP": "ベイク用に新しいUVマップを自動的に作成して展開します"
+        "Automatically load this preset if the scene has no bake jobs": {
+            "zh_CN": "Automatically load this preset if the scene has no bake jobs",
+            "fr_FR": "Automatically load this preset if the scene has no bake jobs",
+            "ru_RU": "Automatically load this preset if the scene has no bake jobs",
+            "ja_JP": "Automatically load this preset if the scene has no bake jobs"
+        },
+        "B44": {
+            "zh_CN": "B44",
+            "fr_FR": "B44",
+            "ru_RU": "B44",
+            "ja_JP": "B44"
+        },
+        "B44A": {
+            "zh_CN": "B44A",
+            "fr_FR": "B44A",
+            "ru_RU": "B44A",
+            "ja_JP": "B44A"
+        },
+        "BMP": {
+            "zh_CN": "BMP",
+            "fr_FR": "BMP",
+            "ru_RU": "BMP",
+            "ja_JP": "BMP"
         },
         "BSDF Bake": {
             "zh_CN": "BSDF 烘焙",
             "fr_FR": "Cuisson BSDF",
             "ru_RU": "Запекание BSDF",
             "ja_JP": "BSDFベイク"
+        },
+        "BT_Bake_Temp_UV": {
+            "zh_CN": "BT_Bake_Temp_UV",
+            "fr_FR": "BT_Bake_Temp_UV",
+            "ru_RU": "BT_Bake_Temp_UV",
+            "ja_JP": "BT_Bake_Temp_UV"
+        },
+        "BT_Protection_Node": {
+            "zh_CN": "BT_Protection_Node",
+            "fr_FR": "BT_Protection_Node",
+            "ru_RU": "BT_Protection_Node",
+            "ja_JP": "BT_Protection_Node"
+        },
+        "BW": {
+            "zh_CN": "BW",
+            "fr_FR": "BW",
+            "ru_RU": "BW",
+            "ja_JP": "BW"
         },
         "BW Mode": {
             "zh_CN": "黑白模式",
@@ -293,6 +383,12 @@
             "ru_RU": "Синий",
             "ja_JP": "青"
         },
+        "Blue (B)": {
+            "zh_CN": "Blue (B)",
+            "fr_FR": "Blue (B)",
+            "ru_RU": "Blue (B)",
+            "ja_JP": "Blue (B)"
+        },
         "CPU": {
             "zh_CN": "CPU",
             "fr_FR": "CPU",
@@ -364,18 +460,6 @@
             "fr_FR": "Effacer les erreurs",
             "ru_RU": "Очистить ошибки",
             "ja_JP": "エラーをクリア"
-        },
-        "Clear the crash log and hide this warning": {
-            "zh_CN": "清除崩溃日志并隐藏此警告",
-            "fr_FR": "Effacer le journal de plantage et masquer cet avertissement",
-            "ru_RU": "Очистить журнал сбоев и скрыть это предупреждение",
-            "ja_JP": "クラッシュログをクリアして警告を非表示"
-        },
-        "Col": {
-            "zh_CN": "颜色",
-            "fr_FR": "Col",
-            "ru_RU": "Цвет",
-            "ja_JP": "カラー"
         },
         "Color": {
             "zh_CN": "颜色",
@@ -461,11 +545,47 @@
             "ru_RU": "Польз. имя",
             "ja_JP": "カスタム名"
         },
+        "DIRECTX": {
+            "zh_CN": "DIRECTX",
+            "fr_FR": "DIRECTX",
+            "ru_RU": "DIRECTX",
+            "ja_JP": "DIRECTX"
+        },
+        "DPX": {
+            "zh_CN": "DPX",
+            "fr_FR": "DPX",
+            "ru_RU": "DPX",
+            "ja_JP": "DPX"
+        },
+        "DWAA": {
+            "zh_CN": "DWAA",
+            "fr_FR": "DWAA",
+            "ru_RU": "DWAA",
+            "ja_JP": "DWAA"
+        },
+        "DWAB": {
+            "zh_CN": "DWAB",
+            "fr_FR": "DWAB",
+            "ru_RU": "DWAB",
+            "ja_JP": "DWAB"
+        },
         "Debug Mode": {
             "zh_CN": "调试模式",
             "fr_FR": "Mode débogage",
             "ru_RU": "Режим отладки",
             "ja_JP": "デバッグモード"
+        },
+        "Default Preset": {
+            "zh_CN": "Default Preset",
+            "fr_FR": "Default Preset",
+            "ru_RU": "Default Preset",
+            "ja_JP": "Default Preset"
+        },
+        "Default Startup Configuration": {
+            "zh_CN": "Default Startup Configuration",
+            "fr_FR": "Default Startup Configuration",
+            "ru_RU": "Default Startup Configuration",
+            "ja_JP": "Default Startup Configuration"
         },
         "Deflate": {
             "zh_CN": "Deflate",
@@ -491,18 +611,6 @@
             "ru_RU": "Удалить все",
             "ja_JP": "すべて削除"
         },
-        "Denoise": {
-            "zh_CN": "降噪",
-            "fr_FR": "Débruitage",
-            "ru_RU": "Шумоподавление",
-            "ja_JP": "デノイズ"
-        },
-        "Denoise Method": {
-            "zh_CN": "降噪方法",
-            "fr_FR": "Méthode de débruitage",
-            "ru_RU": "Метод шумоподавления",
-            "ja_JP": "デノイズ方法"
-        },
         "Depth": {
             "zh_CN": "深度",
             "fr_FR": "Profondeur",
@@ -526,12 +634,6 @@
             "fr_FR": "Appareil",
             "ru_RU": "Устройство",
             "ja_JP": "デバイス"
-        },
-        "Dielectric Specular": {
-            "zh_CN": "介电高光 (Dielectric Specular)",
-            "fr_FR": "Spéculaire diélectrique",
-            "ru_RU": "Диэлектрический блик",
-            "ja_JP": "誘電体スペキュラー"
         },
         "Diffuse": {
             "zh_CN": "漫射",
@@ -568,12 +670,6 @@
             "fr_FR": "Distance",
             "ru_RU": "Расстояние",
             "ja_JP": "距离"
-        },
-        "Down": {
-            "zh_CN": "下移",
-            "fr_FR": "Bas",
-            "ru_RU": "Вниз",
-            "ja_JP": "下へ"
         },
         "Duration": {
             "zh_CN": "持续时间",
@@ -641,12 +737,6 @@
             "ru_RU": "Экспорт модели",
             "ja_JP": "モデルをエクスポート"
         },
-        "Export Settings": {
-            "zh_CN": "导出设置",
-            "fr_FR": "Paramètres d'exportation",
-            "ru_RU": "Настройки экспорта",
-            "ja_JP": "エクスポート設定"
-        },
         "Extension (PBR Conv)": {
             "zh_CN": "扩展 (PBR 转换)",
             "fr_FR": "Extension (Conv PBR)",
@@ -683,35 +773,23 @@
             "ru_RU": "FBX",
             "ja_JP": "FBX"
         },
-        "Fake User": {
-            "zh_CN": "伪用户",
-            "fr_FR": "Utilisateur fictif",
-            "ru_RU": "Фальшивый пользователь",
-            "ja_JP": "フェイクユーザー"
-        },
         "Fast": {
             "zh_CN": "快速",
             "fr_FR": "Rapide",
             "ru_RU": "Быстрый",
             "ja_JP": "高速"
         },
-        "First color used for ID generation": {
-            "zh_CN": "用于 ID 生成的起始颜色",
-            "fr_FR": "Première couleur pour la génération d'ID",
-            "ru_RU": "Первый цвет для генерации ID",
-            "ja_JP": "ID生成に使用される最初の色"
+        "File Size": {
+            "zh_CN": "File Size",
+            "fr_FR": "File Size",
+            "ru_RU": "File Size",
+            "ja_JP": "File Size"
         },
-        "Folder Naming": {
-            "zh_CN": "文件夹命名",
-            "fr_FR": "Nommage du dossier",
-            "ru_RU": "Именование папки",
-            "ja_JP": "フォルダの命名"
-        },
-        "Force UVs to the specific tiles defined in the object list below.": {
-            "zh_CN": "强制 UV 到下面物体列表中定义的特定瓦片。",
-            "fr_FR": "Forcer les UV vers les tuiles spécifiques définies dans la liste ci-dessous.",
-            "ru_RU": "Принудительно направить UV на определенные плитки, определенные в списке объектов ниже.",
-            "ja_JP": "下のオブジェクトリストで定義された特定のタイルにUVを強制します。"
+        "Final": {
+            "zh_CN": "Final",
+            "fr_FR": "Final",
+            "ru_RU": "Final",
+            "ja_JP": "Final"
         },
         "Format": {
             "zh_CN": "格式",
@@ -725,11 +803,23 @@
             "ru_RU": "Разрядность кадра",
             "ja_JP": "フレーム桁数"
         },
-        "Gloss": {
-            "zh_CN": "光泽",
-            "fr_FR": "Brillance",
-            "ru_RU": "Глянец",
-            "ja_JP": "光沢"
+        "GLB": {
+            "zh_CN": "GLB",
+            "fr_FR": "GLB",
+            "ru_RU": "GLB",
+            "ja_JP": "GLB"
+        },
+        "GPU": {
+            "zh_CN": "GPU",
+            "fr_FR": "GPU",
+            "ru_RU": "GPU",
+            "ja_JP": "GPU"
+        },
+        "Glossy": {
+            "zh_CN": "Glossy",
+            "fr_FR": "Glossy",
+            "ru_RU": "Glossy",
+            "ja_JP": "Glossy"
         },
         "Green": {
             "zh_CN": "绿色",
@@ -737,29 +827,17 @@
             "ru_RU": "Зеленый",
             "ja_JP": "緑"
         },
-        "Grid U": {
-            "zh_CN": "网格 U",
-            "fr_FR": "Grille U",
-            "ru_RU": "Сетка U",
-            "ja_JP": "グリッド U"
-        },
-        "Grid V": {
-            "zh_CN": "网格 V",
-            "fr_FR": "Grille V",
-            "ru_RU": "Сетка V",
-            "ja_JP": "グリッド V"
+        "Green (G)": {
+            "zh_CN": "Green (G)",
+            "fr_FR": "Green (G)",
+            "ru_RU": "Green (G)",
+            "ja_JP": "Green (G)"
         },
         "Height": {
             "zh_CN": "高度",
             "fr_FR": "Hauteur",
             "ru_RU": "Высота",
             "ja_JP": "高さ"
-        },
-        "Higher values produce better color separation but take longer": {
-            "zh_CN": "较高的值产生更好的区分度但耗时更长",
-            "fr_FR": "Des valeurs plus élevées améliorent la séparation mais prennent plus de temps",
-            "ru_RU": "Высокие значения улучшают разделение, но занимают больше времени",
-            "ja_JP": "値が高いほど色の分離は良くなりますが、時間がかかります"
         },
         "ID Map Count": {
             "zh_CN": "ID图数量",
@@ -845,29 +923,29 @@
             "ru_RU": "Отступ островов",
             "ja_JP": "アイランド余白"
         },
+        "JPEG": {
+            "zh_CN": "JPEG",
+            "fr_FR": "JPEG",
+            "ru_RU": "JPEG",
+            "ja_JP": "JPEG"
+        },
+        "JPEG 2000": {
+            "zh_CN": "JPEG 2000",
+            "fr_FR": "JPEG 2000",
+            "ru_RU": "JPEG 2000",
+            "ja_JP": "JPEG 2000"
+        },
         "Job Name": {
             "zh_CN": "任务名称",
             "fr_FR": "Nom de la tâche",
             "ru_RU": "Имя задачи",
             "ja_JP": "ジョブ名"
         },
-        "Keep as Active": {
-            "zh_CN": "保持为活动项",
-            "fr_FR": "Garder comme actif",
-            "ru_RU": "Оставить активным",
-            "ja_JP": "アクティブとして保持"
-        },
-        "Keep existing UDIM UVs, but automatically move 0-1 UVs to new empty tiles.": {
-            "zh_CN": "保留现有的 UDIM UV，但自动将 0-1 UV 移动到新的空瓦片。",
-            "fr_FR": "Garder les UV UDIM existants, mais déplacer auto les UV 0-1 vers de nouvelles tuiles vides.",
-            "ru_RU": "Сохранить существующие UDIM UV, но автоматически переместить 0-1 UV на новые пустые плитки.",
-            "ja_JP": "既存のUDIM UVを保持しますが、0-1 UVを自動的に新しい空のタイルに移動します。"
-        },
-        "Keep the new UV as active after baking": {
-            "zh_CN": "烘焙后保持新 UV 为活动项",
-            "fr_FR": "Garder le nouvel UV comme actif après la cuisson",
-            "ru_RU": "Оставить новый UV активным после запекания",
-            "ja_JP": "ベイク後に新しいUVをアクティブとして保持"
+        "LZW": {
+            "zh_CN": "LZW",
+            "fr_FR": "LZW",
+            "ru_RU": "LZW",
+            "ja_JP": "LZW"
         },
         "LZW compression": {
             "zh_CN": "LZW 压缩",
@@ -911,12 +989,6 @@
             "ru_RU": "Загрузить пресет",
             "ja_JP": "プリセットをロード"
         },
-        "Load a full workspace configuration (replaces current jobs)": {
-            "zh_CN": "加载完整工作区配置（替换当前任务）",
-            "fr_FR": "Charger une config complète (remplace les tâches actuelles)",
-            "ru_RU": "Загрузить полную конфигурацию (заменяет текущие задачи)",
-            "ja_JP": "完全なワークスペース设定をロード (现在的ジョブを置换)"
-        },
         "Local": {
             "zh_CN": "本地",
             "fr_FR": "Local",
@@ -947,12 +1019,6 @@
             "ru_RU": "Ручной нач. цвет",
             "ja_JP": "手动开始色"
         },
-        "Manually specify the first color, otherwise calculate automatically": {
-            "zh_CN": "手动指定起始颜色，否则自动计算",
-            "fr_FR": "Spécifier manuellement la première couleur, sinon automatique",
-            "ru_RU": "Укажите первый цвет вручную, иначе авторасчет",
-            "ja_JP": "最初の色を手動で指定、それ以外は自動計算"
-        },
         "Margin": {
             "zh_CN": "边距",
             "fr_FR": "Marge",
@@ -970,12 +1036,6 @@
             "fr_FR": "Cartes de maillage",
             "ru_RU": "Карты сетки",
             "ja_JP": "メッシュマップ"
-        },
-        "Mesh Maps + Animation might be redundant": {
-            "zh_CN": "网格贴图 + 动画可能冗余",
-            "fr_FR": "Cartes de maillage + Animation peut être redondant",
-            "ru_RU": "Карты сетки + Анимация могут быть избыточны",
-            "ja_JP": "メッシュマップ + アニメーションは冗長な可能性があります"
         },
         "Method": {
             "zh_CN": "方法",
@@ -995,29 +1055,17 @@
             "ru_RU": "Запекание нескольких объектов",
             "ja_JP": "マルチオブジェクトベイク"
         },
+        "MyOutput": {
+            "zh_CN": "MyOutput",
+            "fr_FR": "MyOutput",
+            "ru_RU": "MyOutput",
+            "ja_JP": "MyOutput"
+        },
         "Name": {
             "zh_CN": "名称",
             "fr_FR": "Nom",
             "ru_RU": "Имя",
             "ja_JP": "名前"
-        },
-        "Name of the Shader Node Group to use as bake source": {
-            "zh_CN": "用作烘焙源的着色器节点组名称",
-            "fr_FR": "Nom du groupe de nœuds shader à utiliser comme source de cuisson",
-            "ru_RU": "Имя группы шейдерных узлов для использования в качестве источника запекания",
-            "ja_JP": "ベイクソースとして使用するシェーダーノードグループの名前"
-        },
-        "Name of the output socket to bake. Leave empty for first output.": {
-            "zh_CN": "要烘焙的输出插孔名称。留空则使用第一个输出。",
-            "fr_FR": "Nom de la prise de sortie à cuire. Laisser vide pour la première sortie.",
-            "ru_RU": "Имя выходного сокета для запекания. Оставьте пустым для первого вывода.",
-            "ja_JP": "ベイクする出力ソケットの名前。最初の出力の場合は空のままにします。"
-        },
-        "Naming": {
-            "zh_CN": "命名",
-            "fr_FR": "Nommage",
-            "ru_RU": "Именование",
-            "ja_JP": "命名"
         },
         "Naming:": {
             "zh_CN": "命名:",
@@ -1157,6 +1205,12 @@
             "ru_RU": "Операции могут сбросить данные сцены.",
             "ja_JP": "操作によってシーンデータがリセットされる場合があります。"
         },
+        "Out": {
+            "zh_CN": "Out",
+            "fr_FR": "Out",
+            "ru_RU": "Out",
+            "ja_JP": "Out"
+        },
         "Output Name": {
             "zh_CN": "输出名称",
             "fr_FR": "Nom de sortie",
@@ -1253,17 +1307,29 @@
             "ru_RU": "Вывод изображения в несжатом формате Targa",
             "ja_JP": "非圧縮Targa形式で画像を出力"
         },
-        "Override Color Settings": {
-            "zh_CN": "覆盖颜色设置",
-            "fr_FR": "Remplacer les paramètres de couleur",
-            "ru_RU": "Переопределить настройки цвета",
-            "ja_JP": "カラー设定を上書き"
+        "Override Global Color Settings": {
+            "zh_CN": "Override Global Color Settings",
+            "fr_FR": "Override Global Color Settings",
+            "ru_RU": "Override Global Color Settings",
+            "ja_JP": "Override Global Color Settings"
         },
         "Override Size": {
             "zh_CN": "覆盖尺寸",
             "fr_FR": "Remplacer la taille",
             "ru_RU": "Переопределить размер",
             "ja_JP": "サイズを上書き"
+        },
+        "PIZ": {
+            "zh_CN": "PIZ",
+            "fr_FR": "PIZ",
+            "ru_RU": "PIZ",
+            "ja_JP": "PIZ"
+        },
+        "PNG": {
+            "zh_CN": "PNG",
+            "fr_FR": "PNG",
+            "ru_RU": "PNG",
+            "ja_JP": "PNG"
         },
         "Pack Island": {
             "zh_CN": "岛屿打包",
@@ -1289,23 +1355,17 @@
             "ru_RU": "Сжатие Packbits",
             "ja_JP": "Packbits压缩"
         },
-        "Packing": {
-            "zh_CN": "打包",
-            "fr_FR": "Empaquetage",
-            "ru_RU": "Упаковка",
-            "ja_JP": "パッキング"
-        },
-        "Pad": {
-            "zh_CN": "补零位数",
-            "fr_FR": "Remplissage",
-            "ru_RU": "Заполнение (Pad)",
-            "ja_JP": "桁埋め"
-        },
         "Path": {
             "zh_CN": "路径",
             "fr_FR": "Chemin",
             "ru_RU": "Путь",
             "ja_JP": "パス"
+        },
+        "Path to the JSON preset file to load on new scenes": {
+            "zh_CN": "Path to the JSON preset file to load on new scenes",
+            "fr_FR": "Path to the JSON preset file to load on new scenes",
+            "ru_RU": "Path to the JSON preset file to load on new scenes",
+            "ja_JP": "Path to the JSON preset file to load on new scenes"
         },
         "Pre": {
             "zh_CN": "前缀",
@@ -1325,6 +1385,12 @@
             "ru_RU": "Прогресс",
             "ja_JP": "进捗"
         },
+        "Pxr24": {
+            "zh_CN": "Pxr24",
+            "fr_FR": "Pxr24",
+            "ru_RU": "Pxr24",
+            "ja_JP": "Pxr24"
+        },
         "Quality": {
             "zh_CN": "质量",
             "fr_FR": "Qualité",
@@ -1336,6 +1402,18 @@
             "fr_FR": "Qualité (Itérations)",
             "ru_RU": "Качество (Итерации)",
             "ja_JP": "品质(反复回数)"
+        },
+        "Quick Bake Selected": {
+            "zh_CN": "Quick Bake Selected",
+            "fr_FR": "Quick Bake Selected",
+            "ru_RU": "Quick Bake Selected",
+            "ja_JP": "Quick Bake Selected"
+        },
+        "RGB": {
+            "zh_CN": "RGB",
+            "fr_FR": "RGB",
+            "ru_RU": "RGB",
+            "ja_JP": "RGB"
         },
         "RGB and Alpha channel": {
             "zh_CN": "RGB 和 Alpha 通道",
@@ -1349,11 +1427,17 @@
             "ru_RU": "RGB канал",
             "ja_JP": "RGBチャンネル"
         },
-        "Rad/Dist": {
-            "zh_CN": "半径/距离",
-            "fr_FR": "Ray/Dist",
-            "ru_RU": "Радиус/Дист",
-            "ja_JP": "半径/距离"
+        "RGBA": {
+            "zh_CN": "RGBA",
+            "fr_FR": "RGBA",
+            "ru_RU": "RGBA",
+            "ja_JP": "RGBA"
+        },
+        "RLE": {
+            "zh_CN": "RLE",
+            "fr_FR": "RLE",
+            "ru_RU": "RLE",
+            "ja_JP": "RLE"
         },
         "Radiance HDR": {
             "zh_CN": "Radiance HDR",
@@ -1379,35 +1463,23 @@
             "ru_RU": "Перепаковывает объекты 1001 в новые плитки",
             "ja_JP": "1001個のオブジェクトを新しいタイルに再パッキングします"
         },
-        "Record": {
-            "zh_CN": "记录",
-            "fr_FR": "Enregistrer",
-            "ru_RU": "Запись",
-            "ja_JP": "记录"
-        },
         "Red": {
             "zh_CN": "红色",
             "fr_FR": "Rouge",
             "ru_RU": "Красный",
             "ja_JP": "赤"
         },
+        "Red (R)": {
+            "zh_CN": "Red (R)",
+            "fr_FR": "Red (R)",
+            "ru_RU": "Red (R)",
+            "ja_JP": "Red (R)"
+        },
         "Refresh / Repack UDIMs": {
             "zh_CN": "刷新 / 重新打包 UDIM",
             "fr_FR": "Rafraîchir / Réempaqueter les UDIM",
             "ru_RU": "Обновить / Перепаковать UDIM",
             "ja_JP": "UDIMを更新/再パッキング"
-        },
-        "Reload Image": {
-            "zh_CN": "重载图像",
-            "fr_FR": "Recharger l'image",
-            "ru_RU": "Перезагрузить изображение",
-            "ja_JP": "画像を引きリロード"
-        },
-        "Remove": {
-            "zh_CN": "移除",
-            "fr_FR": "Supprimer",
-            "ru_RU": "Убрать",
-            "ja_JP": "削除"
         },
         "Reset": {
             "zh_CN": "重置",
@@ -1457,12 +1529,6 @@
             "ru_RU": "Сохр. и Экспорт",
             "ja_JP": "保存とエクスポート"
         },
-        "Save ALL jobs and settings to a JSON file (excludes objects)": {
-            "zh_CN": "将所有任务保存到 JSON 文件（不含物体）",
-            "fr_FR": "Enregistrer TOUTES les tâches dans un fichier JSON (sans objets)",
-            "ru_RU": "Сохранить ВСЕ задачи в JSON (без объектов)",
-            "ja_JP": "すべてのジョブと设定をJSONに保存（オブジェクトを除く）"
-        },
         "Save And Quit": {
             "zh_CN": "保存并退出",
             "fr_FR": "Sauvegarder et quitter",
@@ -1487,12 +1553,6 @@
             "ru_RU": "Сохранить пресет",
             "ja_JP": "プリセットを保存"
         },
-        "Sep": {
-            "zh_CN": "分隔符",
-            "fr_FR": "Sép",
-            "ru_RU": "Раздел.",
-            "ja_JP": "区切り"
-        },
         "Separate": {
             "zh_CN": "分离",
             "fr_FR": "Séparer",
@@ -1504,18 +1564,6 @@
             "fr_FR": "Séparateur",
             "ru_RU": "Разделитель",
             "ja_JP": "区切り文字"
-        },
-        "Set": {
-            "zh_CN": "设置",
-            "fr_FR": "Définir",
-            "ru_RU": "Задать",
-            "ja_JP": "设定"
-        },
-        "Set Active": {
-            "zh_CN": "设为活动",
-            "fr_FR": "Définir Actif",
-            "ru_RU": "Задать активным",
-            "ja_JP": "アクティブに设定"
         },
         "Simple": {
             "zh_CN": "简单",
@@ -1535,29 +1583,23 @@
             "ru_RU": "Запекание одного объекта",
             "ja_JP": "単一オブジェクトベイク"
         },
-        "Size": {
-            "zh_CN": "大小",
-            "fr_FR": "Taille",
-            "ru_RU": "Размер",
-            "ja_JP": "サイズ"
-        },
         "Smart Project": {
             "zh_CN": "智能投影",
             "fr_FR": "Projection intelligente",
             "ru_RU": "Умное проецирование",
             "ja_JP": "スマート投影"
         },
-        "Smart Set": {
-            "zh_CN": "智能设置",
-            "fr_FR": "Réglage intelligent",
-            "ru_RU": "Умная настройка",
-            "ja_JP": "スマート设定"
-        },
         "Smart Set (Sel -> Act)": {
             "zh_CN": "智能设置 (选 -> 活)",
             "fr_FR": "Réglage intelligent (Sél -> Act)",
             "ru_RU": "Умная настройка (Выд -> Акт)",
             "ja_JP": "スマート设定 (选択 -> アクティブ)"
+        },
+        "Smart_UV": {
+            "zh_CN": "Smart_UV",
+            "fr_FR": "Smart_UV",
+            "ru_RU": "Smart_UV",
+            "ja_JP": "Smart_UV"
         },
         "Source": {
             "zh_CN": "源",
@@ -1583,18 +1625,6 @@
             "ru_RU": "Spec > F0 становится металлом",
             "ja_JP": "Spec > F0 はメタリック"
         },
-        "Special Map": {
-            "zh_CN": "特殊贴图",
-            "fr_FR": "Carte spéciale",
-            "ru_RU": "Спец. карта",
-            "ja_JP": "スペシャルマップ"
-        },
-        "Special Settings": {
-            "zh_CN": "特殊设置",
-            "fr_FR": "Paramètres spéciaux",
-            "ru_RU": "Спец. настройки",
-            "ja_JP": "特别设定"
-        },
         "Split Material Bake": {
             "zh_CN": "拆分材质烘焙",
             "fr_FR": "Cuisson par matériau séparé",
@@ -1612,18 +1642,6 @@
             "fr_FR": "Index de départ",
             "ru_RU": "Нач. индекс",
             "ja_JP": "开始インデックス"
-        },
-        "Start Tile": {
-            "zh_CN": "起始瓦片",
-            "fr_FR": "Tuile de départ",
-            "ru_RU": "Начальная плитка",
-            "ja_JP": "开始タイル"
-        },
-        "Start#": {
-            "zh_CN": "起始序号",
-            "fr_FR": "Début#",
-            "ru_RU": "Старт#",
-            "ja_JP": "开始#"
         },
         "Status": {
             "zh_CN": "状态",
@@ -1697,29 +1715,17 @@
             "ru_RU": "Индекс набора текстур",
             "ja_JP": "テクスチャセットインデックス"
         },
-        "Thickness": {
-            "zh_CN": "厚度",
-            "fr_FR": "Épaisseur",
-            "ru_RU": "Толщина",
-            "ja_JP": "厚さ"
-        },
-        "Threshold for separating Dielectric from Metallic (F0)": {
-            "zh_CN": "区分电介质与金属的阈值 (F0)",
-            "fr_FR": "Seuil pour séparer Diélectrique de Métallique (F0)",
-            "ru_RU": "Порог разделения диэлектрика и металла (F0)",
-            "ja_JP": "诱电体とメタリックを分离するしきい値 (F0)"
+        "Threshold": {
+            "zh_CN": "Threshold",
+            "fr_FR": "Threshold",
+            "ru_RU": "Threshold",
+            "ja_JP": "Threshold"
         },
         "Tile": {
             "zh_CN": "瓦片",
             "fr_FR": "Tuile",
             "ru_RU": "Плитка",
             "ja_JP": "タイル"
-        },
-        "Tile Count": {
-            "zh_CN": "瓦片数量",
-            "fr_FR": "Nombre de tuiles",
-            "ru_RU": "Кол-во плиток",
-            "ja_JP": "タイル数"
         },
         "To Disk": {
             "zh_CN": "保存到磁盘",
@@ -1732,12 +1738,6 @@
             "fr_FR": "Transmission",
             "ru_RU": "Пропускание",
             "ja_JP": "伝播"
-        },
-        "Trust current UV positions (e.g. 1002, 1011). Bake assumes UVs are already laid out.": {
-            "zh_CN": "信任当前的 UV 位置（例如 1002, 1011）。烘焙假设 UV 已经布局完成。",
-            "fr_FR": "Faire confiance aux positions UV actuelles (ex: 1002, 1011). La cuisson suppose que les UV sont déjà disposés.",
-            "ru_RU": "Доверять текущим позициям UV (например, 1002, 1011). Запекание предполагает, что UV уже разложены.",
-            "ja_JP": "現在のUV位置（1002、1011など）を信頼します。ベイクはUVがすでに配置されていることを前提としています。"
         },
         "UDIM Bake": {
             "zh_CN": "UDIM 烘焙",
@@ -1757,17 +1757,23 @@
             "ru_RU": "UDIM плитка",
             "ja_JP": "UDIMタイル"
         },
+        "USD": {
+            "zh_CN": "USD",
+            "fr_FR": "USD",
+            "ru_RU": "USD",
+            "ja_JP": "USD"
+        },
         "UV Name": {
             "zh_CN": "UV 名称",
             "fr_FR": "Nom de l'UV",
             "ru_RU": "Имя UV",
             "ja_JP": "UV 名"
         },
-        "Up": {
-            "zh_CN": "上移",
-            "fr_FR": "Haut",
-            "ru_RU": "Вверх",
-            "ja_JP": "上へ"
+        "UVMap": {
+            "zh_CN": "UVMap",
+            "fr_FR": "UVMap",
+            "ru_RU": "UVMap",
+            "ja_JP": "UVMap"
         },
         "Use Alpha": {
             "zh_CN": "使用透明通道",
@@ -1865,11 +1871,23 @@
             "ru_RU": "Использовать Smart UV Project для перепаковки UV",
             "ja_JP": "スマートUV投影を使用してUVを再パッキングする"
         },
-        "Use custom resolution for this tile instead of global bake resolution": {
-            "zh_CN": "为此瓦片使用自定义分辨率，而不是全局烘焙分辨率",
-            "fr_FR": "Utiliser une résolution personnalisée pour cette tuile au lieu de la globale",
-            "ru_RU": "Использовать польз. разрешение для этой плитки вместо глобального",
-            "ja_JP": "グローバルベイク解像度の代わりに、このタイルにカスタム解像度を使用します"
+        "Use custom resolution for this tile": {
+            "zh_CN": "Use custom resolution for this tile",
+            "fr_FR": "Use custom resolution for this tile",
+            "ru_RU": "Use custom resolution for this tile",
+            "ja_JP": "Use custom resolution for this tile"
+        },
+        "Use specific color space and depth for this channel instead of job defaults": {
+            "zh_CN": "Use specific color space and depth for this channel instead of job defaults",
+            "fr_FR": "Use specific color space and depth for this channel instead of job defaults",
+            "ru_RU": "Use specific color space and depth for this channel instead of job defaults",
+            "ja_JP": "Use specific color space and depth for this channel instead of job defaults"
+        },
+        "Warning: External Save recommended for export": {
+            "zh_CN": "Warning: External Save recommended for export",
+            "fr_FR": "Warning: External Save recommended for export",
+            "ru_RU": "Warning: External Save recommended for export",
+            "ja_JP": "Warning: External Save recommended for export"
         },
         "WebP": {
             "zh_CN": "WebP",
@@ -1882,6 +1900,18 @@
             "fr_FR": "Largeur",
             "ru_RU": "Ширина",
             "ja_JP": "幅"
+        },
+        "ZIP": {
+            "zh_CN": "ZIP",
+            "fr_FR": "ZIP",
+            "ru_RU": "ZIP",
+            "ja_JP": "ZIP"
+        },
+        "ZIPS": {
+            "zh_CN": "ZIPS",
+            "fr_FR": "ZIPS",
+            "ru_RU": "ZIPS",
+            "ja_JP": "ZIPS"
         },
         "bw": {
             "zh_CN": "黑白",

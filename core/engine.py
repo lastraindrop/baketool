@@ -3,7 +3,7 @@ import logging
 import traceback
 import time
 from collections import namedtuple
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Any, Optional
 from pathlib import Path
 
 from .common import (
@@ -90,7 +90,8 @@ class BakeStepRunner:
                             if state_mgr: 
                                 try:
                                     state_mgr.update_step(i, task.active_obj.name, c['name'])
-                                except: pass
+                                except Exception: pass
+
                             
                             img = BakePassExecutor.execute(job.setting, task, c, handler, baked_images, udim_tiles, array_cache)
                             
@@ -274,15 +275,7 @@ class JobPreparer:
             channels = JobPreparer._collect_channels(job)
             if not channels: continue
 
-            frames = [None]
-            if s.bake_motion and s.use_external_save:
-                start = s.bake_motion_start if s.bake_motion_use_custom else scene.frame_start
-                dur = s.bake_motion_last if s.bake_motion_use_custom else (scene.frame_end - start + 1)
-                frames = [{
-                    'frame': start + i, 
-                    'save_idx': s.bake_motion_startindex + i, 
-                    'digits': s.bake_motion_digit
-                } for i in range(dur)]
+            frames = JobPreparer._build_frame_list(s, scene)
 
             for f_info in frames:
                 for task in tasks:
@@ -316,23 +309,26 @@ class JobPreparer:
         channels = JobPreparer._collect_channels(reference_job) # Channels are same as ref
         
         queue = []
-        # Support Animation for Quick Bake if enabled in template
-        frames = [None]
-        if runtime_setting.bake_motion and runtime_setting.use_external_save:
-            scene = context.scene
-            start = runtime_setting.bake_motion_start if runtime_setting.bake_motion_use_custom else scene.frame_start
-            dur = runtime_setting.bake_motion_last if runtime_setting.bake_motion_use_custom else (scene.frame_end - start + 1)
-            frames = [{
-                'frame': start + i, 
-                'save_idx': runtime_setting.bake_motion_startindex + i, 
-                'digits': runtime_setting.bake_motion_digit
-            } for i in range(dur)]
-            
+        frames = JobPreparer._build_frame_list(runtime_setting, context.scene)
+        
         for f_info in frames:
             for task in tasks:
                 queue.append(BakeStep(runtime_job, task, channels, f_info))
                 
         return queue
+
+    @staticmethod
+    def _build_frame_list(setting, scene) -> List[Optional[Dict]]:
+        """Build animation frame info list. Returns [None] for static (non-animated) bakes."""
+        if not (setting.bake_motion and setting.use_external_save):
+            return [None]
+        start = setting.bake_motion_start if setting.bake_motion_use_custom else scene.frame_start
+        dur = setting.bake_motion_last if setting.bake_motion_use_custom else (scene.frame_end - start + 1)
+        return [{
+            'frame': start + i,
+            'save_idx': setting.bake_motion_startindex + i,
+            'digits': setting.bake_motion_digit
+        } for i in range(dur)]
 
     @staticmethod
     def _collect_channels(job) -> List[Dict]:
@@ -584,13 +580,12 @@ class ModelExporter:
                 )
             logger.info(f"Exported: {fmt} -> {abs_filepath}")
         except Exception as e:
-            logger.error(f"Export Error: {e}")
-            traceback.print_exc()
+            logger.exception(f"Export Error: {e}")
         finally:
             try:
                 bpy.ops.object.select_all(action='DESELECT')
                 for o in prev_sel:
                     try: o.select_set(True)
-                    except: pass
+                    except Exception: pass
                 context.view_layer.objects.active = prev_act
-            except: pass
+            except Exception: pass

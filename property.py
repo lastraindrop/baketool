@@ -1,6 +1,12 @@
 import bpy
 from bpy import props
-from .constants import *
+from .constants import (
+    BAKE_TYPES, BAKE_MODES, BASIC_FORMATS, DEVICES, DIRECTIONS,
+    NORMAL_TYPES, NORMAL_CHANNELS, COLOR_DEPTHS, COLOR_MODES, COLOR_SPACES,
+    EXR_CODECS, TIFF_CODECS, DENOISE_METHODS, NAMING_MODES,
+    CUSTOM_CHANNEL_SEP, ATLAS_PACK_METHODS, FORMAT_SETTINGS,
+)
+
 from .core.common import reset_channels_logic
 import logging
 
@@ -177,6 +183,7 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     color_mode: props.EnumProperty(items=get_valid_modes, name='Color Mode')
     quality: props.IntProperty(name='Quality', default=85)
     exr_code: props.EnumProperty(items=EXR_CODECS, name='EXR Codec', default='ZIP')
+    tiff_codec: props.EnumProperty(items=TIFF_CODECS, name='TIFF Codec', default='DEFLATE')
     
     create_new_folder: props.BoolProperty(default=False, name='New Folder')
     folder_name: props.StringProperty(name='Custom Folder Name') 
@@ -191,7 +198,7 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     bake_motion_digit: props.IntProperty(name='Frame Digits', default=4)
     bake_motion_separator: props.StringProperty(name='Separator', default='_')
 
-    export_model: bpy.props.BoolProperty(name="Export Model", default=False)
+    export_model: props.BoolProperty(name="Export Model", default=False)
     export_format: props.EnumProperty(items=[('FBX','FBX','',1),('GLB','GLB','',2),('USD','USD','',3)], default='FBX')
 
     # Channel Packing (ORM etc)
@@ -206,9 +213,9 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     active_channel_index: props.IntProperty(name="Active Channel Index")
     active_object_index: props.IntProperty(name="Active Object Index", default=0)
     
-    use_light_map: bpy.props.BoolProperty(default=False, name='Light Maps', update=update_channels)
-    use_mesh_map: bpy.props.BoolProperty(default=False, name='Mesh Maps', update=update_channels)
-    use_extension_map: bpy.props.BoolProperty(default=False, name='Extension Maps', update=update_channels)
+    use_light_map: props.BoolProperty(default=False, name='Light Maps', update=update_channels)
+    use_mesh_map: props.BoolProperty(default=False, name='Mesh Maps', update=update_channels)
+    use_extension_map: props.BoolProperty(default=False, name='Extension Maps', update=update_channels)
     use_custom_map: props.BoolProperty(default=False, name='Use Custom Map')
 
     use_auto_uv: props.BoolProperty(name="Auto Smart UV", default=False)
@@ -236,6 +243,7 @@ class BakeImageSettings(bpy.types.PropertyGroup):
     color_mode: props.EnumProperty(items=get_valid_modes)
     quality: props.IntProperty(name='Quality', default=100)
     exr_code: props.EnumProperty(items=EXR_CODECS, default='ZIP')
+    tiff_codec: props.EnumProperty(items=TIFF_CODECS, default='DEFLATE')
 
 class BakeNodeSettings(bpy.types.PropertyGroup):
     res_x: props.IntProperty(name='X', default=1024)
@@ -251,7 +259,7 @@ class BakeResultSettings(bpy.types.PropertyGroup):
     image_settings: props.PointerProperty(type=BakeImageSettings)
     
 class BakeJobs(bpy.types.PropertyGroup):
-    debug_mode: bpy.props.BoolProperty(name="Debug Mode", default=False, update=update_debug_mode)
+    debug_mode: props.BoolProperty(name="Debug Mode", default=False, update=update_debug_mode)
     jobs: props.CollectionProperty(type=BakeJob)
     job_index: props.IntProperty(name='Index', default=0)
     node_bake_settings: props.PointerProperty(type=BakeNodeSettings)

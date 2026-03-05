@@ -5,7 +5,6 @@ Extracted from ops.py for better separation of concerns.
 """
 import bpy
 import logging
-import traceback
 from ..state_manager import BakeStateManager
 from .engine import BakeStepRunner
 from .common import log_error
@@ -141,7 +140,7 @@ class BakeModalOperator:
             try:
                 img.source, img.filepath, img.frame_duration = 'SEQUENCE', info['first_path'], info['count']
                 img.reload()
-            except: pass
+            except Exception: pass
         self.sequence_tracking.clear()
         
         # Auto-Save logic (Only for standard jobs, checked via first step)
@@ -155,5 +154,5 @@ class BakeModalOperator:
     def _remove_timer(self, context):
         if self._timer: 
             try: context.window_manager.event_timer_remove(self._timer)
-            except: pass
+            except Exception: pass
             self._timer = None
