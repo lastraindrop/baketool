@@ -42,7 +42,7 @@ def robust_image_editor_context(context, image):
         area.spaces.active.image = image
         region = next((r for r in area.regions if r.type == 'WINDOW'), None)
         
-        with context.temp_override(window=window, area=area, region=region, screen=screen):
+        with context.temp_override(window=window, area=area, region=region, screen=screen, space_data=area.spaces.active):
             yield True
             
     except Exception as e:
@@ -73,10 +73,12 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
         if use_udim and tile_resolutions and 1001 in tile_resolutions:
             target_w, target_h = tile_resolutions[1001]
             
-        if image.size[0] != target_w or image.size[1] != target_h: 
-            image.scale(target_w, target_h)
-            if image.source == 'GENERATED':
-                image.generated_width = target_w; image.generated_height = target_h
+        try:
+            if image.size[0] != target_w or image.size[1] != target_h: 
+                image.scale(target_w, target_h)
+                if image.source == 'GENERATED':
+                    image.generated_width = target_w; image.generated_height = target_h
+        except Exception: pass
 
     image.file_format = 'PNG' 
     image.use_fake_user = True
@@ -104,7 +106,10 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
         if 1001 in existing_tiles and 1001 in target_tiles:
             t_w, t_h = x, y
             if tile_resolutions and 1001 in tile_resolutions: t_w, t_h = tile_resolutions[1001]
-            if image.size[0] != t_w or image.size[1] != t_h: image.scale(t_w, t_h)
+            try:
+                if image.size[0] != t_w or image.size[1] != t_h:
+                    image.scale(t_w, t_h)
+            except Exception: pass
 
         missing_tiles = target_tiles - existing_tiles
         if missing_tiles:
@@ -112,18 +117,23 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
                 for t_idx in missing_tiles:
                     t_w, t_h = x, y
                     if tile_resolutions and t_idx in tile_resolutions: t_w, t_h = tile_resolutions[t_idx]
-                    try: 
-                        if valid:
+                    
+                    op_success = False
+                    if valid:
+                        try: 
                             bpy.ops.image.tile_add(
                                 number=t_idx, count=1, label=str(t_idx), fill=True, 
                                 width=t_w, height=t_h, float=full, alpha=alpha,
                                 generated_type='BLANK', color=basiccolor
                             )
-                        else:
-                            # Fallback if no valid context for operators
-                            image.tiles.new(tile_number=t_idx)
-                    except Exception as e:
-                        logger.error(f"Failed to add UDIM tile {t_idx}: {e}")
+                            op_success = True
+                        except Exception: pass
+                    
+                    if not op_success:
+                        # Fallback for headless/legacy where operator poll fails
+                        try: image.tiles.new(tile_number=t_idx)
+                        except Exception as e:
+                            logger.error(f"Failed to add UDIM tile {t_idx} even with fallback: {e}")
 
         extra_tiles = existing_tiles - target_tiles
         for t_idx in extra_tiles:
@@ -132,6 +142,8 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
                 try: image.tiles.remove(tile_to_remove)
                 except Exception: pass
 
+    try: image.update()
+    except Exception: pass
     return image
 
 def save_image(image, path='//', folder=False, folder_name='folder', file_format='PNG', motion=False, frame=0, reload=False, fillnum=4, save=True, separator="_"):

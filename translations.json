@@ -131,6 +131,12 @@
             "ru_RU": "Расширенное переопределение цвета",
             "ja_JP": "高度なカラーオーバーライド"
         },
+        "All bake settings are valid and ready.": {
+            "zh_CN": "所有烘焙设置均有效且已就绪。",
+            "fr_FR": "All bake settings are valid and ready.",
+            "ru_RU": "All bake settings are valid and ready.",
+            "ja_JP": "All bake settings are valid and ready."
+        },
         "Alpha": {
             "zh_CN": "Alpha",
             "fr_FR": "Alpha",
@@ -162,7 +168,7 @@
             "ja_JP": "ベイクを適用"
         },
         "Apply to Scene": {
-            "zh_CN": "Apply to Scene",
+            "zh_CN": "应用至场景",
             "fr_FR": "Apply to Scene",
             "ru_RU": "Apply to Scene",
             "ja_JP": "Apply to Scene"
@@ -174,25 +180,25 @@
             "ja_JP": "上のオブジェクトリストでタイルを割り当てます"
         },
         "Auto Load on Startup/New File": {
-            "zh_CN": "Auto Load on Startup/New File",
+            "zh_CN": "启动/新建文件时自动加载",
             "fr_FR": "Auto Load on Startup/New File",
             "ru_RU": "Auto Load on Startup/New File",
             "ja_JP": "Auto Load on Startup/New File"
         },
         "Auto Pack Channels": {
-            "zh_CN": "Auto Pack Channels",
+            "zh_CN": "自动打包通道",
             "fr_FR": "Auto Pack Channels",
             "ru_RU": "Auto Pack Channels",
             "ja_JP": "Auto Pack Channels"
         },
         "Auto Pack Channels (ORM)": {
-            "zh_CN": "Auto Pack Channels (ORM)",
+            "zh_CN": "自动打包通道 (ORM)",
             "fr_FR": "Auto Pack Channels (ORM)",
             "ru_RU": "Auto Pack Channels (ORM)",
             "ja_JP": "Auto Pack Channels (ORM)"
         },
         "Auto Repack": {
-            "zh_CN": "Auto Repack",
+            "zh_CN": "自动重新分幅",
             "fr_FR": "Auto Repack",
             "ru_RU": "Auto Repack",
             "ja_JP": "Auto Repack"
@@ -210,7 +216,7 @@
             "ja_JP": "オブジェクトのUVからタイルを自動検出します"
         },
         "Automatically load this preset if the scene has no bake jobs": {
-            "zh_CN": "Automatically load this preset if the scene has no bake jobs",
+            "zh_CN": "如果场景中没有烘焙任务，则自动加载此预设",
             "fr_FR": "Automatically load this preset if the scene has no bake jobs",
             "ru_RU": "Automatically load this preset if the scene has no bake jobs",
             "ja_JP": "Automatically load this preset if the scene has no bake jobs"
@@ -317,6 +323,12 @@
             "ru_RU": "Запекание нескольких объектов",
             "ja_JP": "マルチオブジェクトベイク"
         },
+        "Bake preparation failed: {}": {
+            "zh_CN": "烘焙准备失败: {}",
+            "fr_FR": "Bake preparation failed: {}",
+            "ru_RU": "Bake preparation failed: {}",
+            "ja_JP": "Bake preparation failed: {}"
+        },
         "Bake selected objects to UDIM tiles": {
             "zh_CN": "将选中物体烘焙到 UDIM 瓦片",
             "fr_FR": "Cuire les objets sélectionnés vers des tuiles UDIM",
@@ -334,6 +346,18 @@
             "fr_FR": "Cuisson d'un seul objet",
             "ru_RU": "Запекание одного объекта",
             "ja_JP": "単一オブジェクトベイク"
+        },
+        "BakeTool Headless CLI": {
+            "zh_CN": "BakeTool 无头命令行界面",
+            "fr_FR": "BakeTool Headless CLI",
+            "ru_RU": "BakeTool Headless CLI",
+            "ja_JP": "BakeTool Headless CLI"
+        },
+        "BakeTool v1.0.0 optimized for Blender 5.0 rendering pipeline.": {
+            "zh_CN": "BakeTool v1.0.0 已针对 Blender 5.0 渲染管线进行优化。",
+            "fr_FR": "BakeTool v1.0.0 optimized for Blender 5.0 rendering pipeline.",
+            "ru_RU": "BakeTool v1.0.0 optimized for Blender 5.0 rendering pipeline.",
+            "ja_JP": "BakeTool v1.0.0 optimized for Blender 5.0 rendering pipeline."
         },
         "Baked Image Results": {
             "zh_CN": "已烘焙图像结果",
@@ -406,6 +430,12 @@
             "fr_FR": "Cage",
             "ru_RU": "Клетка (Cage)",
             "ja_JP": "ケージ"
+        },
+        "Cage Mode": {
+            "zh_CN": "罩体模式",
+            "fr_FR": "Cage Mode",
+            "ru_RU": "Cage Mode",
+            "ja_JP": "Cage Mode"
         },
         "Channel": {
             "zh_CN": "通道",
@@ -576,13 +606,13 @@
             "ja_JP": "デバッグモード"
         },
         "Default Preset": {
-            "zh_CN": "Default Preset",
+            "zh_CN": "默认预设",
             "fr_FR": "Default Preset",
             "ru_RU": "Default Preset",
             "ja_JP": "Default Preset"
         },
         "Default Startup Configuration": {
-            "zh_CN": "Default Startup Configuration",
+            "zh_CN": "默认启动配置",
             "fr_FR": "Default Startup Configuration",
             "ru_RU": "Default Startup Configuration",
             "ja_JP": "Default Startup Configuration"
@@ -780,13 +810,13 @@
             "ja_JP": "高速"
         },
         "File Size": {
-            "zh_CN": "File Size",
+            "zh_CN": "文件大小",
             "fr_FR": "File Size",
             "ru_RU": "File Size",
             "ja_JP": "File Size"
         },
         "Final": {
-            "zh_CN": "Final",
+            "zh_CN": "最终",
             "fr_FR": "Final",
             "ru_RU": "Final",
             "ja_JP": "Final"
@@ -816,7 +846,7 @@
             "ja_JP": "GPU"
         },
         "Glossy": {
-            "zh_CN": "Glossy",
+            "zh_CN": "光泽",
             "fr_FR": "Glossy",
             "ru_RU": "Glossy",
             "ja_JP": "Glossy"
@@ -893,6 +923,12 @@
             "ru_RU": "Внутри",
             "ja_JP": "内部"
         },
+        "Interactive Preview": {
+            "zh_CN": "交互式预览",
+            "fr_FR": "Interactive Preview",
+            "ru_RU": "Interactive Preview",
+            "ja_JP": "Interactive Preview"
+        },
         "Invert": {
             "zh_CN": "反转",
             "fr_FR": "Inverser",
@@ -934,6 +970,30 @@
             "fr_FR": "JPEG 2000",
             "ru_RU": "JPEG 2000",
             "ja_JP": "JPEG 2000"
+        },
+        "Job '{}' skipped: Missing UVs on {}": {
+            "zh_CN": "任务 '{}' 已跳过：{} 缺失 UV。",
+            "fr_FR": "Job '{}' skipped: Missing UVs on {}",
+            "ru_RU": "Job '{}' skipped: Missing UVs on {}",
+            "ja_JP": "Job '{}' skipped: Missing UVs on {}"
+        },
+        "Job '{}' skipped: No active object target for Select-to-Active.": {
+            "zh_CN": "任务 '{}' 已跳过：缺少“所选向活动项”的活动物体目标。",
+            "fr_FR": "Job '{}' skipped: No active object target for Select-to-Active.",
+            "ru_RU": "Job '{}' skipped: No active object target for Select-to-Active.",
+            "ja_JP": "Job '{}' skipped: No active object target for Select-to-Active."
+        },
+        "Job '{}' skipped: No objects assigned.": {
+            "zh_CN": "任务 '{}' 已跳过：未分配物体。",
+            "fr_FR": "Job '{}' skipped: No objects assigned.",
+            "ru_RU": "Job '{}' skipped: No objects assigned.",
+            "ja_JP": "Job '{}' skipped: No objects assigned."
+        },
+        "Job '{}' skipped: No valid Mesh target.": {
+            "zh_CN": "任务 '{}' 已跳过：无有效的网格目标。",
+            "fr_FR": "Job '{}' skipped: No valid Mesh target.",
+            "ru_RU": "Job '{}' skipped: No valid Mesh target.",
+            "ja_JP": "Job '{}' skipped: No valid Mesh target."
         },
         "Job Name": {
             "zh_CN": "任务名称",
@@ -1102,6 +1162,12 @@
             "fr_FR": "Pas de compression",
             "ru_RU": "Без сжатия",
             "ja_JP": "压缩なし"
+        },
+        "No enabled jobs.": {
+            "zh_CN": "没有启用的任务。",
+            "fr_FR": "No enabled jobs.",
+            "ru_RU": "No enabled jobs.",
+            "ja_JP": "No enabled jobs."
         },
         "Node Bake": {
             "zh_CN": "节点烘焙",
@@ -1308,7 +1374,7 @@
             "ja_JP": "非圧縮Targa形式で画像を出力"
         },
         "Override Global Color Settings": {
-            "zh_CN": "Override Global Color Settings",
+            "zh_CN": "覆盖全局颜色设置",
             "fr_FR": "Override Global Color Settings",
             "ru_RU": "Override Global Color Settings",
             "ja_JP": "Override Global Color Settings"
@@ -1362,7 +1428,7 @@
             "ja_JP": "パス"
         },
         "Path to the JSON preset file to load on new scenes": {
-            "zh_CN": "Path to the JSON preset file to load on new scenes",
+            "zh_CN": "新场景加载的 JSON 预设文件路径",
             "fr_FR": "Path to the JSON preset file to load on new scenes",
             "ru_RU": "Path to the JSON preset file to load on new scenes",
             "ja_JP": "Path to the JSON preset file to load on new scenes"
@@ -1384,6 +1450,12 @@
             "fr_FR": "Progrès",
             "ru_RU": "Прогресс",
             "ja_JP": "进捗"
+        },
+        "Proximity": {
+            "zh_CN": "邻近度",
+            "fr_FR": "Proximity",
+            "ru_RU": "Proximity",
+            "ja_JP": "Proximity"
         },
         "Pxr24": {
             "zh_CN": "Pxr24",
@@ -1408,6 +1480,12 @@
             "fr_FR": "Quick Bake Selected",
             "ru_RU": "Quick Bake Selected",
             "ja_JP": "Quick Bake Selected"
+        },
+        "Quick Bake preparation failed (check logs).": {
+            "zh_CN": "快速烘焙准备失败（请检查日志）。",
+            "fr_FR": "Quick Bake preparation failed (check logs).",
+            "ru_RU": "Quick Bake preparation failed (check logs).",
+            "ja_JP": "Quick Bake preparation failed (check logs)."
         },
         "RGB": {
             "zh_CN": "RGB",
@@ -1457,6 +1535,12 @@
             "ru_RU": "Случайное зерно",
             "ja_JP": "ランダムシード"
         },
+        "Ray-cast based smart offset": {
+            "zh_CN": "基于射线检测的智能偏移",
+            "fr_FR": "Ray-cast based smart offset",
+            "ru_RU": "Ray-cast based smart offset",
+            "ja_JP": "Ray-cast based smart offset"
+        },
         "Re-packs 1001 objects to new tiles": {
             "zh_CN": "将 1001 物体重新打包到新瓦片",
             "fr_FR": "Réempaquette les objets 1001 vers de nouvelles tuiles",
@@ -1487,6 +1571,12 @@
             "ru_RU": "Сброс",
             "ja_JP": "リセット"
         },
+        "Resume Interrupted Bake": {
+            "zh_CN": "恢复中断的烘焙",
+            "fr_FR": "Resume Interrupted Bake",
+            "ru_RU": "Resume Interrupted Bake",
+            "ja_JP": "Resume Interrupted Bake"
+        },
         "Run Full Test Suite": {
             "zh_CN": "运行完整测试套件",
             "fr_FR": "Exécuter la suite de tests complète",
@@ -1504,6 +1594,12 @@
             "fr_FR": "DÉMARRER CUISSON",
             "ru_RU": "НАЧАТЬ ЗАПЕКАНИЕ",
             "ja_JP": "ベイク开始"
+        },
+        "Safety Margin": {
+            "zh_CN": "安全外边距",
+            "fr_FR": "Safety Margin",
+            "ru_RU": "Safety Margin",
+            "ja_JP": "Safety Margin"
         },
         "Sample": {
             "zh_CN": "采样",
@@ -1553,6 +1649,12 @@
             "ru_RU": "Сохранить пресет",
             "ja_JP": "プリセットを保存"
         },
+        "Select mesh objects to bake.": {
+            "zh_CN": "请选择要烘焙的网格物体。",
+            "fr_FR": "Select mesh objects to bake.",
+            "ru_RU": "Select mesh objects to bake.",
+            "ja_JP": "Select mesh objects to bake."
+        },
         "Separate": {
             "zh_CN": "分离",
             "fr_FR": "Séparer",
@@ -1564,6 +1666,12 @@
             "fr_FR": "Séparateur",
             "ru_RU": "Разделитель",
             "ja_JP": "区切り文字"
+        },
+        "Show real-time channel packing preview in viewport": {
+            "zh_CN": "在视口中显示实时通道打包预览",
+            "fr_FR": "Show real-time channel packing preview in viewport",
+            "ru_RU": "Show real-time channel packing preview in viewport",
+            "ja_JP": "Show real-time channel packing preview in viewport"
         },
         "Simple": {
             "zh_CN": "简单",
@@ -1631,6 +1739,12 @@
             "ru_RU": "Запекание с разделением по материалам",
             "ja_JP": "マテリアル分割ベイク"
         },
+        "Standard normal offset": {
+            "zh_CN": "标准法线偏移",
+            "fr_FR": "Standard normal offset",
+            "ru_RU": "Standard normal offset",
+            "ja_JP": "Standard normal offset"
+        },
         "Start": {
             "zh_CN": "起始",
             "fr_FR": "Début",
@@ -1697,6 +1811,12 @@
             "ru_RU": "Цель (Актив)",
             "ja_JP": "ターゲット (アクティブ)"
         },
+        "Target Density": {
+            "zh_CN": "目标像素密度",
+            "fr_FR": "Target Density",
+            "ru_RU": "Target Density",
+            "ja_JP": "Target Density"
+        },
         "Target UDIM Tile for this object": {
             "zh_CN": "此物体的目标 UDIM 瓦片",
             "fr_FR": "Tuile UDIM cible pour cet objet",
@@ -1709,6 +1829,12 @@
             "ru_RU": "Имя целевой UV",
             "ja_JP": "ターゲット UV 名"
         },
+        "Target texel density in px/unit": {
+            "zh_CN": "目标像素密度 (像素/单位)",
+            "fr_FR": "Target texel density in px/unit",
+            "ru_RU": "Target texel density in px/unit",
+            "ja_JP": "Target texel density in px/unit"
+        },
         "Texture set index": {
             "zh_CN": "贴图集索引",
             "fr_FR": "Index jeu de textures",
@@ -1716,7 +1842,7 @@
             "ja_JP": "テクスチャセットインデックス"
         },
         "Threshold": {
-            "zh_CN": "Threshold",
+            "zh_CN": "阈值",
             "fr_FR": "Threshold",
             "ru_RU": "Threshold",
             "ja_JP": "Threshold"
@@ -1732,6 +1858,12 @@
             "fr_FR": "Sur disque",
             "ru_RU": "На диск",
             "ja_JP": "ディスクへ"
+        },
+        "Toggle Preview": {
+            "zh_CN": "切换预览",
+            "fr_FR": "Toggle Preview",
+            "ru_RU": "Toggle Preview",
+            "ja_JP": "Toggle Preview"
         },
         "Transmission": {
             "zh_CN": "透射",
@@ -1774,6 +1906,18 @@
             "fr_FR": "UVMap",
             "ru_RU": "UVMap",
             "ja_JP": "UVMap"
+        },
+        "Uniform": {
+            "zh_CN": "统一",
+            "fr_FR": "Uniform",
+            "ru_RU": "Uniform",
+            "ja_JP": "Uniform"
+        },
+        "Uniform Extrude": {
+            "zh_CN": "统一挤出",
+            "fr_FR": "Uniform Extrude",
+            "ru_RU": "Uniform Extrude",
+            "ja_JP": "Uniform Extrude"
         },
         "Use Alpha": {
             "zh_CN": "使用透明通道",
@@ -1872,19 +2016,31 @@
             "ja_JP": "スマートUV投影を使用してUVを再パッキングする"
         },
         "Use custom resolution for this tile": {
-            "zh_CN": "Use custom resolution for this tile",
+            "zh_CN": "为此瓦片使用自定义分辨率",
             "fr_FR": "Use custom resolution for this tile",
             "ru_RU": "Use custom resolution for this tile",
             "ja_JP": "Use custom resolution for this tile"
         },
         "Use specific color space and depth for this channel instead of job defaults": {
-            "zh_CN": "Use specific color space and depth for this channel instead of job defaults",
+            "zh_CN": "为此通道使用特定的色彩空间和深度，而不是任务默认值",
             "fr_FR": "Use specific color space and depth for this channel instead of job defaults",
             "ru_RU": "Use specific color space and depth for this channel instead of job defaults",
             "ja_JP": "Use specific color space and depth for this channel instead of job defaults"
         },
+        "Validation failed: {}": {
+            "zh_CN": "验证失败: {}",
+            "fr_FR": "Validation failed: {}",
+            "ru_RU": "Validation failed: {}",
+            "ja_JP": "Validation failed: {}"
+        },
+        "Warning: Cage object missing for selective bake.": {
+            "zh_CN": "警告：选择性烘焙缺少罩体物体。",
+            "fr_FR": "Warning: Cage object missing for selective bake.",
+            "ru_RU": "Warning: Cage object missing for selective bake.",
+            "ja_JP": "Warning: Cage object missing for selective bake."
+        },
         "Warning: External Save recommended for export": {
-            "zh_CN": "Warning: External Save recommended for export",
+            "zh_CN": "警告：建议开启外部保存以进行导出",
             "fr_FR": "Warning: External Save recommended for export",
             "ru_RU": "Warning: External Save recommended for export",
             "ja_JP": "Warning: External Save recommended for export"

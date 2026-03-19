@@ -380,3 +380,23 @@ CHANNEL_MESH_TYPE_MAP = {
     'position': 'POS', 'UV': 'UV', 'wireframe': 'WF',
     'ao': 'AO', 'bevel': 'BEVEL', 'bevnor': 'BEVEL', 'slope': 'SLOPE',
 }
+
+# --- UI & System Messages ---
+UI_MESSAGES = {
+    'NO_JOBS': "No enabled jobs.",
+    'PREP_FAILED': "Bake preparation failed: {}",
+    'QUICK_PREP_FAILED': "Quick Bake preparation failed (check logs).",
+    'NO_OBJECTS': "Select mesh objects to bake.",
+    'JOB_SKIPPED_NO_OBJS': "Job '{}' skipped: No objects assigned.",
+    'JOB_SKIPPED_NO_TARGET': "Job '{}' skipped: No active object target for Select-to-Active.",
+    'JOB_SKIPPED_MISSING_UV': "Job '{}' skipped: Missing UVs on {}",
+    'JOB_SKIPPED_NO_MESH': "Job '{}' skipped: No valid Mesh target.",
+    'CAGE_MISSING': "Warning: Cage object missing for selective bake.",
+    'VALIDATION_SUCCESS': "All bake settings are valid and ready.",
+    'VALIDATION_ERROR': "Validation failed: {}",
+    'B5_SYNC_NOTICE': "BakeTool v1.0.0 optimized for Blender 5.0 rendering pipeline.",
+}
+
+# --- API & Versioning ---
+API_VERSION = "1.0.0"
+SYSTEM_ID = "BAKETOOL_CORE"

@@ -92,6 +92,11 @@ class UniversalExtractor(ast.NodeVisitor):
                 if target.id in {'bl_label', 'bl_description', 'bl_category', 'bl_warning', 'bl_info'}:
                     self.add(self._get_str(node.value))
                 
+                # UI_MESSAGES 字典值
+                if target.id == 'UI_MESSAGES' and isinstance(node.value, ast.Dict):
+                    for val_node in node.value.values:
+                        self.add(self._get_str(val_node))
+
                 # 枚举列表 (启发式)
                 is_list_var = "item" in target.id.lower() or "list" in target.id.lower() or target.id.isupper()
                 if is_list_var and isinstance(node.value, ast.List):

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 # Version Detection
 IS_BLENDER_5 = bpy.app.version >= (5, 0, 0)
 IS_BLENDER_4 = bpy.app.version >= (4, 0, 0) and bpy.app.version < (5, 0, 0)
-IS_BLENDER_3 = bpy.app.version >= (3, 6, 0) and bpy.app.version < (4, 0, 0)
+IS_BLENDER_3 = bpy.app.version >= (3, 0, 0) and bpy.app.version < (4, 0, 0)
 
 def get_bake_settings(scene):
     """

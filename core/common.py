@@ -1,6 +1,7 @@
 import bpy
 import logging
 import traceback
+from collections import namedtuple
 from contextlib import contextmanager
 from ..constants import (
     BAKE_CHANNEL_INFO, BSDF_COMPATIBILITY_MAP, 
@@ -9,6 +10,8 @@ from ..constants import (
 )
 
 logger = logging.getLogger(__name__)
+
+ValidationResult = namedtuple('ValidationResult', ['success', 'message', 'job_name'])
 
 def log_error(context, message, state_mgr=None, include_traceback=False):
 

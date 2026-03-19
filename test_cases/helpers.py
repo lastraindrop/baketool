@@ -137,6 +137,15 @@ class JobBuilder:
         self.setting.external_save_format = format
         return self
     
+    def auto_cage(self, mode='PROXIMITY', margin=0.1):
+        self.setting.auto_cage_mode = mode
+        self.setting.auto_cage_margin = margin
+        return self
+
+    def target_density(self, density):
+        self.setting.texel_density = density
+        return self
+
     def enable_channel(self, channel_id):
         for c in self.setting.channels:
             if c.id == channel_id:

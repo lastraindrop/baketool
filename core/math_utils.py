@@ -3,6 +3,8 @@ import bmesh
 import numpy as np
 import colorsys
 import logging
+import mathutils
+from mathutils.bvhtree import BVHTree
 from ..constants import SYSTEM_NAMES
 
 logger = logging.getLogger(__name__)
@@ -287,3 +289,62 @@ def setup_mesh_attribute(obj, id_type='ELEMENT', start_color=(1,0,0,1), iteratio
         except Exception: pass
         
     return attr_name
+
+def calculate_cage_proximity(low_poly, high_poly_list, margin=0.1):
+    """
+    Analyzes proximity between low-poly and high-poly meshes to determine 
+    safe extrusion distances per vertex.
+    """
+    if not low_poly or not high_poly_list: return None
+    
+    try:
+        # Build BVHTree for high-poly (using first as representative)
+        hp_obj = high_poly_list[0]
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        hp_tree = BVHTree.FromObject(hp_obj, depsgraph)
+        
+        lp_mesh = low_poly.data
+        extrusions = np.zeros(len(lp_mesh.vertices), dtype=np.float32)
+        
+        for i, v in enumerate(lp_mesh.vertices):
+            world_co = low_poly.matrix_world @ v.co
+            local_co = hp_obj.matrix_world.inverted() @ world_co
+            
+            location, normal, index, dist = hp_tree.find_nearest(local_co)
+            if dist is not None:
+                extrusions[i] = dist + margin
+            else:
+                extrusions[i] = margin
+                
+        return extrusions
+    except Exception as e:
+        logger.error(f"Cage Proximity Analysis Failed: {e}")
+        return None
+
+class TexelDensityCalculator:
+    """Utility for PBR texel density verification."""
+    @staticmethod
+    def get_mesh_density(obj, res_x, res_y):
+        if obj.type != 'MESH' or not obj.data.uv_layers: return 0.0
+        
+        import bmesh
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+        uv_layer = bm.loops.layers.uv.active
+        
+        total_uv_area = 0.0
+        total_world_area = 0.0
+        
+        for face in bm.faces:
+            total_world_area += face.calc_area()
+            if len(face.loops) < 3: continue
+            uvs = [loop[uv_layer].uv for loop in face.loops]
+            area = 0.5 * abs(sum(uvs[i].x * uvs[i-1].y - uvs[i-1].x * uvs[i].y for i in range(len(uvs))))
+            total_uv_area += area
+            
+        bm.free()
+        if total_world_area < 1e-6: return 0.0
+        
+        avg_res = (res_x + res_y) / 2
+        density = (avg_res * np.sqrt(total_uv_area)) / np.sqrt(total_world_area)
+        return float(density)

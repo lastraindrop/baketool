@@ -33,7 +33,7 @@ class BAKETOOL_OT_RunTests(bpy.types.Operator):
         # 关键：从父目录开始 discover，以确保 test_cases 被识别为 baketool.test_cases
         suite = loader.discover(
             start_dir=test_dir, 
-            pattern='test_*.py', 
+            pattern='suite_*.py', 
             top_level_dir=parent_dir
         )
         
@@ -42,6 +42,21 @@ class BAKETOOL_OT_RunTests(bpy.types.Operator):
         runner = unittest.TextTestRunner(verbosity=2)
         result = runner.run(suite)
         
+        # 3. 反馈到 UI // Feedback to UI
+        scene = context.scene
+        scene.test_pass = result.wasSuccessful()
+        t = result.testsRun
+        f = len(result.failures)
+        e = len(result.errors)
+        
+        import datetime
+        now = datetime.datetime.now().strftime("%H:%M:%S")
+        
+        if scene.test_pass:
+            scene.last_test_info = f"[{now}] PASS: {t} tests"
+        else:
+            scene.last_test_info = f"[{now}] FAIL: {f} fail, {e} err"
+
         print("\n" + "="*60)
         if result.wasSuccessful():
             self.report({'INFO'}, f"ALL TESTS PASSED: {result.testsRun} tests.")

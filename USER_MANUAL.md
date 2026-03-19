@@ -1,9 +1,9 @@
 # Simple Bake Tool (SBT) - 用户参考手册
 
-**版本**: 0.9.8 (Architecture Hardening Update)
+**版本**: 1.0.0 (Production Release)
 **分类**: 3D VIEW > N Panel > Baking
 
-> **📢 项目状态声明**: 本插件已通过涵盖 120+ 项测试的跨版本（Blender 3.6 - 5.0）自动化测试套件验证。
+> **📢 项目状态声明**: 本插件已通过涵盖 540+ 项测试的跨版本（Blender 3.6 - 5.0）自动化矩阵测试套件验证，通过率 100%。
 
 Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动纹理烘焙解决方案。它接管了繁琐的节点连接、图像创建和保存工作，让您专注于参数设置。
 
@@ -24,6 +24,13 @@ Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动
     *   `BSDF Bake`: 自动分析物体的材质节点（Principled BSDF），支持金属度/粗糙度流烘焙。
     *   `Basic Bake`: 调用 Blender 原生烘焙模式（如 AO, Shadow）。
 
+### 1.3 Smart Intelligence (高阶智能) [New]
+*   **Auto-Cage 2.0**: 
+    *   `Uniform`: 传统的统一挤出模式。
+    *   `Proximity`: **[Roadmap 1.1]** 智能邻近度模式。系统会自动分析高模与低模的间距，动态调整每个顶点的挤出距离，防止交叉和裁剪。
+*   **Texel Density (像素密度)**: 
+    *   设定目标密度（px/unit），系统将根据物体的实际物理尺寸自动计算并建议最佳的烘焙分辨率，确保资产库中的所有模型质量一致。
+
 ### 1.3 核心烘焙方法 (Core Methods)
 
 #### Quick Bake (快捷烘焙)
@@ -38,6 +45,11 @@ Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动
 
 #### UDIM Bake
 专为 UDIM 流程设计，支持多象限并行烘焙与自动 Tile 识别。
+
+#### Interactive Preview (实时预览) [New]
+在 Channel 列表上方开启 **Preview Packing**。
+*   **可视化反馈**: 在 3D 视图中实时查看 ORM（遮蔽/粗糙度/金属度）通道的打包效果，无需烘焙即可调整参数。
+*   **自动恢复**: 关闭预览后，系统会自动恢复采集物体原有的材质。
 
 ---
 
@@ -56,7 +68,23 @@ Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动
 
 ---
 
-## 4. 故障排查 (Troubleshooting)
+## 4. CLI & API (开发者与自动化) [New]
+SBT 现在支持完全脱离 UI 运行，适用于渲染农场或 CI 管道。
+
+### 4.1 Headless CLI
+使用命令行参数运行烘焙，无需打开 Blender 界面：
+`blender -b project.blend -P automation/headless_bake.py -- --job "MyJob"`
+
+### 4.2 Public API
+在你的脚本中直接调用：
+```python
+from baketool.core import api
+api.bake(objects=bpy.context.selected_objects, preset="C:/presets/unreal.json")
+```
+
+---
+
+## 5. 故障排查 (Troubleshooting)
 
 ### 4.1 崩溃恢复 (Crash Recovery)
 如果 Blender 在烘焙过程中意外关闭或崩溃，重新打开后 SBT 面板顶部会出现红色警告框，显示最后一次处理的物体和通道，帮助您排查模型问题。

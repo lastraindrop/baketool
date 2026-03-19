@@ -1,5 +1,8 @@
 import bpy
-from .constants import FORMAT_SETTINGS, CAT_MESH, CAT_LIGHT, CAT_DATA, CAT_EXTENSION, CHANNEL_BAKE_INFO, CHANNEL_UI_LAYOUT
+from .constants import (
+    FORMAT_SETTINGS, CAT_MESH, CAT_LIGHT, CAT_DATA, CAT_EXTENSION, 
+    CHANNEL_BAKE_INFO, CHANNEL_UI_LAYOUT, UI_MESSAGES
+)
 from .state_manager import BakeStateManager
 
 def draw_header(layout, text, icon='NONE'):
@@ -397,7 +400,14 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             box.alert = True
             box.label(text="⚠ Warning: Developer use only!", icon='ERROR')
             box.label(text="Operations may reset scene data.", icon='INFO')
-            box.operator("bake.run_dev_tests", text="Run Test Suite", icon='CHECKBOX_HLT')
+            
+            row = box.row(align=True)
+            row.operator("bake.run_dev_tests", text="Run Test Suite", icon='CHECKBOX_HLT')
+            
+            if scene.last_test_info:
+                sub = box.box()
+                if not scene.test_pass: sub.alert = True
+                sub.label(text=scene.last_test_info, icon='INFO' if scene.test_pass else 'ERROR')
             l.separator()
         
         if scene.is_baking:
@@ -597,6 +607,20 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
                 row.prop(s, "custom_name", text="")
                 
             draw_image_format_options(sb, s)
+
+            # --- Smart Intelligence (Roadmap 1.1) ---
+            sb.separator()
+            draw_header(sb, "Smart Intelligence", 'LIGHTPROBE_CUBEMAP')
+            box = sb.box()
+            box.prop(s, "auto_cage_mode")
+            if s.auto_cage_mode == 'PROXIMITY':
+                box.prop(s, "auto_cage_margin")
+            else:
+                box.prop(s, "extrusion")
+            
+            row = box.row(align=True)
+            row.prop(s, "texel_density")
+            # In a real impl, we'd add an operator here to 'Calculate Auto Resolution'
             
             # --- Channel Packing (ORM) ---
             sb.separator()

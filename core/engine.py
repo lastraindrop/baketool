@@ -16,7 +16,8 @@ from .uv_manager import get_active_uv_udim_tiles, UDIMPacker, UVLayoutManager, d
 from .node_manager import NodeGraphHandler
 from ..constants import (
     BAKE_CHANNEL_INFO, CHANNEL_BAKE_INFO, 
-    DATA_BAKE_FORCE_SINGLE_SAMPLE, CHANNEL_MESH_TYPE_MAP
+    DATA_BAKE_FORCE_SINGLE_SAMPLE, CHANNEL_MESH_TYPE_MAP,
+    UI_MESSAGES
 )
 
 logger = logging.getLogger(__name__)
@@ -60,8 +61,9 @@ class BakeStepRunner:
     Encapsulates the full execution logic for a single bake step.
     Handles context management, execution, result recording, and channel packing.
     """
-    def __init__(self, context):
+    def __init__(self, context=None, scene=None):
         self.context = context
+        self.scene = scene if scene else (context.scene if context else None)
 
     def run(self, step: BakeStep, state_mgr=None, queue_idx=0) -> List[Dict]:
         """
@@ -69,7 +71,7 @@ class BakeStepRunner:
         Returns: List of dicts {'image': bpy.types.Image, 'type': str, 'path': str, 'obj': str}
         """
         job, task, channels, f_info = step.job, step.task, step.channels, step.frame_info
-        scene = self.context.scene
+        scene = self.scene
         
         results = [] 
         baked_images = {}
@@ -241,38 +243,15 @@ class JobPreparer:
         scene = context.scene
         
         for job in jobs:
-            s = job.setting
-            objs = [o.bakeobject for o in s.bake_objects if o.bakeobject]
-            if not objs:
-                logger.warning(f"Job '{job.name}' skipped: No objects assigned.")
+            result = JobPreparer.validate_job(job, scene)
+            if not result.success:
+                logger.error(result.message)
+                scene.bake_error_log += result.message + "\n"
                 continue
 
-            # In SELECT_ACTIVE mode, only the active (target) object strictly needs UVs.
-            # High-poly source objects do not need UVs.
-            if s.bake_mode == 'SELECT_ACTIVE':
-                if not s.active_object:
-                    logger.error(f"Job '{job.name}' skipped: No active object target for Select-to-Active.")
-                    continue
-                if missing_uvs := check_objects_uv([s.active_object]):
-                    err = f"Job '{job.name}' skipped: Target object {s.active_object.name} missing UVs."
-                    logger.error(err); scene.bake_error_log += err + "\n"
-                    continue
-            else:
-                if missing_uvs := check_objects_uv(objs):
-                    err = f"Job '{job.name}' skipped: Missing UVs on {', '.join(missing_uvs)}"
-                    logger.error(err); scene.bake_error_log += err + "\n"
-                    continue
-
-            active = s.active_object if s.active_object else objs[0]
-            # Validation: active object must be a Mesh for baking targets
-            if active and active.type != 'MESH':
-                # Try to find a mesh object in the list as fallback
-                mesh_objs = [o for o in objs if o.type == 'MESH']
-                if mesh_objs:
-                    active = mesh_objs[0]
-                else:
-                    logger.error(f"Job '{job.name}' skipped: No valid Mesh target.")
-                    continue
+            s = job.setting
+            objs = [o.bakeobject for o in s.bake_objects if o.bakeobject]
+            active = s.active_object if s.active_object else next(o for o in objs if o.type == 'MESH')
 
             tasks = TaskBuilder.build(context, s, objs, active)
             channels = JobPreparer._collect_channels(job)
@@ -285,6 +264,33 @@ class JobPreparer:
                     queue.append(BakeStep(job, task, channels, f_info))
                     
         return queue
+
+    @staticmethod
+    def validate_job(job, scene) -> 'ValidationResult':
+        """Standalone validation logic for CLI and UI usage."""
+        from .common import ValidationResult
+        s = job.setting
+        objs = [o.bakeobject for o in s.bake_objects if o.bakeobject]
+        
+        if not objs:
+            return ValidationResult(False, UI_MESSAGES['JOB_SKIPPED_NO_OBJS'].format(job.name), job.name)
+
+        if s.bake_mode == 'SELECT_ACTIVE':
+            if not s.active_object:
+                return ValidationResult(False, UI_MESSAGES['JOB_SKIPPED_NO_TARGET'].format(job.name), job.name)
+            if missing_uvs := check_objects_uv([s.active_object]):
+                return ValidationResult(False, UI_MESSAGES['JOB_SKIPPED_MISSING_UV'].format(job.name, s.active_object.name), job.name)
+        else:
+            if missing_uvs := check_objects_uv(objs):
+                return ValidationResult(False, UI_MESSAGES['JOB_SKIPPED_MISSING_UV'].format(job.name, ', '.join(missing_uvs)), job.name)
+
+        active = s.active_object if s.active_object else objs[0]
+        if active and active.type != 'MESH':
+            mesh_objs = [o for o in objs if o.type == 'MESH']
+            if not mesh_objs:
+                return ValidationResult(False, UI_MESSAGES['JOB_SKIPPED_NO_MESH'].format(job.name), job.name)
+        
+        return ValidationResult(True, "", job.name)
 
     @staticmethod
     def prepare_quick_bake_queue(context: bpy.types.Context, reference_job: Any, selected_objects: List[bpy.types.Object], active_object: Optional[bpy.types.Object]) -> List[BakeStep]:
@@ -497,10 +503,21 @@ class BakePassExecutor:
                 params['normal_space'] = 'OBJECT' if prop.normal_settings.object_space else 'TANGENT'
             
             if setting.bake_mode == 'SELECT_ACTIVE':
+                cage_obj_name = setting.cage_object.name if setting.cage_object else ""
+                cage_ext = setting.extrusion
+                
+                # Auto-Cage 2.0 (Proximity)
+                if setting.auto_cage_mode == 'PROXIMITY' and not setting.cage_object:
+                    # Logic for dynamic cage calculation would go here if we create a temp cage.
+                    # For now, we adjust the uniform extrusion to a safe average analyzed from proximity.
+                    exts = calculate_cage_proximity(task.active_obj, task.objects, setting.auto_cage_margin)
+                    if exts is not None:
+                        cage_ext = float(np.mean(exts)) # Simplification: Use mean of analyzed per-vertex safe distance
+                
                 params.update({
                     'use_selected_to_active': True, 
-                    'cage_object': setting.cage_object.name if setting.cage_object else "", 
-                    'cage_extrusion': setting.extrusion
+                    'cage_object': cage_obj_name, 
+                    'cage_extrusion': cage_ext
                 })
             
             # Ensure we are in the right engine

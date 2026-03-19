@@ -24,6 +24,7 @@ from .core.engine import (
 from .core.execution import BakeModalOperator
 from .core import compat
 from . import preset_handler
+from .constants import UI_MESSAGES
 from .state_manager import BakeStateManager
 
 import logging
@@ -47,7 +48,7 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
         try:
             enabled_jobs = [j for j in context.scene.BakeJobs.jobs if j.enabled]
             if not enabled_jobs:
-                self.report({'WARNING'}, "No enabled jobs.")
+                self.report({'WARNING'}, UI_MESSAGES['NO_JOBS'])
                 return {'CANCELLED'}
                 
             self.bake_queue = JobPreparer.prepare_execution_queue(context, enabled_jobs)
@@ -65,7 +66,7 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
                         start_idx = data.get('current_queue_idx', 0)
                         
         except Exception as e: 
-            err_msg = f"Bake preparation failed: {str(e)}"
+            err_msg = UI_MESSAGES['PREP_FAILED'].format(str(e))
             self.report({'ERROR'}, err_msg)
             log_error(context, err_msg, include_traceback=True)
             return {'CANCELLED'}
@@ -99,7 +100,7 @@ class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
             self.bake_queue = JobPreparer.prepare_quick_bake_queue(context, job, sel_objs, act_obj)
             
             if not self.bake_queue:
-                self.report({'WARNING'}, "Quick Bake preparation failed (check logs).")
+                self.report({'WARNING'}, UI_MESSAGES['QUICK_PREP_FAILED'])
                 return {'CANCELLED'}
             
         except Exception as e:
@@ -259,7 +260,7 @@ class BAKETOOL_OT_TogglePreview(bpy.types.Operator):
         objs = [o.bakeobject for o in s.bake_objects if o.bakeobject]
         
         if not objs:
-            self.report({'WARNING'}, "No objects assigned to job.")
+            self.report({'WARNING'}, UI_MESSAGES['JOB_SKIPPED_NO_OBJS'].format(job.name))
             s.use_preview = False
             return {'CANCELLED'}
             

@@ -7,6 +7,7 @@ from pathlib import Path
 # You can add your local blender paths here. 
 # The script will automatically skip missing ones.
 BLENDER_PATHS = [
+    r"D:\Program Files\Blender-3.3\blender.exe",
     r"D:\Program Files\Blender-3.6\blender.exe",
     r"D:\Program Files\Blender-4.2\blender.exe",
     r"D:\Program Files\Blender-4.5\blender.exe",
@@ -14,7 +15,7 @@ BLENDER_PATHS = [
 ]
 
 current_dir = str(Path(__file__).resolve().parent)
-runner_script = str(Path(current_dir) / "headless_runner.py")
+runner_script = str(Path(current_dir) / "suite_runner.py")
 
 def get_blender_version(path):
     try:
@@ -61,7 +62,10 @@ def main():
             stdout = process.stdout.decode('utf-8', errors='replace')
             stderr = process.stderr.decode('utf-8', errors='replace')
             
-            if process.returncode == 0:
+            # More reliable check than returncode for Blender background processes
+            is_success = "CONSOLIDATED SUITES PASSED" in stdout
+            
+            if is_success:
                 print(f"{ver_display:<45} | \033[92mPASS\033[0m       | All tests cleared")
                 results.append((ver_display, "PASS", ""))
             else:

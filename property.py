@@ -185,7 +185,16 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     bake_type: props.EnumProperty(items=BAKE_TYPES, name='Bake Type', default="BSDF", update=update_channels)
     bake_mode: props.EnumProperty(items=BAKE_MODES, name='Bake Mode', default='SINGLE_OBJECT')
     
-    extrusion: props.FloatProperty(name='Extrude', min=0)
+    extrusion: props.FloatProperty(name='Uniform Extrude', min=0, default=0.01)
+    
+    # Auto-Cage 2.0
+    auto_cage_mode: props.EnumProperty(
+        name="Cage Mode",
+        items=[('UNIFORM', 'Uniform', 'Standard normal offset'), 
+               ('PROXIMITY', 'Proximity', 'Ray-cast based smart offset')],
+        default='UNIFORM'
+    )
+    auto_cage_margin: props.FloatProperty(name="Safety Margin", default=0.1, min=0.0)
     use_float32: props.BoolProperty(default=False, name='32 Bit')
     use_clear_image: props.BoolProperty(default=True, name='Clear')
     color_base: props.FloatVectorProperty(name='Color Base', default=(0,0,0,0), subtype='COLOR', size=4)
@@ -247,6 +256,9 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     id_start_color: props.FloatVectorProperty(name='ID Start Color', default=(1.0, 0.0, 0.0, 1.0), subtype='COLOR', size=4)
     id_iterations: props.IntProperty(name='Quality (Iterations)', default=50, min=1, max=1000)
     id_seed: props.IntProperty(name='Random Seed', default=0, min=0)
+
+    # Texel Density
+    texel_density: props.FloatProperty(name="Target Density", default=10.24, min=0.01, description="Target texel density in px/unit")
 
 class BakeJob(bpy.types.PropertyGroup):
     name: props.StringProperty(name="Job Name", default="New Job")

@@ -51,7 +51,7 @@ class BakeToolPreferences(AddonPreferences):
 bl_info = {
     "name": "Simple Bake Tool",
     "author": "lastraindrop",
-    "version": (0, 9, 8),
+    "version": (1, 0, 0),
     "blender": (3, 6, 0),
     "location": "3D VIEW > N panel > Baking",
     "description": "A simplified, high-efficiency baking solution for Blender. Robust architecture with cross-version compatibility.",
@@ -155,6 +155,10 @@ def register():
     bpy.types.Scene.bake_progress = props.FloatProperty(name="Progress", default=0.0, min=0.0, max=100.0, subtype='PERCENTAGE')
     bpy.types.Scene.bake_status = props.StringProperty(name="Status", default="Idle")
     bpy.types.Scene.bake_error_log = props.StringProperty(name="Error Log", default="")
+    
+    # 测试反馈 / Test Feedback
+    bpy.types.Scene.last_test_info = props.StringProperty(name="Last Test Info", default="")
+    bpy.types.Scene.test_pass = props.BoolProperty(name="Test Passed", default=False)
     
     # Add to Object Context Menu
     bpy.types.VIEW3D_MT_object_context_menu.append(menu_func_quick_bake)
