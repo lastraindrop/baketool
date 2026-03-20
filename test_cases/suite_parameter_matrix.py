@@ -13,6 +13,9 @@ class SuiteParameterMatrix(unittest.TestCase):
         cleanup_scene()
         self.obj = create_test_object("MatrixCube")
 
+    def tearDown(self):
+        cleanup_scene()
+
     def test_exhaustive_queue_generation(self):
         """Matrix test for [Mode] x [Type] x [Format] queue generation."""
         from ..core.engine import JobPreparer

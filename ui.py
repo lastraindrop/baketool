@@ -140,10 +140,12 @@ def draw_results(scene, layout, bj):
         split = inner.split(factor=0.4)
         c1 = split.column()
         c1.label(text=f"{res.res_x} x {res.res_y}", icon='FULLSCREEN_ENTER')
-        c1.label(text=f"{res.duration:.2f} s", icon='TIME')
+        c1.label(text=f"Total: {res.duration:.2f} s", icon='TIME')
         
         c2 = split.column()
-        c2.label(text=f"Samples: {res.samples}", icon='MOD_PARTICLES')
+        row = c2.row(align=True)
+        row.label(text=f"Bake: {res.bake_time:.2f}s")
+        row.label(text=f"Save: {res.save_time:.2f}s")
         c2.label(text=f"{res.bake_type} ({res.device})", icon='NODE_COMPOSITING')
 
     layout.separator()
@@ -344,6 +346,13 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             op.data_path = "scene.bake_error_log"
             op.value = ""
 
+        # Roadmap 2.3: Visual Preset Library
+        b = l.box()
+        draw_header(b, "Preset Library", 'ASSET_MANAGER')
+        row = b.row(align=True)
+        row.template_icon_view(bj, "library_preset", show_labels=True)
+        row.operator("bake.refresh_presets", text="", icon='FILE_REFRESH')
+
         b = l.box()
         r = b.row()
         
@@ -382,6 +391,10 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         r = col.row(align=True)
         r.prop(s, "res_x")
         r.prop(s, "res_y")
+        
+        r = col.row(align=True)
+        r.prop(s, "use_float32", text="32 Bit")
+        r.prop(s, "use_denoise", text="Denoise")
         
         col.prop(s, "bake_type")
         col.prop(s, "bake_mode")

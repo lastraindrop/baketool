@@ -68,6 +68,10 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
             init_x, init_y = tile_resolutions[1001]
             
         image = bpy.data.images.new(name, width=init_x, height=init_y, alpha=alpha, float_buffer=full, tiled=use_udim)
+        # Ensure at least one tile exists for UDIM to avoid "uninitialized image" error in older versions
+        if use_udim and hasattr(image, "tiles") and len(image.tiles) == 0:
+            image.tiles.new(1001)
+            image.update() # Force internal data sync for older versions like 3.3
     else:
         target_w, target_h = x, y
         if use_udim and tile_resolutions and 1001 in tile_resolutions:
@@ -94,9 +98,11 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
         image.generated_color = basiccolor
         # For non-tiled images, we can force clear pixels
         if image.source != 'TILED':
+            import numpy as np
             try:
-                pixels = [c for c in basiccolor] * (image.size[0] * image.size[1])
-                image.pixels.foreach_set(pixels)
+                num_pixels = image.size[0] * image.size[1]
+                arr = np.tile(np.array(basiccolor, dtype=np.float32), num_pixels)
+                image.pixels.foreach_set(arr)
             except Exception: pass
 
     if use_udim and image.source == 'TILED':

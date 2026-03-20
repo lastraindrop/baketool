@@ -17,6 +17,9 @@ class SuitePresetAndState(unittest.TestCase):
     def setUp(self):
         cleanup_scene()
 
+    def tearDown(self):
+        cleanup_scene()
+
     # --- Preset Roundtrip ---
     def test_preset_roundtrip(self):
         """Serialize → Deserialize → Verify consistency."""
@@ -80,20 +83,25 @@ class SuitePresetAndState(unittest.TestCase):
     # --- Channel Reset Completeness ---
     def test_channel_reset_bsdf_populates_channels(self):
         """Verify reset_channels_logic populates correct channels for BSDF type."""
+        from ..constants import BAKE_CHANNEL_INFO
+        from ..core import compat
         builder = JobBuilder("ChannelTest").type('BSDF')
         s = builder.setting
         channel_ids = [c.id for c in s.channels if c.valid_for_mode]
-        # BSDF must always include 'color', 'normal', 'rough', 'metal'
-        for required in ['color', 'normal', 'rough', 'metal']:
-            self.assertIn(required, channel_ids, f"Missing required channel: {required}")
+        bsdf_key = 'BSDF_4' if (compat.IS_BLENDER_4 or compat.IS_BLENDER_5) else 'BSDF_3'
+        required = [ch['id'] for ch in BAKE_CHANNEL_INFO[bsdf_key] if ch.get('defaults', {}).get('enabled')]
+        for req in required:
+            self.assertIn(req, channel_ids, f"Missing required channel: {req}")
 
     def test_channel_reset_basic_populates_channels(self):
         """Verify reset_channels_logic populates correct channels for BASIC type."""
+        from ..constants import BAKE_CHANNEL_INFO
         builder = JobBuilder("BasicTest").type('BASIC')
         s = builder.setting
         channel_ids = [c.id for c in s.channels if c.valid_for_mode]
-        for required in ['diff', 'normal', 'combine']:
-            self.assertIn(required, channel_ids, f"Missing required channel: {required}")
+        required = [ch['id'] for ch in BAKE_CHANNEL_INFO['BASIC'] if ch.get('defaults', {}).get('enabled')]
+        for req in required:
+            self.assertIn(req, channel_ids, f"Missing required channel: {req}")
 
     # --- Register/Unregister Symmetry ---
     def test_registered_scene_properties_exist(self):

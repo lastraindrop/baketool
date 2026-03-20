@@ -15,7 +15,7 @@ BLENDER_PATHS = [
 ]
 
 current_dir = str(Path(__file__).resolve().parent)
-runner_script = str(Path(current_dir) / "suite_runner.py")
+runner_script = str(Path(current_dir) / "cli_runner.py")
 
 def get_blender_version(path):
     try:

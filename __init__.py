@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 # --- Preferences ---
 class BakeToolPreferences(AddonPreferences):
-    bl_idname = __name__
+    bl_idname = __package__
 
     default_preset_path: StringProperty(
         name="Default Preset",
@@ -40,18 +40,28 @@ class BakeToolPreferences(AddonPreferences):
         default=False
     )
 
+    library_path: StringProperty(
+        name="Preset Library Path",
+        description="Directory containing .json presets and matching .png thumbnails",
+        subtype='DIR_PATH',
+    )
+
     def draw(self, context):
         layout = self.layout
         layout.label(text="Default Startup Configuration")
-        row = layout.row()
-        row.prop(self, "auto_load")
-        row.prop(self, "default_preset_path")
+        col = layout.column(align=True)
+        col.prop(self, "auto_load")
+        col.prop(self, "default_preset_path")
+        
+        layout.separator()
+        layout.label(text="Preset Library")
+        layout.prop(self, "library_path")
 
 
 bl_info = {
     "name": "Simple Bake Tool",
     "author": "lastraindrop",
-    "version": (1, 0, 0),
+    "version": (0, 9, 5),
     "blender": (3, 6, 0),
     "location": "3D VIEW > N panel > Baking",
     "description": "A simplified, high-efficiency baking solution for Blender. Robust architecture with cross-version compatibility.",
@@ -180,6 +190,10 @@ def register():
     
     
 def unregister():
+    # Cleanup Previews
+    from .core import thumbnail_manager
+    thumbnail_manager.clear_preview_collection("presets")
+
     # Remove Auto Load Handler
     preset_handler.AutoLoadHandler.unregister()
 

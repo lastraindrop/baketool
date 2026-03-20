@@ -1,5 +1,7 @@
 import bpy
 from bpy import props
+import os
+from pathlib import Path
 from .constants import (
     BAKE_TYPES, BAKE_MODES, BASIC_FORMATS, DEVICES, DIRECTIONS,
     NORMAL_TYPES, NORMAL_CHANNELS, COLOR_DEPTHS, COLOR_MODES, COLOR_SPACES,
@@ -17,11 +19,11 @@ logger = logging.getLogger(__name__)
 def get_channel_source_items(self, context):
     """Safely retrieve available channels for custom source selection."""
     fallback = [('NONE', 'None', 'No enabled channels available')]
-    if context is None: return fallback
+    if not context or not getattr(context, "scene", None): return fallback
     
     try:
-        scene = getattr(context, "scene", None)
-        if not scene or not hasattr(scene, "BakeJobs") or not scene.BakeJobs.jobs: 
+        scene = context.scene
+        if not hasattr(scene, "BakeJobs") or not scene.BakeJobs.jobs: 
             return fallback
             
         job = scene.BakeJobs.jobs[scene.BakeJobs.job_index]
@@ -36,6 +38,7 @@ def get_channel_source_items(self, context):
 
 def get_valid_depths(self, context):
     """Filter color depths based on current image format technical constraints."""
+    if not context or not getattr(context, "scene", None): return COLOR_DEPTHS
     fmt = getattr(self, "external_save_format", "PNG")
     valid_keys = FORMAT_SETTINGS.get(fmt, {}).get("depths", [])
     if not valid_keys: return COLOR_DEPTHS
@@ -43,6 +46,7 @@ def get_valid_depths(self, context):
 
 def get_valid_modes(self, context):
     """Filter color modes based on current image format technical constraints."""
+    if not context or not getattr(context, "scene", None): return COLOR_MODES
     fmt = getattr(self, "external_save_format", "PNG")
     valid_keys = FORMAT_SETTINGS.get(fmt, {}).get("modes", [])
     if not valid_keys: return COLOR_MODES
@@ -164,6 +168,8 @@ class BakedImageResult(bpy.types.PropertyGroup):
     res_y: props.IntProperty(name="Height")
     samples: props.IntProperty(name="Samples")
     duration: props.FloatProperty(name="Duration", precision=2)
+    bake_time: props.FloatProperty(name="Bake Time", precision=2)
+    save_time: props.FloatProperty(name="Save Time", precision=2)
     bake_type: props.StringProperty(name="Method")
     device: props.StringProperty(name="Device")
     file_size: props.StringProperty(name="File Size") # Formatted e.g. "1.2 MB"
@@ -196,6 +202,7 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     )
     auto_cage_margin: props.FloatProperty(name="Safety Margin", default=0.1, min=0.0)
     use_float32: props.BoolProperty(default=False, name='32 Bit')
+    use_denoise: props.BoolProperty(default=False, name='Denoise (OIDN)')
     use_clear_image: props.BoolProperty(default=True, name='Clear')
     color_base: props.FloatVectorProperty(name='Color Base', default=(0,0,0,0), subtype='COLOR', size=4)
     use_alpha: props.BoolProperty(default=True, name='Use Alpha')
@@ -247,7 +254,8 @@ class BakeJobSetting(bpy.types.PropertyGroup):
 
     use_auto_uv: props.BoolProperty(name="Auto Smart UV", default=False)
     auto_uv_name: props.StringProperty(name="UV Name", default="Smart_UV")
-    auto_uv_angle: props.FloatProperty(name="Angle Limit", default=66.0, min=1.0, max=89.0, subtype='ANGLE')
+    auto_uv_angle: props.FloatProperty(name="Angle Limit", default=1.15192, min=0.0175, max=1.5533, subtype='ANGLE',
+                                        description="Angle limit for Smart UV projection (66° default)")
     auto_uv_margin: props.FloatProperty(name="Island Margin", default=0.001, min=0.0, max=1.0, precision=4)
 
     udim_mode: props.EnumProperty(name="UDIM Mode", items=[('DETECT', 'Use Existing UVs', ''), ('REPACK', 'Auto Repack', ''), ('CUSTOM', 'Custom List', '')], default='DETECT')
@@ -291,8 +299,61 @@ class BakeResultSettings(bpy.types.PropertyGroup):
     external_save_path: props.StringProperty(subtype='DIR_PATH')
     image_settings: props.PointerProperty(type=BakeImageSettings)
     
+def update_library_preset(self, context):
+    """Load the selected preset from the library."""
+    if self.library_preset == 'NONE': return
+    
+    path = self.library_preset
+    if os.path.exists(path):
+        import json
+        from . import preset_handler
+        try:
+            with open(path, 'r') as f:
+                data = json.load(f)
+            preset_handler.PropertyIO().from_dict(self, data)
+            # Reset the enum so it can be re-selected if needed
+            # (Blender enums stay on the last value)
+        except Exception as e:
+            logger.error(f"Failed to load preset from library: {e}")
+
+def get_library_preset_items(self, context):
+    """Scan library path and return items with icons for the UI gallery."""
+    items = [('NONE', 'No Presets', 'Select a folder in preferences', 0)]
+    if not context: return items
+    
+    package_name = __package__.split('.')[0] if '.' in __package__ else __package__
+    prefs = context.preferences.addons.get(package_name)
+    if not prefs or not prefs.preferences.library_path:
+        return items
+        
+    library_path = Path(prefs.preferences.library_path)
+    if not library_path.exists():
+        return items
+        
+    from .core import thumbnail_manager
+    pcoll = thumbnail_manager.get_preview_collection("presets")
+    
+    found_items = []
+    # Find all .json files
+    for f in library_path.glob("*.json"):
+        name = f.stem
+        # Icon ID from thumbnail manager (0 if no matching png)
+        icon_id = thumbnail_manager.get_icon_id(name)
+        found_items.append((str(f.resolve()), name, f"Load {name}", icon_id, len(found_items)))
+        
+    return found_items if found_items else items
+
 class BakeJobs(bpy.types.PropertyGroup):
     debug_mode: props.BoolProperty(name="Debug Mode", default=False, update=update_debug_mode)
+    
+    # Roadmap 2.3: Visual Preset Library
+    library_preset: props.EnumProperty(
+        name="Library",
+        items=get_library_preset_items,
+        update=update_library_preset,
+        description="Visual Preset Gallery"
+    )
+    
     jobs: props.CollectionProperty(type=BakeJob)
     job_index: props.IntProperty(name='Index', default=0)
     node_bake_settings: props.PointerProperty(type=BakeNodeSettings)

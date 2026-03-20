@@ -379,6 +379,10 @@ PRESET_MIGRATION_MAP = {
     'save_format': 'external_save_format',
     'float32': 'use_float32',
     'save_outside': 'use_external_save',
+    
+    # WARNING: 下列映射存在一对多冲突。旧版每个通道有独立开关（diff_dir, gloss_dir），
+    # 新版共享 pass_settings.use_direct。加载旧预设时，最后一个值将生效。
+    # 这是一个已知的向后兼容限制，不影响新版预设。
     # Render Pass mappings
     'diff_dir': 'pass_settings.use_direct', 'diff_ind': 'pass_settings.use_indirect', 'diff_col': 'pass_settings.use_color',
     'gloss_dir': 'pass_settings.use_direct', 'gloss_ind': 'pass_settings.use_indirect', 'gloss_col': 'pass_settings.use_color',

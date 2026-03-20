@@ -220,8 +220,6 @@ class SceneSettingsContext:
         self.original = {}
         self.attr_map = {
             'scene': {'res_x': 'resolution_x', 'res_y': 'resolution_y', 'res_pct': 'resolution_percentage'},
-            # NOTE: 'bake' category currently unused (params passed via bpy.ops), kept for reference
-            'bake': {'margin': 'bake_margin', 'type': 'bake_type', 'use_clear': 'bake_clear'} if bpy.app.version < (5, 0, 0) else {},
         }
 
     def _get_target(self):

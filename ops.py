@@ -79,14 +79,24 @@ class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
     bl_label = "Quick Bake Selected"
     
     def execute(self, context):
-        # We redirect execute to invoke for script usage, though usually not recommended for modal
-        return self.invoke(context, None)
+        # 支持脚本调用，需创建虚拟 event
+        class _DummyEvent:
+            type = 'NONE'
+        return self.invoke(context, _DummyEvent())
 
     def invoke(self, context, event):
+        if not hasattr(context.scene, "BakeJobs"):
+            self.report({'ERROR'}, "BakeTool properties not initialized in this scene.")
+            return {'CANCELLED'}
+            
         bj = context.scene.BakeJobs
         if not bj.jobs:
             self.report({'WARNING'}, "No Job settings available to use as template.")
             return {'CANCELLED'}
+        
+        # Ensure job_index is within bounds
+        if bj.job_index < 0 or bj.job_index >= len(bj.jobs):
+            bj.job_index = 0
             
         job = bj.jobs[bj.job_index]
         sel_objs = [o for o in context.selected_objects if o.type == 'MESH']
@@ -112,13 +122,15 @@ class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
         return self.init_modal(context)
 
 class BAKETOOL_OT_ResetChannels(bpy.types.Operator):
-    bl_idname = "bake.reset_channels"; bl_label = "Reset"
+    bl_idname = "bake.reset_channels"
+    bl_label = "Reset"
     def execute(self, context):
         if context.scene.BakeJobs.jobs: reset_channels_logic(context.scene.BakeJobs.jobs[context.scene.BakeJobs.job_index].setting)
         return {'FINISHED'}
 
 class BAKETOOL_OT_GenericChannelOperator(bpy.types.Operator):
-    bl_idname = "bake.generic_channel_op"; bl_label = "Op"
+    bl_idname = "bake.generic_channel_op"
+    bl_label = "Op"
     action_type: props.EnumProperty(items=[('ADD','',''),('DELETE','',''),('UP','',''),('DOWN','',''),('CLEAR','','')])
     target: props.StringProperty()
     def execute(self, context):
@@ -130,7 +142,10 @@ class BAKETOOL_OT_GenericChannelOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 class BAKETOOL_OT_SetSaveLocal(bpy.types.Operator):
-    bl_idname="bake.set_save_local"; bl_label="Local"; save_location: props.IntProperty(default=0)
+    bl_idname = "bake.set_save_local"
+    bl_label = "Local"
+    save_location: props.IntProperty(default=0)
+    
     def execute(self,context):
         if not bpy.data.filepath: return {'CANCELLED'}
         path = str(Path(bpy.data.filepath).parent) + os.sep
@@ -140,7 +155,8 @@ class BAKETOOL_OT_SetSaveLocal(bpy.types.Operator):
         return{'FINISHED'}
 
 class BAKETOOL_OT_RefreshUDIM(bpy.types.Operator):
-    bl_idname = "bake.refresh_udim_locations"; bl_label = "Refresh / Repack UDIMs"
+    bl_idname = "bake.refresh_udim_locations"
+    bl_label = "Refresh / Repack UDIMs"
     def execute(self, context):
         if not context.scene.BakeJobs.jobs: return {'CANCELLED'}
         s = context.scene.BakeJobs.jobs[context.scene.BakeJobs.job_index].setting
@@ -154,7 +170,9 @@ class BAKETOOL_OT_RefreshUDIM(bpy.types.Operator):
         return {'FINISHED'}
 
 class BAKETOOL_OT_ManageObjects(bpy.types.Operator):
-    bl_idname = "bake.manage_objects"; bl_label = "Manage Objects"; bl_options = {'REGISTER', 'UNDO'}
+    bl_idname = "bake.manage_objects"
+    bl_label = "Manage Objects"
+    bl_options = {'REGISTER', 'UNDO'}
     action: props.EnumProperty(items=[('SET','',''),('ADD','',''),('REMOVE','',''),('CLEAR','',''),('SET_ACTIVE','',''),('SMART_SET','','')])
     def execute(self, context):
         if not context.scene.BakeJobs.jobs: return {'CANCELLED'}
@@ -167,8 +185,14 @@ class BAKETOOL_OT_ManageObjects(bpy.types.Operator):
         return {'FINISHED'}
 
 class BAKETOOL_OT_SaveSetting(bpy.types.Operator):
-    bl_idname = "bake.save_setting"; bl_label = "Save Preset"; filepath: props.StringProperty(subtype="FILE_PATH")
-    def invoke(self, context, event): context.window_manager.fileselect_add(self); return {'RUNNING_MODAL'}
+    bl_idname = "bake.save_setting"
+    bl_label = "Save Preset"
+    filepath: props.StringProperty(subtype="FILE_PATH")
+    
+    def invoke(self, context, event): 
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+        
     def execute(self, context):
         data = preset_handler.PropertyIO(exclude_props={'active_channel_index'}).to_dict(context.scene.BakeJobs)
         path = self.filepath if self.filepath.endswith(".json") else self.filepath+".json"
@@ -176,11 +200,32 @@ class BAKETOOL_OT_SaveSetting(bpy.types.Operator):
         return {'FINISHED'}
 
 class BAKETOOL_OT_LoadSetting(bpy.types.Operator):
-    bl_idname = "bake.load_setting"; bl_label = "Load Preset"; filepath: props.StringProperty(subtype="FILE_PATH")
-    def invoke(self, context, event): context.window_manager.fileselect_add(self); return {'RUNNING_MODAL'}
+    bl_idname = "bake.load_setting"
+    bl_label = "Load Preset"
+    filepath: props.StringProperty(subtype="FILE_PATH")
+    
+    def invoke(self, context, event): 
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+        
     def execute(self, context):
         with open(self.filepath, 'r') as f: data = json.load(f)
         preset_handler.PropertyIO().from_dict(context.scene.BakeJobs, data)
+        return {'FINISHED'}
+
+class BAKETOOL_OT_RefreshPresets(bpy.types.Operator):
+    """Scan library path and load thumbnails"""
+    bl_idname = "bake.refresh_presets"
+    bl_label = "Refresh Preset Library"
+    
+    def execute(self, context):
+        from .core import thumbnail_manager
+        prefs = context.preferences.addons[__package__].preferences
+        if prefs.library_path:
+            thumbnail_manager.load_preset_thumbnails(prefs.library_path)
+            self.report({'INFO'}, f"Library refreshed from: {prefs.library_path}")
+        else:
+            self.report({'WARNING'}, "Library path not set in Addon Preferences.")
         return {'FINISHED'}
 
 class BAKETOOL_OT_BakeSelectedNode(bpy.types.Operator):

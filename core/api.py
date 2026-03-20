@@ -30,7 +30,7 @@ def bake(objects, use_selection=True):
         
     # Logic to queue a bake job (Modal operators require UI context, 
     # so this will trigger the existing operator but with API-initialized settings)
-    bpy.ops.bake.bake_operator()
+    bpy.ops.bake.bake_operator('INVOKE_DEFAULT')
     return True
 
 def get_udim_tiles(objects):

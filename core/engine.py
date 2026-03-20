@@ -56,6 +56,96 @@ class RuntimeJobProxy:
 
 # --- Logic Classes ---
 
+class BakePostProcessor:
+    """封装烘焙后的图像后处理逻辑 (降噪等)"""
+    @staticmethod
+    def apply_denoise(image):
+        if not image: return
+        
+        # 记录原始设置 // Store original
+        scene = bpy.context.scene
+        # NOTE: 降噪使用 bpy.ops.render.render() 触发合成器，
+        # 在复杂场景中可能较慢。未来考虑替换为 Python OIDN 绑定。
+        
+        # 1. 创建临时场景 // Create temporary scene
+        tmp_scene = bpy.data.scenes.new(name="BT_Denoise_Temp")
+        tmp_scene.render.engine = 'CYCLES' # Required for OIDN if using older versions, though node-based works generally
+        tmp_scene.use_nodes = True
+        tmp_scene.render.resolution_x = image.size[0]
+        tmp_scene.render.resolution_y = image.size[1]
+        tmp_scene.render.resolution_percentage = 100
+        
+        # Ensure use_nodes is True before accessing tree
+        tmp_scene.use_nodes = True
+        
+        # Support version-specific access
+        tree = None
+        if hasattr(tmp_scene, "node_tree") and tmp_scene.node_tree:
+            tree = tmp_scene.node_tree
+        elif hasattr(tmp_scene, "compositing_node_group") and tmp_scene.compositing_node_group:
+            tree = tmp_scene.compositing_node_group
+            
+        if not tree:
+            # In some versions, use_nodes = True doesn't immediately create the tree
+            if hasattr(tmp_scene, "node_tree_add"):
+                tmp_scene.node_tree_add()
+                tree = getattr(tmp_scene, "node_tree", None) or getattr(tmp_scene, "compositing_node_group", None)
+        
+        if not tree:
+            logger.error("Could not find/create compositor node tree on temporary scene.")
+            bpy.data.scenes.remove(tmp_scene)
+            return
+
+        nodes = tree.nodes
+        links = tree.links
+        nodes.clear()
+        
+        # 2. 构建合成树 // Setup nodes
+        n_img = nodes.new('CompositorNodeImage')
+        n_img.image = image
+        
+        n_denoise = nodes.new('CompositorNodeDenoise')
+        # Blender 3.5+ uses prefilter, we keep it default
+        
+        n_comp = nodes.new('CompositorNodeComposite')
+        
+        links.new(n_img.outputs[0], n_denoise.inputs[0])
+        links.new(n_denoise.outputs[0], n_comp.inputs[0])
+        
+        # 3. 执行单帧“合成” // Execute "render" to process pixels
+        # We use a trick: bypass actual rendering by just updating the compositor
+        # In newer Blender versions, we might need a small render or use `node_tree.update()`
+        # A more robust way is to use a temporary Viewer node and read its pixels
+        n_viewer = nodes.new('CompositorNodeViewer')
+        links.new(n_denoise.outputs[0], n_viewer.inputs[0])
+        
+        # Use context override to ensure we are in the right scene
+        with bpy.context.temp_override(scene=tmp_scene):
+            # Trigger compositor update
+            bpy.ops.render.render() # Minimal render to trigger compositor
+            
+        # 4. 回写像素 // Retrieve processed pixels from Viewer
+        # Note: This is memory intensive for 8K. We use explicit deletion and GL freeing to assist GC.
+        viewer_img = bpy.data.images.get("Viewer Node")
+        if viewer_img:
+            # Match size check
+            if viewer_img.size[0] == image.size[0] and viewer_img.size[1] == image.size[1]:
+                # Copy pixels
+                try:
+                    # Free GL memory of the target image before massive pixel update to prevent spikes
+                    image.gl_free()
+                    image.pixels.foreach_set(viewer_img.pixels)
+                    image.update()
+                except Exception as e:
+                    logger.error(f"Failed to write back denoised pixels: {e}")
+        
+        # 5. 清理 // Cleanup
+        # Explicitly free viewer pixels before removing scene
+        if viewer_img:
+            viewer_img.gl_free()
+            
+        bpy.data.scenes.remove(tmp_scene)
+
 class BakeStepRunner:
     """
     Encapsulates the full execution logic for a single bake step.
@@ -99,13 +189,21 @@ class BakeStepRunner:
 
                             
                             img = BakePassExecutor.execute(job.setting, task, c, handler, baked_images, udim_tiles, array_cache)
+                            bake_duration = time.time() - start_time
                             
                             if img:
-                                duration = time.time() - start_time
+                                if job.setting.use_denoise:
+                                    scene.bake_status = f"[{i+1}/{total_ch}] Denoising {c['name']}..."
+                                    BakePostProcessor.apply_denoise(img)
+                                
                                 key = c['name'] if c['id'] == 'CUSTOM' else c['id']
                                 baked_images[key] = img
                                 
+                                save_start = time.time()
                                 path = self._handle_save(job.setting, task, img, f_info)
+                                save_duration = time.time() - save_start
+                                
+                                total_duration = bake_duration + save_duration
                                 
                                 # Package metadata
                                 results.append({
@@ -117,7 +215,9 @@ class BakeStepRunner:
                                         'res_x': img.size[0],
                                         'res_y': img.size[1],
                                         'samples': int(job.setting.sample),
-                                        'duration': duration,
+                                        'duration': total_duration,
+                                        'bake_time': bake_duration,
+                                        'save_time': save_duration,
                                         'bake_type': str(job.setting.bake_type),
                                         'device': str(job.setting.device)
                                     }
@@ -172,8 +272,12 @@ class BakeStepRunner:
         pack_img = set_image(pack_name, s.res_x, s.res_y, alpha=True, space='Non-Color')
         
         if pack_channels_numpy(pack_img, pack_map, array_cache):
-            duration = time.time() - start_time
+            bake_duration = time.time() - start_time
+            
+            save_start = time.time()
             path = self._handle_save(s, task, pack_img, f_info)
+            save_duration = time.time() - save_start
+            
             baked_images['PACKED'] = pack_img
             return {
                 'image': pack_img,
@@ -184,7 +288,9 @@ class BakeStepRunner:
                     'res_x': pack_img.size[0],
                     'res_y': pack_img.size[1],
                     'samples': 0, # Packing doesn't use samples
-                    'duration': duration,
+                    'duration': bake_duration + save_duration,
+                    'bake_time': bake_duration,
+                    'save_time': save_duration,
                     'bake_type': "NUMPY_PACK",
                     'device': "CPU"
                 }

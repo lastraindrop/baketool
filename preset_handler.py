@@ -106,6 +106,10 @@ class PropertyIO:
         :param clear_collection: 是否在加载列表前先清空现有列表 (通常为 True)
         :param data: JSON 格式的字典数据
         """
+        if not isinstance(data, dict):
+            logger.debug(f"FromDict aborted: Input data is not a dictionary (got {type(data).__name__})")
+            return
+            
         if not data or not prop_group:
             return
 
@@ -169,7 +173,7 @@ class PropertyIO:
 
             except Exception as e:
                 self.stats['error'] += 1
-                logger.warning(f"Failed to load property '{key}' in {type(prop_group).__name__}: {e}")
+                logger.debug(f"FromDict: Failed to load property '{key}' in {type(prop_group).__name__}: {e}")
 
     def _set_nested_attr(self, obj, path, val):
         """支持设置嵌套属性，如 'mesh_settings.samples'"""
@@ -184,7 +188,8 @@ class PropertyIO:
         try:
             setattr(target, parts[-1], val)
             self.stats['loaded'] += 1
-        except Exception:
+        except Exception as e:
+            logger.debug(f"FromDict: Nested set failed '{path}': {e}")
             pass
 
     def report_stats(self):

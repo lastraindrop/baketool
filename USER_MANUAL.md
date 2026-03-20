@@ -1,9 +1,9 @@
 # Simple Bake Tool (SBT) - 用户参考手册
 
-**版本**: 1.1.0 (Production Stable - Architectural Refinement)
+**版本**: 0.9.5 (Update - Production E2E Validation)
 **分类**: 3D VIEW > N Panel > Baking
 
-> **📢 项目状态声明**: 本插件已通过涵盖 19x5 (950+) 项测试用例的跨版本（Blender 3.3 - 5.0）自动化矩阵测试套件验证，通过率 100%。v1.1.5 引入了安全性加固引擎与数据驱动 UI。
+> **📢 项目状态声明**: 本插件已通过涵盖 20x5 (1000+) 项测试用例的跨版本（Blender 3.3 - 5.0）自动化矩阵测试套件验证。Blender 3.6+ 已实现 100% 完美测试通过。v0.9.5 引入了全面资源隔离保护与动态参数对齐。
 
 Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动纹理烘焙解决方案。它接管了繁琐的节点连接、图像创建和保存工作，让您专注于参数设置。
 
@@ -23,17 +23,25 @@ Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动
 *   **Bake Type**:
     *   `BSDF Bake`: 自动分析物体的材质节点（Principled BSDF），支持金属度/粗糙度流烘焙。
     *   `Basic Bake`: 调用 Blender 原生烘焙模式（如 AO, Shadow）。
+*   **Post-Processing (后处理) [New]**:
+    *   `Denoise (OIDN)`: 开启后，系统会自动调用 Intel Open Image Denoise 对烘焙结果进行降噪处理，特别适合低采样率下的快速输出。
 
 ### 1.3 Smart Intelligence (高阶智能) [New]
+*   **Performance Profiler (性能剖析)**: 烘焙完成后，在 `Baked Results` 面板中可查看每个通道的 `Bake Time` (计算耗时) 与 `Save Time` (存储耗时)，帮助您定位生产瓶颈。
 *   **Auto-Cage 2.0**: 
     *   `Uniform`: 传统的统一挤出模式。
-    *   `Proximity`: **[Roadmap 1.1]** 智能邻近度模式。系统会自动分析高模与低模的间距，动态调整每个顶点的挤出距离，防止交叉和裁剪。
+    *   `Proximity`: **[NEW]** 智能邻近度模式。系统通过 NumPy 射线追踪预判，自动分析高模与低模的间距并设定合理膨胀。
 *   **Texel Density (像素密度)**: 
-    *   设定目标密度（px/unit），系统将根据物体的实际物理尺寸自动计算并建议最佳的烘焙分辨率，确保资产库中的所有模型质量一致。
+    *   设定目标密度（px/unit），系统将根据物体的实际物理尺寸自动计算并建议最佳的烘焙分辨率，确保资产库质量的一致性。
 
-### 1.3 核心烘焙方法 (Core Methods)
+### 1.4 Preset Library 2.0 (视觉预设库) [New]
+*   **Visual Gallery**: 面板顶部新增预设画廊。您可以直观地浏览带有缩略图的烘焙配置。
+*   **Refresh Library**: 点击刷新按钮可自动扫描首选项中定义的 `Library Path`，加载最新的 `.json` 配置与 `.png` 预览图。
+*   **Setup**: 在 `Edit > Preferences > Add-ons > Simple Bake Tool` 中设置您的预设库路径。
 
-#### Quick Bake (快捷烘焙)
+---
+
+## 2. Channel List (通道列表)
 无需配置复杂的任务，直接在视图中选择物体并点击 **Quick Bake**。
 *   **零副作用**: *[New]* 现在的 Quick Bake 使用内存代理执行，不会修改你当前面板上的 Job 设置或场景预设。
 
@@ -51,9 +59,9 @@ Simple Bake Tool (SBT) 是一套专为 Blender 设计的非破坏性、全自动
 *   **可视化反馈**: 在 3D 视图中实时查看 ORM（遮蔽/粗糙度/金属度）通道的打包效果，无需烘焙即可调整参数。
 *   **自动恢复**: 关闭预览后，系统会自动恢复采集物体原有的材质。
 
----
+## 3. 通道列表 (Channel List)
+SBT 支持多种通道，可根据材质类型动态识别。
 
-## 2. Channel List (通道列表)
 
 这是 SBT 的核心。在这里勾选你需要输出的贴图类型。支持 PBR 数据、光照结果、网格地图（Curvature, ID Map, Thickness 等）以及 PBR 流程转换。
 

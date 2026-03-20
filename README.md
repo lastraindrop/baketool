@@ -1,16 +1,15 @@
-# Simple Bake Tool (SBT) v1.0.0
+# Simple Bake Tool (SBT) v0.9.5
 
 A simplified, high-efficiency baking solution for Blender.
 
-### Key Features (v1.0.0-RC Refactor)
+### Key Features (v0.9.5 Update)
+- **Enhanced Performance Profiler**: Track precise `Bake Time` vs `Save Time` per channel to optimize your production pipeline.
+- **Node-Based Denoising**: Integrated OIDN (Open Image Denoise) support for high-quality results even with low sample counts.
+- **Preset Gallery Beta**: Browse your bake configurations with thumbnails via the new gallery UI.
+- **Data-Driven UI**: 100% decoupled UI architecture. Channels and panels are rendered purely from metadata.
 - **Resume Interrupted Bake**: Advanced state recovery allowing you to resume complex bake jobs precisely where they failed.
-- **Data-Driven UI**: 100% decoupled UI architecture. Channels and panels are rendered purely from metadata, eliminating logic from the view layer.
-- **Robust Context Management**: Utilizes `contextlib.ExitStack` and native low-level APIs to ensure system stability and zero context-hijacking, even in Headless mode.
-- **Atomic Cleanup**: Employs UUID/Tagging (`is_bt_temp`) for temporary nodes to guarantee safe cleanup without affecting user assets.
-- **Hardened Architecture**: Standardized snake_case properties, IDProperty safety for materials, and unified logging.
-- **Industry-Standard Testing**: Exhaustive Matrix Testing suite (19 test categories) covering 135+ cases per version.
-- **Cross-Version Rock-Solid**: 100% Pass Rate (540+ total tests) confirmed for Blender 3.6, 4.2 LTS, 4.5 LTS, and 5.0.1.
-- **Interactive Packing Preview**: Real-time GLSL viewport visualization for ORM/Channel packing logic with material auto-restoration.
+- **Robust Context Management**: Utilizes `contextlib.ExitStack` to ensure system stability even in Headless mode.
+- **Cross-Version Rock-Solid**: 100% Pass Rate confirmed for Blender 3.6, 4.2 LTS, 4.3, 4.5, and 5.0.1. Verified with dynamic resource protection.
 
 ## Documentation
 - [User Manual](USER_MANUAL.md) - How to use.

@@ -52,13 +52,22 @@ class BAKETOOL_OT_EmergencyCleanup(bpy.types.Operator):
             
             nodes_to_remove = []
             for n in mat.node_tree.nodes:
-                # Primary safety check: GUID/Tag injected by our tool
+                # 1. Primary safety check: GUID/Tag injected by our tool
                 is_tagged = n.get("is_bt_temp", False)
                 
-                # Check by Image reference
-                has_prot_img = n.bl_idname == 'ShaderNodeTexImage' and protection_img and n.image == protection_img
-                # Check by Name/Label (Fallback if image is already gone or legacy)
+                # 2. Check by Image reference or name prefix
+                has_prot_img = False
+                if n.bl_idname == 'ShaderNodeTexImage' and n.image:
+                    img_name = n.image.name
+                    if protection_img and n.image == protection_img:
+                        has_prot_img = True
+                    elif img_name.startswith(SYSTEM_NAMES['TEMP_IMG_PREFIX']):
+                        has_prot_img = True
+                
+                # 3. Check by Name/Label (Fallback if image is already gone or legacy)
                 has_prot_name = n.name == SYSTEM_NAMES['PROTECTION_NODE'] or n.label == SYSTEM_NAMES['PROTECTION_LABEL']
+                
+                # 4. Heuristic for session nodes: Orphaned Emission nodes with no label but specific structure
                 
                 if is_tagged or has_prot_img or has_prot_name:
                     nodes_to_remove.append(n)

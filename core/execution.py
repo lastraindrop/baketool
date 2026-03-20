@@ -12,6 +12,47 @@ from .common import log_error
 logger = logging.getLogger(__name__)
 
 
+def add_bake_result_to_ui(context, img, type_name, obj_name, path, meta=None):
+    """
+    Standardized utility to add a bake result to the scene's UI collection
+    and populate metadata (resolution, time, file size).
+    """
+    import os
+    results = context.scene.baked_image_results
+    # Prevent duplicates
+    if any(r.image == img for r in results): 
+        return None
+        
+    item = results.add()
+    item.image = img
+    item.channel_type = type_name 
+    item.object_name = obj_name
+    item.filepath = path or ""
+    
+    # Apply metadata if available
+    if meta:
+        item.res_x = meta.get('res_x', 0)
+        item.res_y = meta.get('res_y', 0)
+        item.samples = meta.get('samples', 0)
+        item.duration = meta.get('duration', 0.0)
+        item.bake_time = meta.get('bake_time', 0.0)
+        item.save_time = meta.get('save_time', 0.0)
+        item.bake_type = meta.get('bake_type', 'UNKNOWN')
+        item.device = meta.get('device', 'UNKNOWN')
+        
+        # Calculate file size if path exists
+        if path and os.path.exists(path):
+            size_bytes = os.path.getsize(path)
+            if size_bytes < 1024:
+                item.file_size = f"{size_bytes} B"
+            elif size_bytes < 1048576:
+                item.file_size = f"{size_bytes/1024:.1f} KB"
+            else:
+                item.file_size = f"{size_bytes/1048576:.1f} MB"
+        else:
+            item.file_size = "N/A (Memory)"
+    return item
+
 class BakeModalOperator:
     """
     Mixin class providing robust modal execution logic, progress tracking,
@@ -81,7 +122,7 @@ class BakeModalOperator:
         results = runner.run(step, self.state_mgr, self.current_step_idx)
         
         for res in results:
-            self._add_ui_result(context, res['image'], res['type'], res['obj'], res['path'], res.get('meta'))
+            add_bake_result_to_ui(context, res['image'], res['type'], res['obj'], res['path'], res.get('meta'))
             if f_info and res['path']:
                 self._track_sequence(res['image'], res['path'], f_info['save_idx'])
 
@@ -93,37 +134,6 @@ class BakeModalOperator:
         if idx < t['min_frame']: 
             t['min_frame'] = idx
             t['first_path'] = path
-
-    def _add_ui_result(self, context, img, type_name, obj_name, path, meta=None):
-        import os
-        results = context.scene.baked_image_results
-        if any(r.image == img for r in results): return
-        item = results.add()
-        item.image = img
-        item.channel_type = type_name 
-        item.object_name = obj_name
-        item.filepath = path or ""
-        
-        # Apply metadata if available
-        if meta:
-            item.res_x = meta.get('res_x', 0)
-            item.res_y = meta.get('res_y', 0)
-            item.samples = meta.get('samples', 0)
-            item.duration = meta.get('duration', 0.0)
-            item.bake_type = meta.get('bake_type', 'UNKNOWN')
-            item.device = meta.get('device', 'UNKNOWN')
-            
-            # Calculate file size if path exists
-            if path and os.path.exists(path):
-                size_bytes = os.path.getsize(path)
-                if size_bytes < 1024:
-                    item.file_size = f"{size_bytes} B"
-                elif size_bytes < 1048576:
-                    item.file_size = f"{size_bytes/1024:.1f} KB"
-                else:
-                    item.file_size = f"{size_bytes/1048576:.1f} MB"
-            else:
-                item.file_size = "N/A (Memory)"
 
     def _handle_step_error(self, context, e):
         err_msg = f"[Error] Step {self.current_step_idx+1}: {str(e)}"

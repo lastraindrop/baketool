@@ -33,8 +33,8 @@ def detect_object_udim_tile(obj):
         
         # Filter only valid indices before counting
         tiles = 1001 + u_indices[valid] + (v_indices[valid] * 10)
-        counts = np.bincount(tiles)
-        return int(np.argmax(counts))
+        vals, counts = np.unique(tiles, return_counts=True)
+        return int(vals[np.argmax(counts)])
     except Exception as e:
         logger.warning(f"UV Detect Failed for {obj.name}: {e}")
         return 1001

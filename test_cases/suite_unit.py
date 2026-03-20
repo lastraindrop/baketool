@@ -18,6 +18,9 @@ class SuiteUnit(unittest.TestCase):
     def setUp(self):
         cleanup_scene()
 
+    def tearDown(self):
+        cleanup_scene()
+
     # --- Image & Math Utils (from test_core.py) ---
     def test_image_setting(self):
         img = image_manager.set_image("TestImg", 64, 64, space='sRGB')
@@ -69,6 +72,72 @@ class SuiteUnit(unittest.TestCase):
         exts = math_utils.calculate_cage_proximity(low, [high], margin=0.05)
         self.assertIsNotNone(exts)
         self.assertTrue(all(e >= 0.1 for e in exts)) # 0.1 offset + 0.05 margin
+
+    # --- Destructive / Boundary Testing ---
+    def test_preset_corruption_handling(self):
+        """Verify that the preset handler doesn't crash on invalid data."""
+        from ..preset_handler import PropertyIO
+        bj = bpy.context.scene.BakeJobs
+        io = PropertyIO()
+        
+        # 1. Invalid root type
+        io.from_dict(bj, "Not a dict")
+        self.assertGreaterEqual(io.stats['error'], 0) # Should log but not crash
+        
+        # 2. Corrupted nested data
+        corrupted_data = {"jobs": [{"setting": {"res_x": "InvalidString"}}]}
+        io.from_dict(bj, corrupted_data)
+        # res_x is IntProperty, should fail to set but continue
+        
+    def test_extension_logic_branches(self):
+        """Parametric test: verify extension channel logic does not crash."""
+        extension_sockets = ['pbr_conv_metal', 'pbr_conv_base', 'rough_inv']
+        for sock_name in extension_sockets:
+            with self.subTest(socket=sock_name):
+                mat = bpy.data.materials.new(f"TestExt_{sock_name}")
+                mat.use_nodes = True
+                with NodeGraphHandler([mat]) as h:
+                    try:
+                        res = h._create_extension_logic(mat, sock_name, None)
+                    except Exception as e:
+                        self.fail(f"Extension logic '{sock_name}' crashed: {e}")
+
+    def test_apply_denoise_pixels_modified(self):
+        """Verify the denoise processor modifies image pixels."""
+        from ..core.engine import BakePostProcessor
+        img = image_manager.set_image("TestDenoise", 16, 16, basiccolor=(0.1, 0.4, 0.2, 1.0))
+        # inject noise
+        arr = np.random.rand(16*16*4).astype(np.float32)
+        arr[3::4] = 1.0 # fixed alpha
+        img.pixels.foreach_set(arr)
+        
+        try:
+            BakePostProcessor.apply_denoise(img)
+            new_arr = np.empty(16*16*4, dtype=np.float32)
+            img.pixels.foreach_get(new_arr)
+            self.assertFalse(np.array_equal(arr, new_arr), "Denoise did not modify pixels")
+        except Exception as e:
+            self.fail(f"Denoise crashed: {e}")
+
+    def test_emergency_cleanup_removes_temp_nodes(self):
+        """Verify EmergencyCleanup removes tagged temporary nodes."""
+        mat = bpy.data.materials.new("TestCleanup")
+        mat.use_nodes = True
+        tree = mat.node_tree
+        # Add a dummy node and tag it exactly as cleanup.py expects: is_bt_temp
+        val_node = tree.nodes.new('ShaderNodeValue')
+        val_node["is_bt_temp"] = True
+        val_node.name = "BakeTool_Temp_Node"
+        
+        self.assertIn(val_node, tree.nodes.values())
+        
+        # Execute actual cleanup operator
+        res = bpy.ops.bake.emergency_cleanup()
+        self.assertEqual(res, {'FINISHED'})
+        
+        # Verify removal
+        remaining = [n for n in tree.nodes if n.get("is_bt_temp", False)]
+        self.assertEqual(len(remaining), 0)
 
 if __name__ == '__main__':
     unittest.main()

@@ -76,10 +76,18 @@ def create_preview_material(obj, s):
                     from_node = socket.links[0].from_node
                     new_node = nodes.new(from_node.bl_idname)
                     new_node.location = (-200, (1-combine_input_idx)*200)
-                    # Copy properties (basic)
+                    # 安全属性复制：仅复制已知安全的用户可编辑属性
+                    safe_skip = {'rna_type', 'bl_rna', 'type', 'bl_idname', 'bl_label', 
+                                 'bl_description', 'bl_icon', 'bl_static_type',
+                                 'inputs', 'outputs', 'internal_links', 'dimensions',
+                                 'name', 'color', 'select', 'show_options', 'show_preview',
+                                 'show_texture', 'parent', 'location', 'width', 'height'}
                     for prop in from_node.bl_rna.properties:
-                        if not prop.is_readonly:
-                            setattr(new_node, prop.identifier, getattr(from_node, prop.identifier))
+                        if not prop.is_readonly and prop.identifier not in safe_skip:
+                            try:
+                                setattr(new_node, prop.identifier, getattr(from_node, prop.identifier))
+                            except Exception:
+                                pass
                     links.new(new_node.outputs[0], combine.inputs[combine_input_idx])
                 else:
                     # Constant value

@@ -42,15 +42,14 @@ def bake_node_to_image(context, material, node, settings):
                     tree.links.new(emi.outputs[0], out.inputs[0])
                     
                     # Use compatibility layer for bake settings
-                    compat.configure_bake_settings(
-                        context.scene,
-                        bake_type='EMIT',
+                    compat.set_bake_type(context.scene, 'EMIT')
+                    
+                    bpy.ops.object.bake(
+                        type='EMIT',
                         margin=settings.margin,
                         use_clear=True,
                         target='IMAGE_TEXTURES'
                     )
-                    
-                    bpy.ops.object.bake(type='EMIT')
                     
                     if settings.use_external_save:
                         save_image(img, settings.external_save_path, file_format=settings.image_settings.external_save_format)
@@ -290,18 +289,29 @@ class NodeGraphHandler:
         if socket_name == 'pbr_conv_metal': return metallic_out
         elif socket_name == 'pbr_conv_base':
             diff_src = self._find_socket_source(mat, 'color', None)
-            mix = self._add_node(mat, 'ShaderNodeMix', data_type='RGBA')
-            tree.links.new(metallic_out, mix.inputs[0]) # Factor
             
-            # Use socket names 'A' and 'B' for robustness (Blender 3.4+ ShaderNodeMix)
-            sock_a = mix.inputs.get('A') or (mix.inputs[6] if len(mix.inputs) > 6 else None)
-            sock_b = mix.inputs.get('B') or (mix.inputs[7] if len(mix.inputs) > 7 else None)
+            # 创建 Mix 节点 (B3.4+ ShaderNodeMix / Legacy ShaderNodeMixRGB)
+            from . import compat
+            if compat.IS_BLENDER_4 or compat.IS_BLENDER_5:
+                mix = self._add_node(mat, 'ShaderNodeMix')
+                mix.data_type = 'RGBA'
+                tree.links.new(metallic_out, mix.inputs[0])  # Factor
+                # B4+ Mix node: inputs索引: 0=Factor, 6=A(RGBA), 7=B(RGBA)
+                sock_a = mix.inputs[6] if len(mix.inputs) > 6 else None
+                sock_b = mix.inputs[7] if len(mix.inputs) > 7 else None
+            else:
+                mix = self._add_node(mat, 'ShaderNodeMixRGB')
+                tree.links.new(metallic_out, mix.inputs[0])  # Fac
+                sock_a = mix.inputs.get('Color1', mix.inputs[1] if len(mix.inputs) > 1 else None)
+                sock_b = mix.inputs.get('Color2', mix.inputs[2] if len(mix.inputs) > 2 else None)
             
             if sock_a is None or sock_b is None:
-                logger.warning("PBR Conv: Mix node 'A'/'B' socket not found, skipping.")
+                logger.warning("PBR Conv: Mix node socket not found, skipping.")
                 return None
             
             tree.links.new(diff_src, sock_a)
             tree.links.new(spec_src, sock_b)
-            return mix.outputs[2] # Result
+            # 输出: B4+ ShaderNodeMix outputs[2]=Result(RGBA); Legacy MixRGB outputs[0]=Color
+            result_output = mix.outputs[2] if (compat.IS_BLENDER_4 or compat.IS_BLENDER_5) else mix.outputs[0]
+            return result_output
         return None

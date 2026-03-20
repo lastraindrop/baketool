@@ -251,6 +251,12 @@
             "ru_RU": "BT_Bake_Temp_UV",
             "ja_JP": "BT_Bake_Temp_UV"
         },
+        "BT_Denoise_Temp": {
+            "zh_CN": "BT_Denoise_Temp",
+            "fr_FR": "BT_Denoise_Temp",
+            "ru_RU": "BT_Denoise_Temp",
+            "ja_JP": "BT_Denoise_Temp"
+        },
         "BT_Protection_Node": {
             "zh_CN": "BT_Protection_Node",
             "fr_FR": "BT_Protection_Node",
@@ -305,6 +311,12 @@
             "ru_RU": "Запечь узел",
             "ja_JP": "ノードをベイク"
         },
+        "Bake Time": {
+            "zh_CN": "Bake Time",
+            "fr_FR": "Bake Time",
+            "ru_RU": "Bake Time",
+            "ja_JP": "Bake Time"
+        },
         "Bake Type": {
             "zh_CN": "烘焙类型",
             "fr_FR": "Type de cuisson",
@@ -352,6 +364,12 @@
             "fr_FR": "BakeTool Headless CLI",
             "ru_RU": "BakeTool Headless CLI",
             "ja_JP": "BakeTool Headless CLI"
+        },
+        "BakeTool Unified CLI Test Runner": {
+            "zh_CN": "BakeTool Unified CLI Test Runner",
+            "fr_FR": "BakeTool Unified CLI Test Runner",
+            "ru_RU": "BakeTool Unified CLI Test Runner",
+            "ja_JP": "BakeTool Unified CLI Test Runner"
         },
         "BakeTool v1.0.0 optimized for Blender 5.0 rendering pipeline.": {
             "zh_CN": "BakeTool v1.0.0 已针对 Blender 5.0 渲染管线进行优化。",
@@ -641,6 +659,18 @@
             "ru_RU": "Удалить все",
             "ja_JP": "すべて削除"
         },
+        "Denoise": {
+            "zh_CN": "Denoise",
+            "fr_FR": "Denoise",
+            "ru_RU": "Denoise",
+            "ja_JP": "Denoise"
+        },
+        "Denoise (OIDN)": {
+            "zh_CN": "Denoise (OIDN)",
+            "fr_FR": "Denoise (OIDN)",
+            "ru_RU": "Denoise (OIDN)",
+            "ja_JP": "Denoise (OIDN)"
+        },
         "Depth": {
             "zh_CN": "深度",
             "fr_FR": "Profondeur",
@@ -688,6 +718,12 @@
             "fr_FR": "Direction",
             "ru_RU": "Направление",
             "ja_JP": "方向"
+        },
+        "Directory containing .json presets and matching .png thumbnails": {
+            "zh_CN": "Directory containing .json presets and matching .png thumbnails",
+            "fr_FR": "Directory containing .json presets and matching .png thumbnails",
+            "ru_RU": "Directory containing .json presets and matching .png thumbnails",
+            "ja_JP": "Directory containing .json presets and matching .png thumbnails"
         },
         "Dismiss Warning": {
             "zh_CN": "忽略警告",
@@ -1013,11 +1049,23 @@
             "ru_RU": "Сжатие LZW",
             "ja_JP": "LZW压缩"
         },
+        "Last Test Info": {
+            "zh_CN": "Last Test Info",
+            "fr_FR": "Last Test Info",
+            "ru_RU": "Last Test Info",
+            "ja_JP": "Last Test Info"
+        },
         "Leave Output empty for default": {
             "zh_CN": "输出留空以使用默认值",
             "fr_FR": "Laisser la sortie vide pour le réglage par défaut",
             "ru_RU": "Оставьте поле вывода пустым для значения по умолчанию",
             "ja_JP": "デフォルトの場合は出力を空のままにします"
+        },
+        "Library": {
+            "zh_CN": "Library",
+            "fr_FR": "Library",
+            "ru_RU": "Library",
+            "ja_JP": "Library"
         },
         "Light Maps": {
             "zh_CN": "光照贴图",
@@ -1156,6 +1204,12 @@
             "fr_FR": "Pas de pré-filtrage",
             "ru_RU": "Без префильтра",
             "ja_JP": "プリフィルタなし"
+        },
+        "No Presets": {
+            "zh_CN": "No Presets",
+            "fr_FR": "No Presets",
+            "ru_RU": "No Presets",
+            "ja_JP": "No Presets"
         },
         "No compression": {
             "zh_CN": "无压缩",
@@ -1445,6 +1499,18 @@
             "ru_RU": "Префикс",
             "ja_JP": "接头辞"
         },
+        "Preset Library": {
+            "zh_CN": "Preset Library",
+            "fr_FR": "Preset Library",
+            "ru_RU": "Preset Library",
+            "ja_JP": "Preset Library"
+        },
+        "Preset Library Path": {
+            "zh_CN": "Preset Library Path",
+            "fr_FR": "Preset Library Path",
+            "ru_RU": "Preset Library Path",
+            "ja_JP": "Preset Library Path"
+        },
         "Progress": {
             "zh_CN": "进度",
             "fr_FR": "Progrès",
@@ -1565,6 +1631,12 @@
             "ru_RU": "Обновить / Перепаковать UDIM",
             "ja_JP": "UDIMを更新/再パッキング"
         },
+        "Refresh Preset Library": {
+            "zh_CN": "Refresh Preset Library",
+            "fr_FR": "Refresh Preset Library",
+            "ru_RU": "Refresh Preset Library",
+            "ja_JP": "Refresh Preset Library"
+        },
         "Reset": {
             "zh_CN": "重置",
             "fr_FR": "Réinitialiser",
@@ -1648,6 +1720,18 @@
             "fr_FR": "Enregistrer préréglage",
             "ru_RU": "Сохранить пресет",
             "ja_JP": "プリセットを保存"
+        },
+        "Save Time": {
+            "zh_CN": "Save Time",
+            "fr_FR": "Save Time",
+            "ru_RU": "Save Time",
+            "ja_JP": "Save Time"
+        },
+        "Select a folder in preferences": {
+            "zh_CN": "Select a folder in preferences",
+            "fr_FR": "Select a folder in preferences",
+            "ru_RU": "Select a folder in preferences",
+            "ja_JP": "Select a folder in preferences"
         },
         "Select mesh objects to bake.": {
             "zh_CN": "请选择要烘焙的网格物体。",
@@ -1834,6 +1918,12 @@
             "fr_FR": "Target texel density in px/unit",
             "ru_RU": "Target texel density in px/unit",
             "ja_JP": "Target texel density in px/unit"
+        },
+        "Test Passed": {
+            "zh_CN": "Test Passed",
+            "fr_FR": "Test Passed",
+            "ru_RU": "Test Passed",
+            "ja_JP": "Test Passed"
         },
         "Texture set index": {
             "zh_CN": "贴图集索引",
@@ -2033,6 +2123,12 @@
             "ru_RU": "Validation failed: {}",
             "ja_JP": "Validation failed: {}"
         },
+        "Visual Preset Gallery": {
+            "zh_CN": "Visual Preset Gallery",
+            "fr_FR": "Visual Preset Gallery",
+            "ru_RU": "Visual Preset Gallery",
+            "ja_JP": "Visual Preset Gallery"
+        },
         "Warning: Cage object missing for selective bake.": {
             "zh_CN": "警告：选择性烘焙缺少罩体物体。",
             "fr_FR": "Warning: Cage object missing for selective bake.",
@@ -2068,6 +2164,12 @@
             "fr_FR": "ZIPS",
             "ru_RU": "ZIPS",
             "ja_JP": "ZIPS"
+        },
+        "all": {
+            "zh_CN": "all",
+            "fr_FR": "all",
+            "ru_RU": "all",
+            "ja_JP": "all"
         },
         "bw": {
             "zh_CN": "黑白",
