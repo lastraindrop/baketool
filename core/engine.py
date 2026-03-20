@@ -251,7 +251,7 @@ class JobPreparer:
 
             s = job.setting
             objs = [o.bakeobject for o in s.bake_objects if o.bakeobject]
-            active = s.active_object if s.active_object else next(o for o in objs if o.type == 'MESH')
+            active = s.active_object if s.active_object else next((o for o in objs if o.type == 'MESH'), objs[0])
 
             tasks = TaskBuilder.build(context, s, objs, active)
             channels = JobPreparer._collect_channels(job)
@@ -407,32 +407,47 @@ class BakeContextManager:
         return False
 
 class BakePassExecutor:
-    """封装单一烘焙通道的执行逻辑"""
+    """封装单一烘焙通道的执行逻辑 (Refactored for KISS/Decoupling)"""
+    
     @classmethod
-    def execute(cls, setting, task, channel_config, handler, current_results, udim_tiles=None, array_cache=None):
-        prop = channel_config['prop']
-        chan_id = channel_config['id']
+    def execute(cls, setting, task, c_config, handler, current_results, udim_tiles=None, array_cache=None):
+        """主入口：编排单通道烘焙流"""
+        chan_id = c_config['id']
+        prop = c_config['prop']
         
-        target_cs, is_float = cls._get_color_settings(setting, prop, channel_config)
-        img_name = f"{channel_config['prefix']}{task.base_name}{channel_config['suffix']}"
+        # 1. Prepare Target Image
+        img = cls._create_target_image(setting, task, c_config, udim_tiles)
+        
+        # 2. Path A: Numpy-based PBR Conversion (Bypass Blender Bake)
+        if cls._try_numpy_pbr(chan_id, prop, img, current_results, array_cache):
+            return img
+            
+        # 3. Path B: Standard Blender Bake Pipeline
+        return cls._run_blender_bake_pipeline(setting, task, c_config, handler, img)
+
+    @classmethod
+    def _create_target_image(cls, setting, task, c_config, udim_tiles):
+        prop = c_config['prop']
+        target_cs, is_float = cls._get_color_settings(setting, prop, c_config)
+        img_name = f"{c_config['prefix']}{task.base_name}{c_config['suffix']}"
         
         tile_resolutions = {}
         if setting.bake_mode == 'UDIM':
-            for bo in setting.bake_objects:
-                if bo.bakeobject and bo.override_size:
-                    tile_resolutions[bo.udim_tile] = (bo.udim_width, bo.udim_height)
+            tile_resolutions = {bo.udim_tile: (bo.udim_width, bo.udim_height) 
+                               for bo in setting.bake_objects if bo.bakeobject and bo.override_size}
         
-        img = set_image(
+        return set_image(
             img_name, setting.res_x, setting.res_y, 
             alpha=setting.use_alpha, full=is_float, space=target_cs, 
             clear=setting.use_clear_image, basiccolor=setting.color_base,
             use_udim=(setting.bake_mode == 'UDIM'),
             udim_tiles=udim_tiles, tile_resolutions=tile_resolutions
         )
-        
-        if cls._try_numpy_pbr(chan_id, prop, img, current_results, array_cache):
-            return img
-            
+
+    @classmethod
+    def _run_blender_bake_pipeline(cls, setting, task, c_config, handler, img):
+        chan_id = c_config['id']
+        prop = c_config['prop']
         mesh_type = cls._get_mesh_type(chan_id)
         attr_name = cls._ensure_attributes(task, setting, handler, chan_id)
         
@@ -442,14 +457,61 @@ class BakePassExecutor:
         try:
             if is_data_pass: bpy.context.scene.cycles.samples = 1
             handler.setup_for_pass(
-                channel_config['bake_pass'], chan_id, img, 
+                c_config['bake_pass'], chan_id, img, 
                 mesh_type=mesh_type, attr_name=attr_name, channel_settings=prop
             )
-            success = cls._run_blender_bake(setting, prop, channel_config['bake_pass'], mesh_type, chan_id)
+            success = cls._execute_blender_bake_op(setting, task, prop, c_config['bake_pass'], mesh_type, chan_id)
+            return img if success else None
         finally:
             if is_data_pass: bpy.context.scene.cycles.samples = orig_samples
-        
-        return img if success else None
+
+    @staticmethod
+    def _execute_blender_bake_op(setting, task, prop, bake_pass, mesh_type, chan_id):
+        from . import compat
+        scene = bpy.context.scene
+        try:
+            # 1. Resolve Bake Type
+            is_special = (mesh_type is not None) or (chan_id == 'CUSTOM')
+            bake_type = 'EMIT' if is_special else bake_pass
+            # NOTE: compat.set_bake_type syncs Cycles internal state (scene.cycles.bake_type)
+            # This is separate from the operator kwarg 'type' which tells bpy.ops.object.bake what pass to run
+            compat.set_bake_type(scene, bake_type)
+
+            # 2. Build Parameters
+            params = {
+                'type': bake_type, 
+                'margin': setting.margin, 
+                'use_clear': setting.use_clear_image, 
+                'target': 'IMAGE_TEXTURES'
+            }
+            
+            if bake_type == 'NORMAL': 
+                params['normal_space'] = 'OBJECT' if prop.normal_settings.object_space else 'TANGENT'
+            
+            if setting.bake_mode == 'SELECT_ACTIVE':
+                params.update({
+                    'use_selected_to_active': True, 
+                    'cage_object': setting.cage_object.name if setting.cage_object else "", 
+                    'cage_extrusion': BakePassExecutor._resolve_cage_extrusion(task, setting)
+                })
+            
+            # NOTE: engine 已由 BakeContextManager 设置为 CYCLES
+            bpy.ops.object.bake(**params)
+            return True
+        except Exception as e:
+            from .common import log_error
+            log_error(bpy.context, f"Bake Error {chan_id}: {e}", include_traceback=True)
+            return False
+
+    @staticmethod
+    def _resolve_cage_extrusion(task, setting):
+        """根据 Auto-Cage 模式解析挤出距离"""
+        if setting.auto_cage_mode == 'PROXIMITY' and not setting.cage_object:
+            from .math_utils import calculate_cage_proximity
+            exts = calculate_cage_proximity(task.active_obj, task.objects, setting.auto_cage_margin)
+            if exts is not None:
+                return float(sum(exts) / len(exts))
+        return setting.extrusion
 
     @staticmethod
     def _get_color_settings(setting, prop, c):
@@ -480,55 +542,6 @@ class BakePassExecutor:
         attr_name = setup_mesh_attribute(task.active_obj, type_key, setting.id_start_color, setting.id_iterations, setting.id_manual_start_color, setting.id_seed)
         if attr_name: handler.temp_attributes.append((task.active_obj, attr_name))
         return attr_name
-
-    @staticmethod
-    def _run_blender_bake(setting, prop, bake_pass, mesh_type, chan_id):
-        from . import compat
-        scene = bpy.context.scene
-        try:
-            is_special = (mesh_type is not None) or (chan_id == 'CUSTOM')
-            bake_type = 'EMIT' if is_special else bake_pass
-            
-            # 1. Configuration (Physical settings applied to scene/engine)
-            # Use compat layer ONLY for bake_type (handles Blender 3.x/4.x/5.0 property mapping differences)
-            compat.set_bake_type(scene, bake_type)
-
-            params = {
-                'type': bake_type, 
-                'margin': setting.margin, 
-                'use_clear': setting.use_clear_image, 
-                'target': 'IMAGE_TEXTURES'
-            }
-            if params['type'] == 'NORMAL': 
-                params['normal_space'] = 'OBJECT' if prop.normal_settings.object_space else 'TANGENT'
-            
-            if setting.bake_mode == 'SELECT_ACTIVE':
-                cage_obj_name = setting.cage_object.name if setting.cage_object else ""
-                cage_ext = setting.extrusion
-                
-                # Auto-Cage 2.0 (Proximity)
-                if setting.auto_cage_mode == 'PROXIMITY' and not setting.cage_object:
-                    # Logic for dynamic cage calculation would go here if we create a temp cage.
-                    # For now, we adjust the uniform extrusion to a safe average analyzed from proximity.
-                    exts = calculate_cage_proximity(task.active_obj, task.objects, setting.auto_cage_margin)
-                    if exts is not None:
-                        cage_ext = float(np.mean(exts)) # Simplification: Use mean of analyzed per-vertex safe distance
-                
-                params.update({
-                    'use_selected_to_active': True, 
-                    'cage_object': cage_obj_name, 
-                    'cage_extrusion': cage_ext
-                })
-            
-            # Ensure we are in the right engine
-            scene.render.engine = 'CYCLES'
-            
-            bpy.ops.object.bake(**params)
-            return True
-        except Exception as e:
-            from .common import log_error
-            log_error(bpy.context, f"Bake Operational Error {chan_id}: {e}", include_traceback=True)
-            return False
 
     @staticmethod
     def get_udim_configuration(setting, objects):

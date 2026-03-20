@@ -267,6 +267,9 @@ class BakeJob(bpy.types.PropertyGroup):
     custom_bake_channels: props.CollectionProperty(type=CustomBakeChannel)
     custom_bake_channels_index: props.IntProperty(name='Index', default=0)
 
+# NOTE: Image format props intentionally duplicated from BakeJobSetting.
+# Blender PropertyGroup does not support inheritance-based reuse,
+# and these serve different contexts (Job Save vs Node/Result Save).
 class BakeImageSettings(bpy.types.PropertyGroup):
     external_save_format: props.EnumProperty(items=BASIC_FORMATS, default="PNG")
     color_depth: props.EnumProperty(items=get_valid_depths)

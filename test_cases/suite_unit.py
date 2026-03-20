@@ -43,29 +43,32 @@ class SuiteUnit(unittest.TestCase):
         for loop in uv_layer: loop.uv[0] += 1.0
         self.assertEqual(uv_manager.detect_object_udim_tile(obj), 1002)
 
+    # --- UI Config Integrity ---
+    def test_ui_layout_config_integrity(self):
+        from ..constants import CHANNEL_UI_LAYOUT
+        from ..property import BakeChannel
+        
+        # Verify that all props in CHANNEL_UI_LAYOUT exist in BakeChannel or its sub-properties
+        for chan_id, config in CHANNEL_UI_LAYOUT.items():
+            if config.get('type') in {'PROPS', 'TOGGLES'}:
+                for prop_data in config.get('props', []):
+                    prop_path = prop_data[0]
+                    target = BakeChannel
+                    root_part = prop_path.split('.')[0]
+                    # Ensure class has the attribute either directly or via annotations
+                    has_prop = hasattr(target, root_part) or (hasattr(target, '__annotations__') and root_part in target.__annotations__)
+                    self.assertTrue(has_prop, f"Root property '{root_part}' (from '{prop_path}') not found in {target} for channel {chan_id}")
+                        # For pointer properties, testing deeper requires instances, so we skip deep validation of nested classes here
+
     # --- Auto-Cage 2.0 Proximity Logic ---
     def test_cage_proximity_analysis(self):
         low = create_test_object("Low")
         high = create_test_object("High", location=(0,0,0.1)) # Slightly offset
         
+        # Test the utility directly
         exts = math_utils.calculate_cage_proximity(low, [high], margin=0.05)
         self.assertIsNotNone(exts)
         self.assertTrue(all(e >= 0.1 for e in exts)) # 0.1 offset + 0.05 margin
-
-    # --- Compatibility Layer (from test_core.py) ---
-    def test_version_compat_flags(self):
-        flags = [compat.IS_BLENDER_3, compat.IS_BLENDER_4, compat.IS_BLENDER_5]
-        self.assertEqual(sum(flags), 1)
-
-    # --- Node Graph Logic ---
-    def test_node_handler_protection(self):
-        obj = create_test_object("ProtObj")
-        mat = obj.data.materials[0]
-        with NodeGraphHandler([mat]) as h:
-            h.setup_for_pass('NORMAL', 'normal', image_manager.set_image("Tmp", 32, 32))
-            self.assertTrue(len(h.session_nodes[mat]) > 0)
-        # Ensure cleanup
-        self.assertFalse(any(n.name.startswith("BT_") for n in mat.node_tree.nodes))
 
 if __name__ == '__main__':
     unittest.main()

@@ -63,7 +63,10 @@ def set_bake_type(scene, bake_type):
 
 
 def set_bake_margin(scene, margin):
-    """Set bake margin in a version-safe way."""
+    """
+    DEPRECATED: Not directly called; margin is passed via bpy.ops.object.bake(margin=...)
+    Set bake margin in a version-safe way.
+    """
     bake_settings = get_bake_settings(scene)
     if bake_settings is None:
         return False
@@ -77,7 +80,10 @@ def set_bake_margin(scene, margin):
 
 
 def set_bake_clear(scene, clear):
-    """Set bake clear flag in a version-safe way."""
+    """
+    DEPRECATED: Not directly called; clear is passed via bpy.ops.object.bake(use_clear=...)
+    Set bake clear flag in a version-safe way.
+    """
     bake_settings = get_bake_settings(scene)
     if bake_settings is None:
         return False
@@ -94,7 +100,10 @@ def set_bake_clear(scene, clear):
 
 
 def set_bake_target(scene, target='IMAGE_TEXTURES'):
-    """Set bake target in a version-safe way."""
+    """
+    DEPRECATED: Not directly called; target is passed via bpy.ops.object.bake(target=...)
+    Set bake target in a version-safe way.
+    """
     bake_settings = get_bake_settings(scene)
     if bake_settings is None:
         return False
@@ -108,7 +117,10 @@ def set_bake_target(scene, target='IMAGE_TEXTURES'):
 
 
 def disable_multires_bake(scene):
-    """Disable multires baking in a version-safe way."""
+    """
+    DEPRECATED: Not directly called
+    Disable multires baking in a version-safe way.
+    """
     bake_settings = get_bake_settings(scene)
     if bake_settings is None:
         return False

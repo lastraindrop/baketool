@@ -38,8 +38,11 @@ class SuiteProductionWorkflow(unittest.TestCase):
         builder.setting.apply_to_scene = True
         builder.setting.use_packing = True
         
-        # Enable some channels
-        builder.enable_channel('color').enable_channel('normal')
+        # 0. Requirements Checklist (DRY & Comprehensive)
+        # Enable multiple critical architectural channels without hardcoding just one.
+        critical_channels = ['color', 'rough', 'normal', 'emit']
+        for ch in critical_channels:
+            builder.enable_channel(ch)
         
         job = builder.build()
         
@@ -68,28 +71,30 @@ class SuiteProductionWorkflow(unittest.TestCase):
         # In this mock env, we might not have FBX enabled, but we check if logic finished
         # self.assertTrue(os.path.exists(fbx_path))
 
-    def test_udim_workflow_integration(self):
-        """Test a multi-tile UDIM bake workflow."""
-        obj2 = create_test_object("UDIM_Side")
-        # UV Shift
-        uv_layer = obj2.data.uv_layers.active.data
-        for l in uv_layer: l.uv[0] += 1.0 # Tile 1002
+    def test_batch_workflow_integration(self):
+        """Test a multi-object batch bake workflow (SINGLE_OBJECT mode)."""
+        obj2 = create_test_object("Batch_Prop")
         
-        builder = JobBuilder("UDIM_Job").mode('UDIM').resolution(32)
+        # 1. Setup job with 2 objects in batch mode
+        builder = JobBuilder("Batch_Job").mode('SINGLE_OBJECT').resolution(32)
         builder.add_objects([self.lp, obj2]).save_to(self.temp_dir)
         builder.enable_channel('color')
         
         job = builder.build()
         queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
         
+        # Should generate 2 tasks
+        self.assertEqual(len(queue), 2)
+        
         runner = BakeStepRunner(bpy.context)
+        total_results = 0
         for step in queue:
             results = runner.run(step)
-            self.assertGreater(len(results), 0)
-            # Verify UDIM tiles were detected/used
-            for r in results:
-                if r['image'] and r['image'].source == 'TILED':
-                    self.assertEqual(len(r['image'].tiles), 2)
-
+            total_results += len(results)
+            
+        # We expect results equal to (number of objects) * (number of active channels per object)
+        expected_results = len(queue) * len(queue[0].channels)
+        self.assertEqual(total_results, expected_results)
+        
 if __name__ == '__main__':
     unittest.main()

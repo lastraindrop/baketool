@@ -14,24 +14,23 @@ logger = logging.getLogger(__name__)
 ValidationResult = namedtuple('ValidationResult', ['success', 'message', 'job_name'])
 
 def log_error(context, message, state_mgr=None, include_traceback=False):
-
     """
-    统一错误日志记录：同时记录到 Python 控制台、场景 UI 和状态管理器。
+    统一错误日志记录：UI 信息简明，日志与追溯写入后台。
     """
-    full_msg = message
+    technical_msg = message
     if include_traceback:
-        full_msg = f"{message}\n{traceback.format_exc()}"
+        technical_msg = f"{message}\n{traceback.format_exc()}"
     
-    # 1. Python Logging
-    logger.error(full_msg)
+    # 1. Python Logging (Detailed)
+    logger.error(technical_msg)
     
-    # 2. Scene UI Log
+    # 2. Scene UI Log (Simplified for user)
     if context and hasattr(context, "scene"):
         context.scene.bake_error_log += f"{message}\n"
         
-    # 3. Persistence Log (Crash recovery)
+    # 3. Persistence Log (Full Traceback for crash recovery)
     if state_mgr:
-        try: state_mgr.log_error(message)
+        try: state_mgr.log_error(technical_msg)
         except Exception: pass
 
 def get_safe_base_name(setting, obj, mat=None, is_batch=False):
@@ -221,6 +220,7 @@ class SceneSettingsContext:
         self.original = {}
         self.attr_map = {
             'scene': {'res_x': 'resolution_x', 'res_y': 'resolution_y', 'res_pct': 'resolution_percentage'},
+            # NOTE: 'bake' category currently unused (params passed via bpy.ops), kept for reference
             'bake': {'margin': 'bake_margin', 'type': 'bake_type', 'use_clear': 'bake_clear'} if bpy.app.version < (5, 0, 0) else {},
         }
 

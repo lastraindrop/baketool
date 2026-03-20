@@ -281,11 +281,28 @@ BAKE_CHANNEL_INFO = {
 
 CHANNEL_UI_LAYOUT = {
     'rough': {'type': 'PROPS', 'props': [('rough_inv', 'Invert Roughness', 'ARROW_LEFTRIGHT')]},
-    'normal': {'type': 'SPECIAL'},
+    'normal': {
+        'type': 'PROPS', 
+        'header': 'Normal Settings', 'icon': 'NORMALS_FACE',
+        'props': [
+            ('normal_settings.type', 'Standard', 'NONE'),
+            ('normal_settings.object_space', 'Object Space', 'NONE'),
+            ('prefix', 'Prefix', 'NONE'),
+            ('suffix', 'Suffix', 'NONE'),
+        ]
+    },
     'diff': {'type': 'TOGGLES', 'header': 'Light Paths', 'icon': 'LIGHT_SUN', 'props': [('pass_settings.use_direct', 'Dir'), ('pass_settings.use_indirect', 'Ind'), ('pass_settings.use_color', 'Col')]},
     'gloss': {'type': 'TOGGLES', 'header': 'Light Paths', 'icon': 'LIGHT_SUN', 'props': [('pass_settings.use_direct', 'Dir'), ('pass_settings.use_indirect', 'Ind'), ('pass_settings.use_color', 'Col')]},
     'tranb': {'type': 'TOGGLES', 'header': 'Light Paths', 'icon': 'LIGHT_SUN', 'props': [('pass_settings.use_direct', 'Dir'), ('pass_settings.use_indirect', 'Ind'), ('pass_settings.use_color', 'Col')]},
-    'combine': {'type': 'SPECIAL'},
+    'combine': {
+        'type': 'TOGGLES', 
+        'header': 'Combined Passes', 'icon': 'RENDERLAYERS',
+        'props': [
+            ('combine_settings.use_direct', 'Dir'), ('combine_settings.use_indirect', 'Ind'),
+            ('combine_settings.use_diffuse', 'Diff'), ('combine_settings.use_glossy', 'Gloss'),
+            ('combine_settings.use_transmission', 'Tran'), ('combine_settings.use_emission', 'Emi')
+        ]
+    },
     'ao': {'type': 'PROPS', 'props': [('mesh_settings.samples', 'Samples'), ('mesh_settings.distance', 'Rad/Dist'), ('mesh_settings.inside', 'Inside'), ('mesh_settings.local_only', 'Only Local')]},
     'bevel': {'type': 'PROPS', 'props': [('mesh_settings.samples', 'Samples'), ('mesh_settings.radius', 'Rad/Dist')]},
     'bevnor': {'type': 'PROPS', 'props': [('mesh_settings.samples', 'Samples'), ('mesh_settings.radius', 'Rad/Dist')]},
@@ -298,9 +315,24 @@ CHANNEL_UI_LAYOUT = {
     'ID_ele': {'type': 'PROPS', 'props': [('mesh_settings.id_count', 'ID Map Count')]},
     'ID_UVI': {'type': 'PROPS', 'props': [('mesh_settings.id_count', 'ID Map Count')]},
     'ID_seam': {'type': 'PROPS', 'props': [('mesh_settings.id_count', 'ID Map Count')]},
-    'pbr_conv_base': {'type': 'SPECIAL'},
-    'pbr_conv_metal': {'type': 'SPECIAL'},
-    'node_group': {'type': 'SPECIAL'},
+    'pbr_conv_base': {
+        'type': 'PROPS', 
+        'header': 'PBR Conversion', 'icon': 'NODETREE',
+        'props': [('extension_settings.threshold', 'F0 Threshold', 'INFO')]
+    },
+    'pbr_conv_metal': {
+        'type': 'PROPS', 
+        'header': 'PBR Conversion', 'icon': 'NODETREE',
+        'props': [('extension_settings.threshold', 'F0 Threshold', 'INFO')]
+    },
+    'node_group': {
+        'type': 'PROPS', 
+        'header': 'Custom Node Group', 'icon': 'NODETREE',
+        'props': [
+            ('extension_settings.node_group', 'Group', 'GROUP'),
+            ('extension_settings.output_name', 'Output', 'OUTPUT')
+        ]
+    },
 }
 
 # --- Preset Serialization Configuration ---

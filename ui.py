@@ -50,88 +50,6 @@ def draw_image_format_options(layout, setting, prefix=""):
 
 # --- Specific Channel UI Drawers ---
 
-def _draw_normal(layout, channel):
-    col = layout.column(align=True)
-    draw_header(col, "Normal Map", 'NORMALS_FACE')
-    s = channel.normal_settings
-    col.prop(s, "type", text="Std")
-    if s.type == 'CUSTOM':
-        r = col.row(align=True)
-        r.prop(s, "X")
-        r.prop(s, "Y")
-        r.prop(s, "Z")
-    col.prop(s, "object_space", text="Object Space")
-
-def _draw_combine(layout, channel):
-    col = layout.column(align=True)
-    draw_header(col, "Passes", 'RENDERLAYERS')
-    s = channel.combine_settings
-    r = col.row(align=True)
-    r.prop(s, "use_direct", text="Dir", toggle=True)
-    r.prop(s, "use_indirect", text="Ind", toggle=True)
-    col.separator()
-    grid = col.grid_flow(columns=2, align=True)
-    grid.prop(s, "use_diffuse")
-    grid.prop(s, "use_glossy")
-    grid.prop(s, "use_transmission")
-    grid.prop(s, "use_emission")
-
-def _draw_pbr_conv(layout, channel):
-    col = layout.column(align=True)
-    draw_header(col, "Conversion Logic", 'NODETREE')
-    s = channel.extension_settings
-    col.prop(s, "threshold", text="F0 Threshold")
-    col.label(text="Spec < F0 is Dielectric", icon='INFO')
-    col.label(text="Spec > F0 becomes Metallic", icon='INFO')
-
-def _draw_node_group(layout, channel):
-    col = layout.column(align=True)
-    draw_header(col, "Target Node Group", 'NODETREE')
-    s = channel.extension_settings
-    col.prop_search(s, "node_group", bpy.data, "node_groups", text="", icon='GROUP')
-    if s.node_group:
-        col.prop(s, "output_name", text="Output Name", icon='OUTPUT')
-        col.label(text="Leave Output empty for default", icon='INFO')
-
-def _draw_naming_section(layout, channel):
-    """绘制命名配置区域 / Draw naming configuration section."""
-    col = layout.column(align=True)
-    row = col.split(factor=0.3)
-    row.label(text="Naming:")
-    sub = row.row(align=True)
-    sub.prop(channel, "prefix", text="Pre")
-    sub.prop(channel, "suffix", text="Suf")
-
-def _draw_color_override_section(layout, channel):
-    """绘制颜色覆盖配置区域 / Draw color override section."""
-    col = layout.column()
-    col.prop(channel, "override_defaults", toggle=True)
-    
-    if channel.override_defaults:
-        sub = col.box()
-        sub.label(text="Advanced Color Override", icon='COLOR')
-        sub.prop(channel, "custom_cs", text="Space")
-        sub.prop(channel, "custom_mode", text="Export Mode")
-
-# Drawer registry for special channel types
-class ChannelDrawerRegistry:
-    _drawers = {}
-
-    @classmethod
-    def register(cls, channel_id, drawer_func):
-        cls._drawers[channel_id] = drawer_func
-
-    @classmethod
-    def get(cls, channel_id):
-        return cls._drawers.get(channel_id)
-
-# Initial registration of core drawers
-ChannelDrawerRegistry.register('normal', _draw_normal)
-ChannelDrawerRegistry.register('combine', _draw_combine)
-ChannelDrawerRegistry.register('node_group', _draw_node_group)
-ChannelDrawerRegistry.register('pbr_conv_base', _draw_pbr_conv)
-ChannelDrawerRegistry.register('pbr_conv_metal', _draw_pbr_conv)
-
 def draw_active_channel_properties(layout, channel, setting):
     if not channel: return
     
@@ -139,54 +57,54 @@ def draw_active_channel_properties(layout, channel, setting):
     row = box.row()
     row.label(text=f"{channel.name} Settings", icon='PREFERENCES')
     
-    _draw_naming_section(box, channel)
-    box.separator()
-    _draw_color_override_section(box, channel)
+    # 极简绘制公共属性 / Minimal public properties
+    col = box.column(align=True)
+    row = col.split(factor=0.3)
+    row.label(text="Naming:")
+    sub = row.row(align=True)
+    sub.prop(channel, "prefix", text="Pre")
+    sub.prop(channel, "suffix", text="Suf")
+    
+    col.separator()
+    col.prop(channel, "override_defaults", toggle=True)
+    if channel.override_defaults:
+        sub = col.box()
+        sub.prop(channel, "custom_cs", text="Space")
+        sub.prop(channel, "custom_mode", text="Export Mode")
+
     box.separator()
 
     # 数据驱动绘制逻辑 / Data-driven drawing logic
     config = CHANNEL_UI_LAYOUT.get(channel.id)
-    if not config:
-        return
+    if not config: return
 
     layout_type = config.get('type')
+    col = box.column(align=True)
     
-    if layout_type == 'SPECIAL':
-        # 处理注册在 registry 中的特殊绘制逻辑
-        drawer = ChannelDrawerRegistry.get(channel.id)
-        if drawer:
-            drawer(box, channel)
+    if 'header' in config:
+        draw_header(col, config['header'], config.get('icon', 'NONE'))
         
-    elif layout_type == 'TOGGLES':
-        col = box.column(align=True)
-        draw_header(col, config.get('header', 'Settings'), config.get('icon', 'NONE'))
+    if layout_type == 'TOGGLES':
         r = col.row(align=True)
         for prop_data in config.get('props', []):
-            prop_name = prop_data[0]
-            display_name = prop_data[1]
-            
-            target = channel
-            if '.' in prop_name:
-                parts = prop_name.split('.')
-                target = getattr(channel, parts[0])
-                prop_name = parts[1]
-                
+            prop_path, display_name = prop_data[0], prop_data[1]
+            target, prop_name = _get_nested_attr(channel, prop_path)
             r.prop(target, prop_name, text=display_name, toggle=True)
             
     elif layout_type == 'PROPS':
-        col = box.column(align=True)
         for prop_data in config.get('props', []):
-            prop_name = prop_data[0]
-            display_name = prop_data[1]
+            prop_path, display_name = prop_data[0], prop_data[1]
             icon = prop_data[2] if len(prop_data) > 2 else 'NONE'
-            
-            target = channel
-            if '.' in prop_name:
-                parts = prop_name.split('.')
-                target = getattr(channel, parts[0])
-                prop_name = parts[1]
-                
+            target, prop_name = _get_nested_attr(channel, prop_path)
             col.prop(target, prop_name, text=display_name, icon=icon)
+
+def _get_nested_attr(obj, path):
+    """Helper to resolve nested property paths."""
+    parts = path.split('.')
+    target = obj
+    for part in parts[:-1]:
+        target = getattr(target, part)
+    return target, parts[-1]
 
 def draw_results(scene, layout, bj):
     layout.label(text="Baked Results", icon='IMAGE_DATA')

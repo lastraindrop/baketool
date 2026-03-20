@@ -100,8 +100,9 @@ def apply_preview(obj, setting):
     if obj is None or obj.type != 'MESH':
         return
         
-    if not obj.get("_bt_orig_mat"):
-        obj["_bt_orig_mat"] = obj.active_material
+    if not obj.get("_bt_orig_mat_name"):
+        if obj.active_material:
+            obj["_bt_orig_mat_name"] = obj.active_material.name
     
     preview_mat = create_preview_material(obj, setting)
     if preview_mat:
@@ -109,10 +110,12 @@ def apply_preview(obj, setting):
 
 def remove_preview(obj):
     """Restore original material."""
-    orig_mat = obj.get("_bt_orig_mat")
-    if orig_mat:
-        obj.active_material = orig_mat
-        del obj["_bt_orig_mat"]
+    orig_mat_name = obj.get("_bt_orig_mat_name")
+    if orig_mat_name:
+        orig_mat = bpy.data.materials.get(orig_mat_name)
+        if orig_mat:
+            obj.active_material = orig_mat
+        del obj["_bt_orig_mat_name"]
     
     # Cleanup temp material if no one uses it
     mat = bpy.data.materials.get(PREVIEW_MAT_NAME)

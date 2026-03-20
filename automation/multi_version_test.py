@@ -7,11 +7,11 @@ from pathlib import Path
 # You can add your local blender paths here. 
 # The script will automatically skip missing ones.
 BLENDER_PATHS = [
-    r"D:\Program Files\Blender-3.3\blender.exe",
+    r"D:\Program Files\blender-3.3\blender.exe",
     r"D:\Program Files\Blender-3.6\blender.exe",
-    r"D:\Program Files\Blender-4.2\blender.exe",
-    r"D:\Program Files\Blender-4.5\blender.exe",
-    r"D:\Program Files\Blender-5.0\blender.exe",
+    r"D:\Program Files\blender-4.2\blender.exe",
+    r"D:\Program Files\blender-4.5\blender.exe",
+    r"D:\Program Files\blender-5.0\blender.exe",
 ]
 
 current_dir = str(Path(__file__).resolve().parent)

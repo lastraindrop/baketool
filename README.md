@@ -7,10 +7,10 @@ A simplified, high-efficiency baking solution for Blender.
 - **Data-Driven UI**: 100% decoupled UI architecture. Channels and panels are rendered purely from metadata, eliminating logic from the view layer.
 - **Robust Context Management**: Utilizes `contextlib.ExitStack` and native low-level APIs to ensure system stability and zero context-hijacking, even in Headless mode.
 - **Atomic Cleanup**: Employs UUID/Tagging (`is_bt_temp`) for temporary nodes to guarantee safe cleanup without affecting user assets.
-- **Hardened Architecture**: Standardized snake_case properties, and unified logging across all modules.
-- **Industry-Standard Testing**: Exhaustive Matrix Testing suite (5x2 modes) covers 135+ cases per version.
-- **Cross-Version Rock-Solid**: 100% Pass Rate (540+ total tests) for Blender 3.6, 4.2 LTS, 4.5 LTS, and 5.0.1.
-- **Interactive Packing Preview** (**v1.0.0**): Real-time GLSL viewport visualization for ORM/Channel packing logic.
+- **Hardened Architecture**: Standardized snake_case properties, IDProperty safety for materials, and unified logging.
+- **Industry-Standard Testing**: Exhaustive Matrix Testing suite (19 test categories) covering 135+ cases per version.
+- **Cross-Version Rock-Solid**: 100% Pass Rate (540+ total tests) confirmed for Blender 3.6, 4.2 LTS, 4.5 LTS, and 5.0.1.
+- **Interactive Packing Preview**: Real-time GLSL viewport visualization for ORM/Channel packing logic with material auto-restoration.
 
 ## Documentation
 - [User Manual](USER_MANUAL.md) - How to use.

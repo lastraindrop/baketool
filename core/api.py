@@ -10,13 +10,12 @@ from .uv_manager import detect_object_udim_tile
 
 logger = logging.getLogger(__name__)
 
-def bake(objects, preset_path=None, use_selection=True):
+def bake(objects, use_selection=True):
     """
     Main entry point for programmatic baking.
     
     Args:
         objects: List of objects to bake (if use_selection=False)
-        preset_path: Path to a .btp preset file to load before baking
         use_selection: If True, uses current viewport selection instead of 'objects' arg
     
     Returns:

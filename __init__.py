@@ -201,6 +201,10 @@ def unregister():
     del bpy.types.Scene.bake_status
     del bpy.types.Scene.bake_error_log
 
+    # 测试反馈 / Test Feedback
+    del bpy.types.Scene.last_test_info
+    del bpy.types.Scene.test_pass
+
     for km, kmi in addon_keymaps:
         km.keymap_items.remove(kmi)
         
