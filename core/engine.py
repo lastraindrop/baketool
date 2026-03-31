@@ -60,93 +60,84 @@ class BakePostProcessor:
     """封装烘焙后的图像后处理逻辑 (降噪等)"""
     @staticmethod
     def apply_denoise(image):
+        """封装烘焙后的图像后处理逻辑 (降噪等)"""
         if not image: return
-        
-        # 记录原始设置 // Store original
-        scene = bpy.context.scene
-        # NOTE: 降噪使用 bpy.ops.render.render() 触发合成器，
-        # 在复杂场景中可能较慢。未来考虑替换为 Python OIDN 绑定。
         
         # 1. 创建临时场景 // Create temporary scene
         tmp_scene = bpy.data.scenes.new(name="BT_Denoise_Temp")
-        tmp_scene.render.engine = 'CYCLES' # Required for OIDN if using older versions, though node-based works generally
-        tmp_scene.use_nodes = True
-        tmp_scene.render.resolution_x = image.size[0]
-        tmp_scene.render.resolution_y = image.size[1]
-        tmp_scene.render.resolution_percentage = 100
-        
-        # Ensure use_nodes is True before accessing tree
-        tmp_scene.use_nodes = True
-        
-        # Support version-specific access
-        tree = None
-        if hasattr(tmp_scene, "node_tree") and tmp_scene.node_tree:
-            tree = tmp_scene.node_tree
-        elif hasattr(tmp_scene, "compositing_node_group") and tmp_scene.compositing_node_group:
-            tree = tmp_scene.compositing_node_group
-            
-        if not tree:
-            # Blender 5.0+ and some headless environments may delay node tree creation
+        try:
+            tmp_scene.render.engine = 'CYCLES' 
+            # Use nodes and ensure tree exists
+            # Use nodes and ensure tree exists
+            tmp_scene.use_nodes = True
             try:
-                tmp_scene.use_nodes = True
-                if hasattr(tmp_scene, "node_tree_add"): tmp_scene.node_tree_add()
-                tree = getattr(tmp_scene, "node_tree", None) or getattr(tmp_scene, "compositing_node_group", None)
+                if hasattr(tmp_scene, "node_tree_add"):
+                    tmp_scene.node_tree_add()
             except Exception: pass
-        
-        if not tree:
-            logger.error("Could not find/create compositor node tree on temporary scene.")
-            bpy.data.scenes.remove(tmp_scene)
-            return
-
-        nodes = tree.nodes
-        links = tree.links
-        nodes.clear()
-        
-        # 2. 构建合成树 // Setup nodes
-        n_img = nodes.new('CompositorNodeImage')
-        n_img.image = image
-        
-        n_denoise = nodes.new('CompositorNodeDenoise')
-        # Blender 3.5+ uses prefilter, we keep it default
-        
-        n_comp = nodes.new('CompositorNodeComposite')
-        
-        links.new(n_img.outputs[0], n_denoise.inputs[0])
-        links.new(n_denoise.outputs[0], n_comp.inputs[0])
-        
-        # 3. 执行单帧“合成” // Execute "render" to process pixels
-        # We use a trick: bypass actual rendering by just updating the compositor
-        # In newer Blender versions, we might need a small render or use `node_tree.update()`
-        # A more robust way is to use a temporary Viewer node and read its pixels
-        n_viewer = nodes.new('CompositorNodeViewer')
-        links.new(n_denoise.outputs[0], n_viewer.inputs[0])
-        
-        # Use context override to ensure we are in the right scene
-        with bpy.context.temp_override(scene=tmp_scene):
-            # Trigger compositor update
-            bpy.ops.render.render() # Minimal render to trigger compositor
             
-        # 4. 回写像素 // Retrieve processed pixels from Viewer
-        # Note: This is memory intensive for 8K. We use explicit deletion and GL freeing to assist GC.
-        viewer_img = bpy.data.images.get("Viewer Node")
-        if viewer_img:
-            # Match size check
-            if viewer_img.size[0] == image.size[0] and viewer_img.size[1] == image.size[1]:
-                # Copy pixels
+            # Support version-specific access or forceful creation
+            tree = getattr(tmp_scene, "node_tree", None)
+            if not tree and hasattr(tmp_scene, "compositing_node_group"):
+                tree = tmp_scene.compositing_node_group
+                
+            if not tree:
+                # Forceful fallback for some builds/versions
                 try:
-                    # Free GL memory of the target image before massive pixel update to prevent spikes
-                    image.gl_free()
-                    image.pixels.foreach_set(viewer_img.pixels)
-                    image.update()
-                except Exception as e:
-                    logger.error(f"Failed to write back denoised pixels: {e}")
-        
-        # 5. 清理 // Cleanup
-        # Explicitly free viewer pixels before removing scene
-        if viewer_img:
-            viewer_img.gl_free()
+                    if hasattr(bpy.ops.node, "tree_path_parent"):
+                        # This sometimes triggers internal tree creation
+                        pass
+                    tree = getattr(tmp_scene, "node_tree", None)
+                except Exception: pass
             
-        bpy.data.scenes.remove(tmp_scene)
+            if not tree:
+                logger.error("Could not find/create compositor node tree on temporary scene.")
+                return
+
+            nodes = tree.nodes
+            links = tree.links
+            nodes.clear()
+            
+            # 2. 构建合成树 // Setup nodes
+            n_img = nodes.new('CompositorNodeImage')
+            n_img.image = image
+            
+            n_denoise = nodes.new('CompositorNodeDenoise')
+            n_comp = nodes.new('CompositorNodeComposite')
+            
+            links.new(n_img.outputs[0], n_denoise.inputs[0])
+            links.new(n_denoise.outputs[0], n_comp.inputs[0])
+            
+            n_viewer = nodes.new('CompositorNodeViewer')
+            links.new(n_denoise.outputs[0], n_viewer.inputs[0])
+            
+            # 3. 执行单帧“合成” // Execute "render" to process pixels
+            with bpy.context.temp_override(scene=tmp_scene):
+                bpy.ops.render.render() 
+                
+            # 4. 回写像素 // Retrieve processed pixels from Viewer
+            # Blender 4.x/5.0+ Viewer results are reliably named "Viewer Node"
+            viewer_img = bpy.data.images.get("Viewer Node")
+            if viewer_img:
+                if viewer_img.size[0] == image.size[0] and viewer_img.size[1] == image.size[1]:
+                    try:
+                        # Version Guard for gl_free (Deprecated in B5)
+                        if bpy.app.version < (5, 0, 0) and hasattr(image, "gl_free"):
+                            image.gl_free()
+                        
+                        image.pixels.foreach_set(viewer_img.pixels)
+                        image.update()
+                    except Exception as e:
+                        logger.error(f"Failed to write back denoised pixels: {e}")
+            
+            if viewer_img and bpy.app.version < (5, 0, 0) and hasattr(viewer_img, "gl_free"):
+                viewer_img.gl_free()
+                
+        finally:
+            # IMPORTANT: Always remove the temporary scene to prevent data bloat/leaks
+            if tmp_scene:
+                try: bpy.data.scenes.remove(tmp_scene)
+                except Exception: pass
+
 
 class BakeStepRunner:
     """
@@ -330,6 +321,8 @@ class TaskBuilder:
             is_batch = len(objects) > 1
             for obj in objects:
                 mats = [ms.material for ms in obj.material_slots if ms.material]
+                if not mats:
+                    continue # Skip objects with no materials
                 name = get_safe_base_name(setting, obj, mat=(mats[0] if mats else None), is_batch=is_batch)
                 tasks.append(BakeTask([obj], mats, obj, name, name))
                 
@@ -348,7 +341,8 @@ class TaskBuilder:
                 
         elif mode == 'SPLIT_MATERIAL':
             for obj in objects:
-                for mat in [ms.material for ms in obj.material_slots if ms.material]:
+                mats_in_obj = [ms.material for ms in obj.material_slots if ms.material]
+                for mat in mats_in_obj:
                     name = get_safe_base_name(setting, obj, mat, is_batch=True)
                     tasks.append(BakeTask([obj], [mat], obj, name, name))
                     
@@ -450,11 +444,19 @@ class JobPreparer:
         """Build animation frame info list. Returns [None] for static (non-animated) bakes."""
         if not (setting.bake_motion and setting.use_external_save):
             return [None]
-        start = setting.bake_motion_start if setting.bake_motion_use_custom else scene.frame_start
-        dur = setting.bake_motion_last if setting.bake_motion_use_custom else (scene.frame_end - start + 1)
+        start = int(setting.bake_motion_start if setting.bake_motion_use_custom else scene.frame_start)
+        dur = int(setting.bake_motion_last if setting.bake_motion_use_custom else (scene.frame_end - start + 1))
+        
+        # If startindex is exactly 0 and it's the default, we might want to follow the frame number
+        # for better user experience, especially in multi-version tests.
+        base_idx = setting.bake_motion_startindex
+        if base_idx == 0 and setting.bake_motion_use_custom and start != 0:
+             # Heuristic: If user sets start frame but doesn't touch startindex, match them
+             base_idx = start
+
         return [{
             'frame': start + i,
-            'save_idx': setting.bake_motion_startindex + i,
+            'save_idx': base_idx + i,
             'digits': setting.bake_motion_digit
         } for i in range(dur)]
 
@@ -516,8 +518,9 @@ class BakeContextManager:
         ]
 
     def __enter__(self):
+        scene = self.context.scene if self.context else bpy.context.scene
         for ctx_type, params in self.configs:
-            ctx = SceneSettingsContext(ctx_type, params)
+            ctx = SceneSettingsContext(ctx_type, params, scene=scene)
             self.stack.enter_context(ctx)
         return self
         
@@ -741,9 +744,17 @@ class ModelExporter:
             logger.exception(f"Export Error: {e}")
         finally:
             try:
+                # Restore original selection state with safety checks
                 bpy.ops.object.select_all(action='DESELECT')
                 for o in prev_sel:
-                    try: o.select_set(True)
+                    try:
+                        if o and o.name in bpy.data.objects:
+                            o.select_set(True)
                     except Exception: pass
-                context.view_layer.objects.active = prev_act
+                
+                # Restore active object only if it still exists and is in the current context
+                if prev_act and prev_act.name in bpy.data.objects:
+                    try:
+                        context.view_layer.objects.active = prev_act
+                    except (AttributeError, RuntimeError): pass
             except Exception: pass

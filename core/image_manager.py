@@ -167,12 +167,8 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
                 tmp_dir = tempfile.gettempdir()
                 image.filepath_raw = os.path.join(tmp_dir, f"{image.name}.1001.png")
             
-            # Use numpy to touch pixels as a second layer of defense
-            import numpy as np
-            num_tiles = len(image.tiles)
-            total_pixels = image.size[0] * image.size[1] * num_tiles
-            arr = np.tile(np.array(basiccolor, dtype=np.float32), total_pixels)
-            image.pixels.foreach_set(arr)
+            # Simple save to initialize internal UDIM buffers (3.3 specific requirement)
+            image.save()
             image.update()
         except Exception as e:
             logger.debug(f"3.3 UDIM buffer touch failed: {e}")

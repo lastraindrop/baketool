@@ -48,9 +48,11 @@ def get_safe_base_name(setting, obj, mat=None, is_batch=False):
             base += suffix
     elif m == 'OBJECT': 
         base = obj.name
+        if mode == 'SPLIT_MATERIAL' and mat:
+            base = f"{base}_{mat.name}"
     elif m == 'MAT': 
         base = mat.name if mat else "NoMat"
-        if is_batch and mode == 'SPLIT_MATERIAL':
+        if (is_batch or mode == 'SPLIT_MATERIAL') and obj:
             base = f"{obj.name}_{base}"
     elif m == 'OBJ_MAT': 
         base = f"{obj.name}_{mat.name if mat else 'NoMat'}"
@@ -214,16 +216,18 @@ def safe_context_override(context, active_object=None, selected_objects=None):
 
 class SceneSettingsContext:
     """Safely apply and restore scene/render settings."""
-    def __init__(self, category, settings):
+    def __init__(self, category, settings, scene=None):
         self.category = category
         self.settings = settings
+        self.scene = scene if scene else bpy.context.scene
         self.original = {}
         self.attr_map = {
             'scene': {'res_x': 'resolution_x', 'res_y': 'resolution_y', 'res_pct': 'resolution_percentage'},
         }
 
     def _get_target(self):
-        scene = bpy.context.scene
+        scene = self.scene
+        if not scene: return None
         if self.category == 'scene': return scene.render
         if self.category == 'cycles': return scene.cycles
         if self.category == 'image': return scene.render.image_settings
@@ -240,10 +244,11 @@ class SceneSettingsContext:
             real_key = mapping.get(k, k)
             if hasattr(target, real_key):
                 self.original[real_key] = getattr(target, real_key)
-                if v is not None:
+                # Skip empty strings for Enum properties to prevent "enum '' not found" errors
+                if v is not None and v != "":
                     try: setattr(target, real_key, v)
                     except Exception as e:
-                        logger.warning(f"Failed to set {self.category}.{real_key}: {e}")
+                        logger.warning(f"Failed to set {self.category}.{real_key} to '{v}': {e}")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

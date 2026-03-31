@@ -1,0 +1,16 @@
+schema_version = "1.0.0"
+id = "baketool"
+version = "1.5.0"
+name = "BakeTool 2.0"
+tagline = "Professional Texture Baking Suite for Blender"
+maintainer = "BakeTool Team"
+type = "add-on"
+
+# Minimum Blender version supported
+blender_version_min = "3.3.0"
+
+[web_resources]
+website = "https://example.com/baketool"
+
+[permissions]
+files = "Required for saving baked textures and export results."

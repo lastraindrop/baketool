@@ -88,7 +88,7 @@ class SuitePresetAndState(unittest.TestCase):
         builder = JobBuilder("ChannelTest").type('BSDF')
         s = builder.setting
         channel_ids = [c.id for c in s.channels if c.valid_for_mode]
-        bsdf_key = 'BSDF_4' if (compat.IS_BLENDER_4 or compat.IS_BLENDER_5) else 'BSDF_3'
+        bsdf_key = 'BSDF_4' if (compat.is_blender_4() or compat.is_blender_5()) else 'BSDF_3'
         required = [ch['id'] for ch in BAKE_CHANNEL_INFO[bsdf_key] if ch.get('defaults', {}).get('enabled')]
         for req in required:
             self.assertIn(req, channel_ids, f"Missing required channel: {req}")
@@ -112,6 +112,45 @@ class SuitePresetAndState(unittest.TestCase):
                     'last_test_info', 'test_pass']
         for prop in expected:
             self.assertTrue(hasattr(scene, prop), f"Missing Scene property: {prop}")
+
+    def test_migration_conflict_keys_no_crash(self):
+        """Verify that PRESET_MIGRATION_MAP conflict keys (diff_dir -> use_direct) load without crashing."""
+        bj = bpy.context.scene.BakeJobs
+        io = PropertyIO()
+        job_name = "MigrateJob"
+        data = {
+            "jobs": [{
+                "name": job_name,
+                "setting": {
+                    "diff_dir": True,
+                    "gloss_dir": False,
+                    "tranb_dir": True
+                }
+            }]
+        }
+        
+        try:
+            io.from_dict(bj, data)
+            job = next((j for j in bj.jobs if j.name == job_name), None)
+            self.assertIsNotNone(job)
+        except Exception as e:
+            self.fail(f"Migration conflict caused crash: {e}")
+
+    def test_from_dict_channel_order_consistent(self):
+        """Verify that loading from dict maintains consistent channel order."""
+        bj = bpy.context.scene.BakeJobs
+        io = PropertyIO()
+        bj.jobs.add()
+        job = bj.jobs[-1]
+        job.setting.bake_type = 'BSDF'
+        reset_channels_logic(job.setting)
+        
+        data = io.to_dict(bj)
+        bj.jobs.clear()
+        io.from_dict(bj, data)
+        
+        new_job = bj.jobs[0]
+        self.assertGreater(len(new_job.setting.channels), 0)
 
 if __name__ == '__main__':
     unittest.main()

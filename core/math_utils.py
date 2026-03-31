@@ -298,21 +298,37 @@ def calculate_cage_proximity(low_poly, high_poly_list, margin=0.1):
     if not low_poly or not high_poly_list: return None
     
     try:
-        # Build BVHTree for high-poly (using first as representative)
-        hp_obj = high_poly_list[0]
         depsgraph = bpy.context.evaluated_depsgraph_get()
-        hp_tree = BVHTree.FromObject(hp_obj, depsgraph)
+        # 1. Build BVHTrees for all high-poly objects
+        # Note: For large high-poly counts, this can be memory intensive.
+        hp_data = []
+        for hp_obj in high_poly_list:
+            try:
+                tree = BVHTree.FromObject(hp_obj, depsgraph)
+                hp_data.append((hp_obj, tree))
+            except Exception as e:
+                logger.warning(f"Could not build BVHTree for {hp_obj.name}: {e}")
         
+        if not hp_data:
+            return np.full(len(low_poly.data.vertices), margin, dtype=np.float32)
+
         lp_mesh = low_poly.data
         extrusions = np.zeros(len(lp_mesh.vertices), dtype=np.float32)
         
+        # 2. Find nearest distance across all high-polys for each vertex
         for i, v in enumerate(lp_mesh.vertices):
             world_co = low_poly.matrix_world @ v.co
-            local_co = hp_obj.matrix_world.inverted() @ world_co
+            min_dist = float('inf')
             
-            location, normal, index, dist = hp_tree.find_nearest(local_co)
-            if dist is not None:
-                extrusions[i] = dist + margin
+            for hp_obj, hp_tree in hp_data:
+                # Transform low-poly vertex to high-poly local space
+                local_co = hp_obj.matrix_world.inverted() @ world_co
+                _, _, _, dist = hp_tree.find_nearest(local_co)
+                if dist is not None and dist < min_dist:
+                    min_dist = dist
+            
+            if min_dist != float('inf'):
+                extrusions[i] = min_dist + margin
             else:
                 extrusions[i] = margin
                 

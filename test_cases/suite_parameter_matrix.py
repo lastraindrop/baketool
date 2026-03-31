@@ -60,5 +60,28 @@ class SuiteParameterMatrix(unittest.TestCase):
                 if name_mode == 'OBJECT': self.assertEqual(name, self.obj.name)
                 if name_mode == 'MAT': self.assertEqual(name, mat.name)
 
+    def test_no_material_object_graceful_skip(self):
+        """Verify that objects without materials are gracefully skipped during queue generation."""
+        from ..core.engine import JobPreparer
+        obj_no_mat = create_test_object("NoMat")
+        obj_no_mat.data.materials.clear()
+        
+        builder = JobBuilder("NoMatJob")
+        builder.mode('SINGLE_OBJECT').resolution(16).add_objects(obj_no_mat)
+        job = builder.build()
+        
+        queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
+        self.assertEqual(len(queue), 0)
+
+    def test_dynamic_enum_returns_5tuple(self):
+        """Verify that dynamic Enum callbacks (get_channel_source_items) return 5-tuples for B4+ compatibility."""
+        from ..property import get_channel_source_items
+        # Mock self (a property group) and context
+        items = get_channel_source_items(None, bpy.context)
+        self.assertGreater(len(items), 0)
+        for item in items:
+            self.assertEqual(len(item), 5, f"Enum item {item[0]} is not a 5-tuple")
+            self.assertIsInstance(item[4], int, f"Index of {item[0]} is not an integer")
+
 if __name__ == '__main__':
     unittest.main()

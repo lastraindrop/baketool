@@ -42,5 +42,36 @@ class SuiteUILogic(unittest.TestCase):
         # Cleanup the test result
         scene.baked_image_results.remove(len(scene.baked_image_results)-1)
 
+    def test_bake_operator_poll_blocks_while_baking(self):
+        """Verify that the Bake Operator poll fails if a bake is already in progress."""
+        from ..ops import BAKETOOL_OT_BakeOperator
+        scene = bpy.context.scene
+        scene.is_baking = False
+        self.assertTrue(BAKETOOL_OT_BakeOperator.poll(bpy.context))
+        
+        scene.is_baking = True
+        self.assertFalse(BAKETOOL_OT_BakeOperator.poll(bpy.context))
+        scene.is_baking = False
+
+    def test_manage_objects_smart_set_logic(self):
+        """Verify the SMART_SET logic for managing bake objects."""
+        scene = bpy.context.scene
+        scene.BakeJobs.jobs.add()
+        job = scene.BakeJobs.jobs[0]
+        s = job.setting
+        
+        target = create_test_object("TargetObj")
+        low = self.obj
+        
+        from ..core.common import manage_objects_logic
+        manage_objects_logic(s, 'SMART_SET', [target, low], low)
+        
+        self.assertEqual(s.active_object, low)
+        self.assertEqual(len(s.bake_objects), 1)
+        self.assertEqual(s.bake_objects[0].bakeobject, target)
+        
+        # Cleanup
+        bpy.data.objects.remove(target)
+
 if __name__ == '__main__':
     unittest.main()

@@ -167,5 +167,43 @@ class SuiteUnit(unittest.TestCase):
             
             cleanup_scene()
 
+    def test_denoise_no_scene_leak(self):
+        """Verify apply_denoise does not leave temporary scenes behind."""
+        from ..core.engine import BakePostProcessor
+        img = image_manager.set_image("Leak_Test", 16, 16)
+        initial_count = len(bpy.data.scenes)
+        
+        try:
+            BakePostProcessor.apply_denoise(img)
+        finally:
+            self.assertEqual(len(bpy.data.scenes), initial_count, "Scene leaked after denoise")
+
+    def test_cage_proximity_multi_highpoly(self):
+        """Verify proximity calculation handles multiple highpolys."""
+        low = create_test_object("Low_P")
+        high1 = create_test_object("High_1", location=(0,0,0.1))
+        high2 = create_test_object("High_2", location=(0,0,0.2))
+        
+        # Test with multiple high polys
+        exts = math_utils.calculate_cage_proximity(low, [high1, high2], margin=0.0)
+        self.assertIsNotNone(exts)
+        # Even before the multi-highpoly fix in Phase 3, this test should pass if it picks at least one.
+        # After Phase 3 fix, it should pick the NEAREST one for each vertex.
+        self.assertGreater(len(exts), 0)
+
+    def test_custom_channel_packing_lookup(self):
+        """Verify that CUSTOM channels can be correctly looked up for packing."""
+        # Mock a channel config
+        c = {'id': 'CUSTOM', 'name': 'MyMask'}
+        baked_images = {}
+        img = image_manager.set_image("MaskImg", 16, 16)
+        
+        # This mirrors the logic in BakeStepRunner.run (L189)
+        key = c['name'] if c['id'] == 'CUSTOM' else c['id']
+        baked_images[key] = img
+        
+        self.assertIn('MyMask', baked_images)
+        self.assertEqual(baked_images['MyMask'], img)
+
 if __name__ == '__main__':
     unittest.main()

@@ -199,5 +199,78 @@ class SuiteProductionWorkflow(unittest.TestCase):
         except Exception as e:
             self.fail(f"State manager crashed with malformed data: {e}")
 
+    def test_animation_bake_2_frames(self):
+        """[E2E] Verify sequential animation baking for 2 frames."""
+        with assert_no_leak(self):
+            cleanup_scene()
+            obj = create_test_object("AnimObj")
+            builder = JobBuilder("AnimJob")
+            builder.mode('SINGLE_OBJECT').resolution(16)
+            builder.add_objects([obj])
+            builder.save_to(self.temp_dir)
+            
+            s = builder.setting
+            s.bake_motion = True
+            s.bake_motion_use_custom = True
+            s.bake_motion_start = 1
+            s.bake_motion_last = 2 
+            s.bake_motion_digit = 4
+            s.bake_motion_separator = '_'
+            
+            builder.enable_channel('diff')
+            job = builder.build()
+            
+            queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
+            self.assertEqual(len(queue), 2)
+            
+            runner = BakeStepRunner(bpy.context)
+            for i, step in enumerate(queue):
+                runner.run(step, queue_idx=i)
+            
+            files = os.listdir(self.temp_dir)
+            self.assertTrue(any("0001" in f for f in files), f"Frame 1 not found: {files}")
+            self.assertTrue(any("0002" in f for f in files), f"Frame 2 not found: {files}")
+            
+            cleanup_scene()
+
+    def test_split_material_3_mats_e2e(self):
+        """[E2E] Verify SPLIT_MATERIAL mode with 3 materials."""
+        with assert_no_leak(self):
+            cleanup_scene()
+            obj = create_test_object("SplitObj", mat_count=3)
+            builder = JobBuilder("SplitJob")
+            builder.mode('SPLIT_MATERIAL').resolution(16)
+            builder.add_objects([obj])
+            builder.save_to(self.temp_dir)
+            builder.enable_channel('diff')
+            job = builder.build()
+            
+            queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
+            self.assertEqual(len(queue), 3)
+            
+            runner = BakeStepRunner(bpy.context)
+            for i, step in enumerate(queue):
+                runner.run(step, queue_idx=i)
+            
+            # Precise search: only match files starting with SplitObj_Mat_SplitObj and containing 'color'
+            files = [f for f in os.listdir(self.temp_dir) if "color" in f.lower() and f.startswith("SplitObj_Mat_SplitObj")]
+            self.assertEqual(len(files), 3, f"Expected 3 color files for Split Material, found: {files}. Total in dir: {os.listdir(self.temp_dir)}")
+            
+            cleanup_scene()
+
+    def test_library_material_protection_skip(self):
+        """Verify that objects with Library materials handle protection setup safely."""
+        with assert_no_leak(self):
+            cleanup_scene()
+            obj = create_test_object("LibObj")
+            from ..core.node_manager import NodeGraphHandler
+            try:
+                with NodeGraphHandler([obj]) as h:
+                    h.setup_protection()
+            except Exception as e:
+                self.fail(f"NodeGraphHandler protection failed: {e}")
+            
+            cleanup_scene()
+
 if __name__ == '__main__':
     unittest.main()

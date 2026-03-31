@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def get_channel_source_items(self, context):
     """Safely retrieve available channels for custom source selection."""
-    fallback = [('NONE', 'None', 'No enabled channels available')]
+    fallback = [('NONE', 'None', 'No enabled channels available', 'NONE', 0)]
     if not context or not getattr(context, "scene", None): return fallback
     
     try:
@@ -27,10 +27,18 @@ def get_channel_source_items(self, context):
             return fallback
             
         job = scene.BakeJobs.jobs[scene.BakeJobs.job_index]
-        items = [
-            (c.id, c.name, f"Use {c.name} result as source") 
-            for c in job.setting.channels if c.enabled
-        ]
+        items = []
+        # Standard channels (use ID)
+        items.extend([
+            (c.id, c.name, f"Use {c.name} result as source", 'NONE', i) 
+            for i, c in enumerate(job.setting.channels) if c.enabled
+        ])
+        # Custom channels (use Name to ensure uniqueness)
+        items.extend([
+            (c.name, c.name, f"Use {c.name} (Custom) as source", 'NONE', len(items) + i) 
+            for i, c in enumerate(job.custom_bake_channels)
+        ])
+        
         return items if items else fallback
     except Exception as e:
         logger.debug(f"Error getting channel sources: {e}")
@@ -38,19 +46,19 @@ def get_channel_source_items(self, context):
 
 def get_valid_depths(self, context):
     """Filter color depths based on current image format technical constraints."""
-    if not context or not getattr(context, "scene", None): return COLOR_DEPTHS
+    if not context or not getattr(context, "scene", None): return [(item[0], item[1], item[2], 'NONE', i) for i, item in enumerate(COLOR_DEPTHS)]
     fmt = getattr(self, "external_save_format", "PNG")
     valid_keys = FORMAT_SETTINGS.get(fmt, {}).get("depths", [])
-    if not valid_keys: return COLOR_DEPTHS
-    return [item for item in COLOR_DEPTHS if item[0] in valid_keys]
+    if not valid_keys: return [(item[0], item[1], item[2], 'NONE', i) for i, item in enumerate(COLOR_DEPTHS)]
+    return [(item[0], item[1], item[2], 'NONE', i) for i, item in enumerate(COLOR_DEPTHS) if item[0] in valid_keys]
 
 def get_valid_modes(self, context):
     """Filter color modes based on current image format technical constraints."""
-    if not context or not getattr(context, "scene", None): return COLOR_MODES
+    if not context or not getattr(context, "scene", None): return [(item[0], item[1], item[2], 'NONE', i) for i, item in enumerate(COLOR_MODES)]
     fmt = getattr(self, "external_save_format", "PNG")
     valid_keys = FORMAT_SETTINGS.get(fmt, {}).get("modes", [])
-    if not valid_keys: return COLOR_MODES
-    return [item for item in COLOR_MODES if item[0] in valid_keys]
+    if not valid_keys: return [(item[0], item[1], item[2], 'NONE', i) for i, item in enumerate(COLOR_MODES)]
+    return [(item[0], item[1], item[2], 'NONE', i) for i, item in enumerate(COLOR_MODES) if item[0] in valid_keys]
 
 def update_debug_mode(self, context):
     """Update global logger level based on debug setting."""

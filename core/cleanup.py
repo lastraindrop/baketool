@@ -9,14 +9,16 @@ logger = logging.getLogger(__name__)
 def log_cleanup_detail(message):
     """Log details to a persistent file in the system temp directory."""
     try:
-        # Use system temp directory to avoid permission issues
         log_dir = Path(bpy.app.tempdir) / "baketool_logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         log_path = log_dir / "cleanup_history.log"
         
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with open(log_path, "a", encoding="utf-8") as f:
-            f.write(f"[{timestamp}] {message}\n")
+            if "\n" in message:
+                f.write(f"\n--- Cleanup Session: {timestamp} ---\n{message}\n")
+            else:
+                f.write(f"[{timestamp}] {message}\n")
     except Exception as e:
         logger.error(f"Failed to write cleanup log: {e}")
 
@@ -110,9 +112,8 @@ class BAKETOOL_OT_EmergencyCleanup(bpy.types.Operator):
         details.append(summary)
         details.append("--- Cleanup Finished ---")
         
-        # Write to log file
-        for line in details:
-            log_cleanup_detail(line)
+        # Write to log file in a single batch operation for performance
+        log_cleanup_detail("\n".join(details))
             
         logger.info(summary)
         self.report({'INFO'}, summary)

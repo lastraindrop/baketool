@@ -1,6 +1,22 @@
-# BakeTool 研发攻坚行动清单 (Phase 3.1 & 3.2)
+# BakeTool 研发攻坚行动看板 (Phase 4.3 & 4.5)
 
-本任务列表用于追踪“近期及中期战略方略”的落地实施。当前优先执行“一键资产交付 (USD/glTF)”，并为后续的两大护城河能力打好基础。
+## [x] Phase 4.3: 跨版本端到端验证 (E2E Hardening)
+- [x] 重构 `compat.set_bake_type` 以支持 B3.3/3.6 (Cycles 引擎强制锁定策略)
+- [x] 修复 UDIM 初始化在 B3.3 Headless 模式下的缓冲分配问题 (像素触摸策略)
+- [x] 优化 `suite_production_workflow.py` 的文件搜索逻辑，解决 `SPLIT_MATERIAL` 误报
+- [x] 验证 Blender 3.6/4.2/4.5/5.0 达到 100% 通过率
+
+## [/] Phase 4.5: 项目同步与文档对齐
+- [x] 更新 `implementation_plan.md` 至 Phase 4.5 状态
+- [x] 撰写 `version_analysis_33_36.md` 深度技术分析报告 (Artifact)
+- [/] 同步更新 `ROADMAP.md` 里程碑状态
+- [/] 同步更新 `DEVELOPER_GUIDE.md` 录入“三点对齐”与“跨版本避坑”规范
+- [ ] 最终执行 `multi_version_test.py` 进行文档一致性后的全量回归
+
+## [ ] 未来方略 (Future Roadmap)
+- [ ] 调研 B3.3 极大贴图下的 OOM 保护机制
+- [ ] 统一项目所有说明文件为全中文 (可选)
+- [ ] 自动化测试环境静态化与容器化预研
 
 ## 🎯 优先战役 1: 零摩擦资产交付闭环 (USD/glTF Delivery Loop)
 - `[x]` **`core/engine.py`**: 开发 `build_pbr_material` 函数。

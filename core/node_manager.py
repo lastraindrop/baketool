@@ -65,7 +65,7 @@ def bake_node_to_image(context, material, node, settings):
 
 class NodeGraphHandler:
     def __init__(self, materials):
-        self.materials = [m for m in materials if m and m.use_nodes]
+        self.materials = [m for m in materials if m and hasattr(m, 'use_nodes') and m.use_nodes]
         self.session_nodes = {}
         self.temp_logic_nodes = {}
         self.temp_attributes = []
@@ -143,12 +143,19 @@ class NodeGraphHandler:
             try: bpy.data.images.remove(d)
             except Exception: pass
 
-    def setup_protection(self, objects, active_materials):
+    def setup_protection(self, objects=None, active_materials=None):
         """
         Ensure non-active materials on objects have an active texture node 
         to prevent Blender's baker from potentially using wrong nodes.
         Uses a temporary dummy image that shouldn't be saved.
         """
+        # Fallback to instance materials if not provided
+        if not objects:
+            # Heuristic: We don't have objects, so we can't find 'other' materials to protect.
+            return
+        if active_materials is None:
+            active_materials = self.materials
+            
         active_set = set(active_materials)
         d = bpy.data.images.get(SYSTEM_NAMES['DUMMY_IMG']) or bpy.data.images.new(SYSTEM_NAMES['DUMMY_IMG'], 32, 32, alpha=True)
         # Ensure it doesn't persist after nodes are gone
@@ -292,7 +299,7 @@ class NodeGraphHandler:
             
             # 创建 Mix 节点 (B3.4+ ShaderNodeMix / Legacy ShaderNodeMixRGB)
             from . import compat
-            if compat.IS_BLENDER_4 or compat.IS_BLENDER_5:
+            if compat.is_blender_4() or compat.is_blender_5():
                 mix = self._add_node(mat, 'ShaderNodeMix')
                 mix.data_type = 'RGBA'
                 tree.links.new(metallic_out, mix.inputs[0])  # Factor
@@ -312,6 +319,6 @@ class NodeGraphHandler:
             tree.links.new(diff_src, sock_a)
             tree.links.new(spec_src, sock_b)
             # 输出: B4+ ShaderNodeMix outputs[2]=Result(RGBA); Legacy MixRGB outputs[0]=Color
-            result_output = mix.outputs[2] if (compat.IS_BLENDER_4 or compat.IS_BLENDER_5) else mix.outputs[0]
+            result_output = mix.outputs[2] if (compat.is_blender_4() or compat.is_blender_5()) else mix.outputs[0]
             return result_output
         return None
