@@ -1,4 +1,5 @@
 import bpy
+import os
 from .constants import (
     FORMAT_SETTINGS, CAT_MESH, CAT_LIGHT, CAT_DATA, CAT_EXTENSION, 
     CHANNEL_BAKE_INFO, CHANNEL_UI_LAYOUT, UI_MESSAGES

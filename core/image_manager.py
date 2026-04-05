@@ -17,7 +17,7 @@ def robust_image_editor_context(context, image):
 
     if not window:
         yield False
-        return
+        return None
 
     screen = window.screen
     
@@ -181,7 +181,7 @@ def _touch_udim_buffer_v3(image):
             try: image.pack()
             except: pass
         image.update()
-    except Exception as e:
+    except (ImportError, IOError, OSError, RuntimeError) as e:
         logger.debug(f"3.3 UDIM buffer touch failed: {e}")
 
     return image

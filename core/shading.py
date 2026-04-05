@@ -78,10 +78,21 @@ def create_preview_material(obj, s):
                 # To be robust, we'd need to link the same input nodes to our new material.
                 # Since we can't easily link across materials, we duplicate the input node.
                 if socket.is_linked:
-                    from_node = socket.links[0].from_node
+                    # HP-8: Correctly capture the output socket index from the source 
+                    from_socket = socket.links[0].from_socket
+                    from_node = from_socket.node
+                    
+                    # Try to find the matching socket index
+                    out_idx = 0
+                    for i, o_sock in enumerate(from_node.outputs):
+                        if o_sock == from_socket:
+                            out_idx = i
+                            break
+                            
                     new_node = nodes.new(from_node.bl_idname)
                     new_node.location = (-200, (1-combine_input_idx)*200)
-                    # 安全属性复制：仅复制已知安全的用户可编辑属性
+                    
+                    # Safe property copy
                     safe_skip = {'rna_type', 'bl_rna', 'type', 'bl_idname', 'bl_label', 
                                  'bl_description', 'bl_icon', 'bl_static_type',
                                  'inputs', 'outputs', 'internal_links', 'dimensions',
@@ -91,9 +102,11 @@ def create_preview_material(obj, s):
                         if not prop.is_readonly and prop.identifier not in safe_skip:
                             try:
                                 setattr(new_node, prop.identifier, getattr(from_node, prop.identifier))
-                            except Exception:
+                            except (AttributeError, TypeError): 
                                 pass
-                    links.new(new_node.outputs[0], combine.inputs[combine_input_idx])
+                                
+                    if out_idx < len(new_node.outputs):
+                        links.new(new_node.outputs[out_idx], combine.inputs[combine_input_idx])
                 else:
                     # Constant value
                     val_node = nodes.new('ShaderNodeValue')

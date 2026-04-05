@@ -128,20 +128,26 @@ class BAKETOOL_OT_ResetChannels(bpy.types.Operator):
     bl_label = "Reset"
     def execute(self, context):
         bj = context.scene.BakeJobs
-        if bj.jobs and bj.job_index >= 0 and bj.job_index < len(bj.jobs):
+        if not bj.jobs: 
+            return {'CANCELLED'}
+        if bj.job_index >= 0 and bj.job_index < len(bj.jobs):
              reset_channels_logic(bj.jobs[bj.job_index].setting)
+        else:
+             bj.job_index = 0
+             if bj.jobs: reset_channels_logic(bj.jobs[0].setting)
         return {'FINISHED'}
 
 class BAKETOOL_OT_GenericChannelOperator(bpy.types.Operator):
     bl_idname = "bake.generic_channel_op"
     bl_label = "Op"
     action_type: props.EnumProperty(
+        name="Action",
         items=[
-            ('ADD', 'Add', 'Add a new item'),
-            ('DELETE', 'Delete', 'Delete the selected item'),
-            ('UP', 'Up', 'Move item up in list'),
-            ('DOWN', 'Down', 'Move item down in list'),
-            ('CLEAR', 'Clear', 'Clear all items')
+            ('ADD', 'Add', 'Add a new custom channel to the list'),
+            ('DELETE', 'Delete', 'Remove the currently selected custom channel'),
+            ('UP', 'Up', 'Move current channel up in execution order'),
+            ('DOWN', 'Down', 'Move current channel down in execution order'),
+            ('CLEAR', 'Clear', 'Remove all custom channels')
         ]
     )
     target: props.StringProperty()
@@ -170,11 +176,14 @@ class BAKETOOL_OT_SetSaveLocal(bpy.types.Operator):
         if self.save_location == 0:
             if bj.job_index >= 0 and bj.job_index < len(bj.jobs):
                 bj.jobs[bj.job_index].setting.external_save_path = path
-        elif self.save_location == 1:
-            # Maybe reserved for something else? Adding anyway to prevent silent skip
-            pass
+            else:
+                self.report({'WARNING'}, "Select a job first to set its path.")
+                return {'CANCELLED'}
         elif self.save_location == 2:
             bj.node_bake_settings.external_save_path = path
+        else:
+            self.report({'WARNING'}, "Invalid save location target.")
+            return {'CANCELLED'}
             
         return {'FINISHED'}
 
@@ -184,11 +193,14 @@ class BAKETOOL_OT_RefreshUDIM(bpy.types.Operator):
     def execute(self, context):
         bj = context.scene.BakeJobs
         if not (bj.jobs and bj.job_index >= 0 and bj.job_index < len(bj.jobs)):
+             self.report({'WARNING'}, "No active job selected for UDIM refresh.")
              return {'CANCELLED'}
              
         s = bj.jobs[bj.job_index].setting
         objs = [o.bakeobject for o in s.bake_objects if o.bakeobject]
-        if not objs: return {'CANCELLED'}
+        if not objs: 
+            self.report({'WARNING'}, "No objects assigned to this job.")
+            return {'CANCELLED'}
         from .core.engine import UDIMPacker
         if s.udim_mode == 'REPACK': assignments = UDIMPacker.calculate_repack(objs)
         else: assignments = {o: detect_object_udim_tile(o) for o in objs}
@@ -201,18 +213,25 @@ class BAKETOOL_OT_ManageObjects(bpy.types.Operator):
     bl_label = "Manage Objects"
     bl_options = {'REGISTER', 'UNDO'}
     action: props.EnumProperty(
+        name="Action",
         items=[
-            ('SET', 'Set', 'Set selection as objects'),
-            ('ADD', 'Add', 'Add selection to objects'),
-            ('REMOVE', 'Remove', 'Remove selection from objects'),
-            ('CLEAR', 'Clear', 'Clear all objects'),
-            ('SET_ACTIVE', 'Set Active', 'Set as active target'),
-            ('SMART_SET', 'Smart Set', 'Auto-assign based on name')
+            ('SET', 'Set', 'Replace entire object list with current selection'),
+            ('ADD', 'Add', 'Add selected objects to the job'),
+            ('REMOVE', 'Remove', 'Remove selected objects from the job'),
+            ('CLEAR', 'Clear', 'Remove all objects from this job'),
+            ('SET_ACTIVE', 'Set Active', 'Set the active object as the bake target'),
+            ('SMART_SET', 'Smart Set', 'Auto-assign objects based on naming conventions (_high/_low)')
         ]
     )
     def execute(self, context):
-        if not context.scene.BakeJobs.jobs: return {'CANCELLED'}
-        s = context.scene.BakeJobs.jobs[context.scene.BakeJobs.job_index].setting
+        bj = context.scene.BakeJobs
+        if not bj.jobs: 
+            self.report({'WARNING'}, "No jobs available.")
+            return {'CANCELLED'}
+        if bj.job_index < 0 or bj.job_index >= len(bj.jobs):
+            bj.job_index = 0
+            
+        s = bj.jobs[bj.job_index].setting
         sel = [o for o in context.selected_objects if o.type == 'MESH']
         act = context.active_object if (context.active_object and context.active_object.type == 'MESH') else None
         
@@ -275,15 +294,18 @@ class BAKETOOL_OT_BakeSelectedNode(bpy.types.Operator):
         from .core.node_manager import bake_node_to_image
         
         nbs = context.scene.BakeJobs.node_bake_settings
-        # M-13: active_object and active_node null check
         if not context.active_object:
              self.report({'WARNING'}, "No active object")
              return {'CANCELLED'}
              
-        mat, node = context.active_object.active_material, context.active_node
+        mat = context.active_object.active_material
+        node = getattr(context, 'active_node', None)
         
-        if not (mat and node):
-            self.report({'WARNING'}, "No active material or node selected")
+        if not mat:
+            self.report({'WARNING'}, "Active object has no material")
+            return {'CANCELLED'}
+        if not node:
+            self.report({'WARNING'}, "No node selected in the Shader Editor")
             return {'CANCELLED'}
         
         img = bake_node_to_image(context, mat, node, nbs)
@@ -316,12 +338,21 @@ class BAKETOOL_OT_ExportResult(bpy.types.Operator):
         results = context.scene.baked_image_results
         idx = context.scene.baked_image_results_index
         # C-06: Bounds check
-        if idx >= 0 and idx < len(results):
+        if 0 <= idx < len(results):
             r = results[idx]
             if r.image: 
-                save_image(r.image, os.path.dirname(self.filepath)) 
+                # Ensure directory exists or use default
+                export_dir = os.path.dirname(self.filepath)
+                if not os.path.exists(export_dir):
+                    try: os.makedirs(export_dir)
+                    except: pass
+                save_image(r.image, export_dir) 
+                self.report({'INFO'}, f"Exported {r.image.name} to {export_dir}")
+            else:
+                self.report({'WARNING'}, "Selected result has no valid image data.")
+                return {'CANCELLED'}
         else:
-            self.report({'WARNING'}, "No result selected to export.")
+            self.report({'WARNING'}, "Select a valid result from the list to export.")
             return {'CANCELLED'}
         return {'FINISHED'}
 

@@ -58,12 +58,16 @@ class RuntimeJobProxy:
 class BakePostProcessor:
     """封装烘焙后的图像后处理逻辑 (降噪等)"""
     @staticmethod
-    def apply_denoise(image):
-        """封装烘焙后的图像后处理逻辑 (降噪等)"""
+    def apply_denoise(image, reuse_scene=None):
+        """
+        BakePostProcessor.apply_denoise: Optimized image denoising.
+        Reuses scene if provided to avoid high overhead of scene creation/deletion.
+        """
         if not image: return
         
-        # 1. 创建临时场景 // Create temporary scene
-        tmp_scene = bpy.data.scenes.new(name="BT_Denoise_Temp")
+        # 1. Ensure temporary scene exists
+        tmp_scene = reuse_scene or bpy.data.scenes.new(name="BT_Denoise_Temp")
+        is_temp = (reuse_scene is None)
         try:
             tmp_scene.render.engine = 'CYCLES' 
             # Use nodes and ensure tree exists
@@ -130,9 +134,12 @@ class BakePostProcessor:
                 viewer_img.gl_free()
                 
         finally:
-            # 重要：始终移除临时场景以防止内存泄漏 // Always remove temporary scene
-            if tmp_scene:
-                try: bpy.data.scenes.remove(tmp_scene)
+            # Important: Only remove if we created it locally
+            if is_temp and tmp_scene:
+                try: 
+                    bpy.data.scenes.remove(tmp_scene)
+                    # Force GC reference clear
+                    tmp_scene = None
                 except Exception: pass
 
 
@@ -167,6 +174,12 @@ class BakeStepRunner:
             handler = stack.enter_context(NodeGraphHandler(task.materials))
             
             handler.setup_protection(task.objects, task.materials)
+            
+            # Persistent denoise scene for the duration of this step
+            denoise_scene = None
+            if job.setting.use_denoise:
+                denoise_scene = bpy.data.scenes.new(name="BT_Denoise_Shared")
+                stack.callback(lambda s=denoise_scene: bpy.data.scenes.remove(s) if s and s.name in bpy.data.scenes else None)
                         
             total_ch = len(channels)
             for i, c in enumerate(channels):
@@ -187,7 +200,7 @@ class BakeStepRunner:
                 if img:
                     if job.setting.use_denoise:
                         scene.bake_status = f"[{i+1}/{total_ch}] Denoising {c['name']}..."
-                        BakePostProcessor.apply_denoise(img)
+                        BakePostProcessor.apply_denoise(img, reuse_scene=denoise_scene)
                     
                     key = c['name'] if c['id'] == 'CUSTOM' else c['id']
                     baked_images[key] = img

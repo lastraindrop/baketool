@@ -190,19 +190,21 @@ def register():
     
     
 def unregister():
-    # Cleanup Previews
-    from .core import thumbnail_manager
-    thumbnail_manager.clear_preview_collection("presets")
+    # 1. Register Translations was last, so Unregister Translations is first
+    bpy.app.translations.unregister(__name__)
 
-    # Remove Auto Load Handler
+    # 2. Keymaps
+    for km, kmi in addon_keymaps:
+        km.keymap_items.remove(kmi)
+    addon_keymaps.clear()
+
+    # 3. Handlers
     preset_handler.AutoLoadHandler.unregister()
 
-    # Remove from Object Context Menu
+    # 4. Menus
     bpy.types.VIEW3D_MT_object_context_menu.remove(menu_func_quick_bake)
-    
-    for cls in reversed(classes_to_register):
-        bpy.utils.unregister_class(cls)
-    
+
+    # 5. Properties
     if hasattr(bpy.types.Object, 'bake_map_index'):
         del bpy.types.Object.bake_map_index
     
@@ -214,17 +216,17 @@ def unregister():
     del bpy.types.Scene.bake_progress
     del bpy.types.Scene.bake_status
     del bpy.types.Scene.bake_error_log
-
-    # 测试反馈 / Test Feedback
+    
     del bpy.types.Scene.last_test_info
     del bpy.types.Scene.test_pass
 
-    for km, kmi in addon_keymaps:
-        km.keymap_items.remove(kmi)
-        
-    addon_keymaps.clear()
-    # 注销翻译 // Unregister translations
-    bpy.app.translations.unregister(__name__)
+    # 6. Classes (Registered first, unregister last)
+    for cls in reversed(classes_to_register):
+        bpy.utils.unregister_class(cls)
+
+    # Cleanup Previews (Side effect)
+    from .core import thumbnail_manager
+    thumbnail_manager.clear_preview_collection("presets")
     
 if __name__ == "__main__":
     register()

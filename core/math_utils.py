@@ -142,9 +142,13 @@ def generate_optimized_colors(count, start_color=(1,0,0,1), iterations=0, manual
         hues = (rng.random() + indices * golden_ratio) % 1.0
 
     # 2. Generate Saturation and Value
-    rng = np.random.default_rng(seed)
-    sats = 0.5 + rng.random(count).astype(np.float32) * 0.3
-    vals = 0.8 + rng.random(count).astype(np.float32) * 0.2
+    if not manual_start:
+        sats = 0.5 + rng.random(count).astype(np.float32) * 0.3
+        vals = 0.8 + rng.random(count).astype(np.float32) * 0.2
+    else:
+        rng_sv = np.random.default_rng(seed)
+        sats = 0.5 + rng_sv.random(count).astype(np.float32) * 0.3
+        vals = 0.8 + rng_sv.random(count).astype(np.float32) * 0.2
     
     # 3. Vectorized HSV to RGB
     # hsv_to_rgb(h, s, v):
@@ -182,16 +186,22 @@ def setup_mesh_attribute(obj, id_type='ELEMENT', start_color=(1,0,0,1), iteratio
     if attr_name in obj.data.attributes: return attr_name
 
     current_mode = obj.mode
-    if current_mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
+    if current_mode != 'OBJECT': 
+        bpy.ops.object.mode_set(mode='OBJECT')
     
-    # --- 快速路径：材质 ID (NumPy) ---
-    if id_type == 'MAT':
-        return _setup_material_id_numpy(obj, attr_name, start_color, iterations, manual_start, seed, current_mode)
+    try:
+        # --- 快速路径：材质 ID (NumPy) ---
+        if id_type == 'MAT':
+            return _setup_material_id_numpy(obj, attr_name, start_color, manual_start, seed)
 
-    # --- 孤岛 ID (BMesh) ---
-    return _setup_island_id_bmesh(obj, id_type, attr_name, start_color, iterations, manual_start, seed, current_mode)
+        # --- 孤岛 ID (BMesh) ---
+        return _setup_island_id_bmesh(obj, id_type, attr_name, start_color, manual_start, seed)
+    finally:
+        if obj.mode != current_mode:
+            try: bpy.ops.object.mode_set(mode=current_mode)
+            except Exception: pass
 
-def _setup_material_id_numpy(obj, attr_name, start_color, iterations, manual_start, seed, current_mode):
+def _setup_material_id_numpy(obj, attr_name, start_color, manual_start, seed):
     """使用 NumPy 快速生成材质 ID 属性"""
     poly_count = len(obj.data.polygons)
     if poly_count == 0: return None
@@ -215,10 +225,9 @@ def _setup_material_id_numpy(obj, attr_name, start_color, iterations, manual_sta
     obj.data.attributes.new(name=attr_name, type='BYTE_COLOR', domain='CORNER')
     obj.data.attributes[attr_name].data.foreach_set("color", loop_colors.flatten())
     
-    if current_mode != 'OBJECT': bpy.ops.object.mode_set(mode=current_mode)
     return attr_name
 
-def _setup_island_id_bmesh(obj, id_type, attr_name, start_color, iterations, manual_start, seed, current_mode):
+def _setup_island_id_bmesh(obj, id_type, attr_name, start_color, manual_start, seed):
     """基于 BMesh 拓扑分析生成孤岛 ID 属性"""
     bm = bmesh.new()
     try:
@@ -228,7 +237,7 @@ def _setup_island_id_bmesh(obj, id_type, attr_name, start_color, iterations, man
         
         islands = _find_islands_bmesh(bm, id_type)
         island_count = len(islands)
-        palette = generate_optimized_colors(max(1, island_count), start_color, iterations, manual_start, seed)
+        palette = generate_optimized_colors(max(1, island_count), start_color, 0, manual_start, seed)
         
         face_to_color_idx = np.zeros(len(bm.faces), dtype=np.int32)
         for idx, island_faces in enumerate(islands):
@@ -246,9 +255,6 @@ def _setup_island_id_bmesh(obj, id_type, attr_name, start_color, iterations, man
     finally:
         bm.free()
     
-    if current_mode != 'OBJECT':
-        try: bpy.ops.object.mode_set(mode=current_mode)
-        except Exception: pass
     return attr_name
 
 def _find_islands_bmesh(bm, id_type):

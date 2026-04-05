@@ -30,8 +30,10 @@ def log_error(context, message, state_mgr=None, include_traceback=False):
         
     # 3. Persistence Log (Full Traceback for crash recovery)
     if state_mgr:
-        try: state_mgr.log_error(technical_msg)
-        except Exception: pass
+        try: 
+            state_mgr.log_error(technical_msg)
+        except (IOError, OSError) as e:
+            logger.debug(f"Failed to persist state error: {e}")
 
 def get_safe_base_name(setting, obj, mat=None, is_batch=False):
     """Naming convention logic."""
@@ -156,8 +158,8 @@ def manage_channels_logic(target, action_type, bj):
     idx = getattr(parent, attr)
     
     if action_type == 'ADD':
-        item = manage_collection_item(coll, 'ADD', idx)
-        if target == "jobs_channel":
+        success, item = manage_collection_item(coll, 'ADD', idx)
+        if success and target == "jobs_channel":
             item.name = f"Job {len(coll)}"
             s = item.setting
             s.bake_type = 'BSDF'
@@ -167,9 +169,9 @@ def manage_channels_logic(target, action_type, bj):
                 if c.id in {'color', 'combine', 'normal'}:
                     c.enabled = True
     else:
-        manage_collection_item(coll, action_type, idx, parent, attr)
+        success, _ = manage_collection_item(coll, action_type, idx, parent, attr)
     
-    return True, ""
+    return success, ""
 
 def manage_collection_item(collection, action, index, parent_obj=None, index_prop=""):
     """
@@ -177,30 +179,30 @@ def manage_collection_item(collection, action, index, parent_obj=None, index_pro
     Supports: ADD, DELETE, CLEAR, UP, DOWN.
     """
     if action == 'ADD':
-        return collection.add()
+        return True, collection.add()
     elif action == 'DELETE':
         if len(collection) > 0 and 0 <= index < len(collection):
             collection.remove(index)
             if parent_obj and index_prop:
                 setattr(parent_obj, index_prop, max(0, index - 1))
-            return True
+            return True, None
     elif action == 'CLEAR':
         collection.clear()
         if parent_obj and index_prop:
             setattr(parent_obj, index_prop, 0)
-        return True
+        return True, None
     elif action in {'UP', 'DOWN'}:
         if action == 'UP' and index > 0:
             target_idx = index - 1
         elif action == 'DOWN' and index < len(collection) - 1:
             target_idx = index + 1
         else:
-            return False
+            return False, None
         collection.move(index, target_idx)
         if parent_obj and index_prop:
             setattr(parent_obj, index_prop, target_idx)
-        return True
-    return None
+        return True, None
+    return False, None
 
 @contextmanager
 def safe_context_override(context, active_object=None, selected_objects=None):
@@ -261,8 +263,10 @@ class SceneSettingsContext:
         target = self._get_target()
         if not target: return
         for k, v in self.original.items():
-            try: setattr(target, k, v)
-            except Exception: pass
+            try: 
+                setattr(target, k, v)
+            except (AttributeError, TypeError, ValueError, RuntimeError) as e:
+                logger.debug(f"Restore failed for {k}: {e}")
 
 def apply_baked_result(original_obj, task_images, setting, task_base_name):
     """Create a new object or update existing one with baked textures applied."""
@@ -340,11 +344,15 @@ def create_simple_baked_material(name, texture_map):
         tex.location = (-600 if chan_id == 'normal' else -300, y_pos)
         y_pos -= 280
         
-        # ColorSpace
-        non_color_channels = {'metal', 'rough', 'normal', 'specular', 'ao', 'height', 'gloss', 'bevnor'}
+        # M-15: Derive non-color channels from CHANNEL_BAKE_INFO metadata
+        from ..constants import CHANNEL_BAKE_INFO
+        non_color_channels = {k for k, v in CHANNEL_BAKE_INFO.items() if v.get('def_cs') == 'Non-Color'}
+        
         if chan_id in non_color_channels:
-            try: tex.image.colorspace_settings.name = 'Non-Color'
-            except Exception: pass
+            try: 
+                tex.image.colorspace_settings.name = 'Non-Color'
+            except (AttributeError, RuntimeError): 
+                pass
             
         if chan_id == 'normal':
             nor = tree.nodes.new('ShaderNodeNormalMap')

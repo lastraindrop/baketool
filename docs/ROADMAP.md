@@ -67,69 +67,67 @@ This document outlines the long-term strategic vision for Simple Bake Tool (SBT)
 
 ### 3.3 Anti-Aliasing & Denoise Pipeline [DONE]
 - **Status**: Completed in v0.9.3.
-- **Feature**: Integrated OIDN (Open Image Denoise) via temporary compositor pipelin## 🚀 Phase 4: Performance & Ecosystem (Focus: Scalability) [STABLE v1.5.0]
-*Goal: Handle massive datasets and multi-app workflows with production-grade stability.*
+- **Feature**: Integrated OIDN (Open Image Denoise) via temporary composito## 🚀 Phase 4: Production Hardening & Ecosystem [STABLE v1.5.0]
+*Goal: 100% architectural stability and cross-version parameter alignment.*
 
-### 4.1 Background Process Baking
-- **Concept**: Spawn a *separate* Blender background process to perform the bake while continuing work.
-- **Status**: Planning (Target v1.6.0).
+### 4.1 Parameter Consistency & Dynamic Alignment (Hardened) [DONE]
+- **Status**: Implemented for v1.5.0.
+- **Mechanism**: Triple-Point Alignment Protocol (Constants -> Engine -> Automation).
+- **Benefit**: Ensures zero `NameError` regressions. Added `suite_parameter_matrix.py` to verify mapping integrity.
 
 ### 4.2 UDIM Massive Batching (Refined) [DONE]
-- **Status**: Completed (v1.5.0).
+- **Status**: Completed in v1.5.0.
+- **Tech**: Recursive tile detection with zero-copy buffer initialization.
 
 ### 4.3 Production E2E Validation Loop [DONE]
 - **Status**: Completed (v1.5.0).
-- **Update**: Robust 100% pass rate across Blender 3.3, 3.6, 4.2, 4.5, 5.0 matrices.
+- **Matrix**: 100% Pass Rate confirmed for Blender 3.3, 3.6, 4.2 LTS, and 5.0 (Alpha).
 
-### 4.4 跨版本关键死角与核心避坑 (Version-Specific Pitfalls) [STABLE]
-针对 v1.5.0 修复的深层兼容性问题的总结：
-- **Blender 5.0 (Node Access)**: 自 5.0 起，场景节点树属性由 `node_tree` 迁移至 `compositing_node_group`（或在某些 context 下不可用）。代码中必须使用 `hasattr` 探测。
-- **Blender 4.2+ (Bake Settings)**: 烘焙设置从 `scene.render` 迁移到了 `scene.render.bake`。已通过 `compat.get_bake_settings()` 统一中转。
-- **Blender 3.3/3.6 (Bake Type Naming)**: 存在 `'NORMAL'` vs `'NORMALS'` 冲突。已通过 `compat.set_bake_type` 自动映射。
-
-### 4.5 动态对齐与参数一致性协议 (Triple-Point Alignment Protocol) [NEW]
-为了防范因拼写错误或逻辑遗漏导致的 `NameError`，新增任何烘焙参数必须遵循以下 **“三点对齐”** 流程：
-1. **常量注册** (`constants.py`): 定义所有底层映射、元数据和默认值。
-2. **导入校验** (`core/engine.py`): 在引擎入口显式导入并验证常量存在性，严禁使用硬编码字符串替代。
-3. **回归防御**: 在 `test_cases/suite_unit.py` 增加断言验证，并在 `multi_version_test.py` 中跨版本跑通。
-
-### 4.6 UX 交互硬化 (UX Hardening) [NEW]
-- **ESC 取消确认**: 模态烘焙过程中按下 `ESC` 会进入二次确认状态，防止长时间误触导致进度全失。
-- **Operator 边界拦截**: 所有涉及列表索引的操作（`job_index`, `results_index`）均增加了严格的 `IndexError` 防护。
+### 4.4 UX & Interaction Hardening [DONE]
+- **Features**: ESC-to-Confirm cancellation, per-operator bounds checking, and unified mode restoration.
 
 ---
 
-## 🎨 Phase 7: UI & User Experience 2.0 (Planned v1.1.0)
- with PBR materials to USD or GLTF formats.
-- **Benefit**: Streamlined asset transfer to game engines, other DCCs, or web viewers. Zero-friction delivery.
+## 🔮 Phase 5: Pipeline Evolution (Planned v1.6.0)
+*Goal: Decouple baking processes and enhance external connectivity.*
 
-### 5.2 External Bake Engine Integration
-- **Concept**: Allow users to swap Blender's internal baker for external engines (e.g., Marmoset Toolbag, Substance Painter) via a standardized API.
+### 5.1 Background Process Baking (Worker Thread)
+- **Concept**: Spawn a detached Blender worker process to perform heavy bakes, keeping the main interface 100% responsive for modeling.
+- **Priority**: HIGH.
+
+### 5.2 Asset Bridge: Zero-Friction Delivery
+- **Concept**: Automatic GLB/USDZ export with PBR material embedding immediately after baking.
+- **Priority**: MEDIUM.
+
+### 5.3 External Engine Bridge (API)
+- **Concept**: Standardized hooks to trigger external bakers (Marmoset/Substance) through the SBT interface.
 
 ---
 
+## 🧠 Phase 6: Intelligence & Scalability
+*Goal: Leverage AI and dashboard-level management.*
 
- ---
- 
--## 🤖 Phase 6: Intelligence & Scalability (Focus: Next Generation)
-+## 🧠 Phase 6: Intelligence & Scalability (Focus: Next Generation)
- *Goal: Leverage AI and distributed computing for extreme-scale baking.*
- 
- ### 6.1 AI-Assisted Cage Optimization (AI-Cage)
-@@ -134,3 +134,22 @@
- ### 6.2 Distributed Node Baking
- - **Concept**: A simple client-server architecture to delegate bake jobs to multiple machines on the same network.
- 
-+---
-+
-+## 🎨 Phase 7: UI & User Experience 2.0 (Planned v1.1.0)
-+*Goal: Proactive assistance and extreme workflow simplification.*
-+
-+### 7.1 Dashboard Hub (Visual Status Management)
-+- **Concept**: A single "Health Dashboard" showing status for all objects, materials, and paths in the current project.
-+- **Sub-Feature**: "Global Auto-Fix" button for missing UVs or invalid resolutions.
-+
-+### 7.2 3D Viewport HUD (Real-time Feedback)
+### 6.1 SBT Dashboard Hub
+- **Feature**: Central health monitor for all project assets, detecting missing UVs or resolution mismatches globally.
+
+### 6.2 Collaborative Network Baking
+- **Feature**: Delegate tiles or objects to other machines on the local network running the SBT Worker.
+
+---
+
+## 🎨 Phase 7: UI & User Experience 2.0 (v2.0 Vision)
+*Goal: Floating HUDs and predictive automation.*
+
+### 7.1 3D Viewport HUD
+- **Feature**: Progress bars and status badges drawn directly in the 3D viewport using the GPU module.
+
+### 7.2 Smart Asset Naming Tokens
+- **Feature**: Dynamic paths using `<OBJECT>`, `<ENGINE>`, and `<DATE>` tokens.
+
+---
+**Current Status**: v1.5.0 Stable Release.
+**Next Focus**: Background Worker (v1.6.0 Dev Cycle).
+ck)
 +- **Concept**: A floating progress bar and "Bake Complete" badge directly in the 3D scene (using GPU modules).
 +
 +### 7.3 Multi-Job Parallelization (Background)
