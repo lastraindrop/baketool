@@ -15,10 +15,9 @@ from .math_utils import process_pbr_numpy, setup_mesh_attribute, pack_channels_n
 from .uv_manager import get_active_uv_udim_tiles, UDIMPacker, UVLayoutManager, detect_object_udim_tile
 from .node_manager import NodeGraphHandler
 from ..constants import (
-    BAKE_CHANNEL_INFO, CHANNEL_BAKE_INFO, 
-    DATA_BAKE_FORCE_SINGLE_SAMPLE, CHANNEL_MESH_TYPE_MAP,
-    UI_MESSAGES
+    UI_MESSAGES, CHANNEL_BAKE_INFO, CHANNEL_MESH_TYPE_MAP, DATA_BAKE_FORCE_SINGLE_SAMPLE
 )
+from . import compat
 
 logger = logging.getLogger(__name__)
 
@@ -115,26 +114,23 @@ class BakePostProcessor:
                 bpy.ops.render.render() 
                 
             # 4. 回写像素 // Retrieve processed pixels from Viewer
-            # Blender 4.x/5.0+ Viewer results are reliably named "Viewer Node"
             viewer_img = bpy.data.images.get("Viewer Node")
             if viewer_img:
                 if viewer_img.size[0] == image.size[0] and viewer_img.size[1] == image.size[1]:
                     try:
-                        from . import compat
                         if not compat.is_blender_5() and hasattr(image, "gl_free"):
                             image.gl_free()
                         
                         image.pixels.foreach_set(viewer_img.pixels)
                         image.update()
                     except Exception as e:
-                        logger.error(f"Failed to write back denoised pixels: {e}")
+                        logger.error(f"无法回写降噪像素 (Failed to write back denoised pixels): {e}")
             
-            from . import compat
             if viewer_img and not compat.is_blender_5() and hasattr(viewer_img, "gl_free"):
                 viewer_img.gl_free()
                 
         finally:
-            # IMPORTANT: Always remove the temporary scene to prevent data bloat/leaks
+            # 重要：始终移除临时场景以防止内存泄漏 // Always remove temporary scene
             if tmp_scene:
                 try: bpy.data.scenes.remove(tmp_scene)
                 except Exception: pass
@@ -161,67 +157,70 @@ class BakeStepRunner:
         baked_images = {}
         array_cache = {} 
 
-        with BakeContextManager(self.context, job.setting):
-            with safe_context_override(self.context, task.active_obj, task.objects):
-                with UVLayoutManager(task.objects, job.setting):
-                    udim_tiles = BakePassExecutor.get_udim_configuration(job.setting, task.objects)
-                    
-                    with NodeGraphHandler(task.materials) as handler:
-                        handler.setup_protection(task.objects, task.materials)
+        from contextlib import ExitStack
+        with ExitStack() as stack:
+            stack.enter_context(BakeContextManager(self.context, job.setting))
+            stack.enter_context(safe_context_override(self.context, task.active_obj, task.objects))
+            stack.enter_context(UVLayoutManager(task.objects, job.setting))
+            
+            udim_tiles = BakePassExecutor.get_udim_configuration(job.setting, task.objects)
+            handler = stack.enter_context(NodeGraphHandler(task.materials))
+            
+            handler.setup_protection(task.objects, task.materials)
                         
-                        total_ch = len(channels)
-                        for i, c in enumerate(channels):
-                            # Update UI status with channel info
-                            scene.bake_status = f"[{i+1}/{total_ch}] Baking {c['name']} - {task.base_name}"
-                            
-                            start_time = time.time()
-                            
-                            if state_mgr: 
-                                try:
-                                    state_mgr.update_step(i, task.active_obj.name, c['name'], queue_idx)
-                                except Exception: pass
+            total_ch = len(channels)
+            for i, c in enumerate(channels):
+                # Update UI status with channel info
+                scene.bake_status = f"[{i+1}/{total_ch}] Baking {c['name']} - {task.base_name}"
+                
+                start_time = time.time()
+                
+                if state_mgr: 
+                    try:
+                        state_mgr.update_step(i, task.active_obj.name, c['name'], queue_idx)
+                    except Exception: pass
 
-                            
-                            img = BakePassExecutor.execute(job.setting, task, c, handler, baked_images, udim_tiles, array_cache)
-                            bake_duration = time.time() - start_time
-                            
-                            if img:
-                                if job.setting.use_denoise:
-                                    scene.bake_status = f"[{i+1}/{total_ch}] Denoising {c['name']}..."
-                                    BakePostProcessor.apply_denoise(img)
-                                
-                                key = c['name'] if c['id'] == 'CUSTOM' else c['id']
-                                baked_images[key] = img
-                                
-                                save_start = time.time()
-                                path = self._handle_save(job.setting, task, img, f_info)
-                                save_duration = time.time() - save_start
-                                
-                                total_duration = bake_duration + save_duration
-                                
-                                # Package metadata
-                                results.append({
-                                    'image': img,
-                                    'type': c['name'],
-                                    'obj': task.active_obj.name,
-                                    'path': path,
-                                    'meta': {
-                                        'res_x': img.size[0],
-                                        'res_y': img.size[1],
-                                        'samples': int(job.setting.sample),
-                                        'duration': total_duration,
-                                        'bake_time': bake_duration,
-                                        'save_time': save_duration,
-                                        'bake_type': str(job.setting.bake_type),
-                                        'device': str(job.setting.device)
-                                    }
-                                })
+                
+                img = BakePassExecutor.execute(job.setting, task, c, handler, baked_images, udim_tiles, array_cache)
+                bake_duration = time.time() - start_time
+                
+                if img:
+                    if job.setting.use_denoise:
+                        scene.bake_status = f"[{i+1}/{total_ch}] Denoising {c['name']}..."
+                        BakePostProcessor.apply_denoise(img)
+                    
+                    key = c['name'] if c['id'] == 'CUSTOM' else c['id']
+                    baked_images[key] = img
+                    
+                    save_start = time.time()
+                    path = self._handle_save(job.setting, task, img, f_info)
+                    save_duration = time.time() - save_start
+                    
+                    total_duration = bake_duration + save_duration
+                    
+                    # Package metadata
+                    results.append({
+                        'image': img,
+                        'type': c['name'],
+                        'obj': task.active_obj.name,
+                        'path': path,
+                        'meta': {
+                            'res_x': img.size[0],
+                            'res_y': img.size[1],
+                            'samples': int(job.setting.sample),
+                            'duration': total_duration,
+                            'bake_time': bake_duration,
+                            'save_time': save_duration,
+                            'bake_type': str(job.setting.bake_type),
+                            'device': str(job.setting.device)
+                        }
+                    })
 
-                        if job.setting.use_packing:
-                            scene.bake_status = f"Packing Channels... - {task.base_name}"
-                            packed_res = self._handle_channel_packing(job.setting, task, baked_images, f_info, array_cache)
-                            if packed_res:
-                                results.append(packed_res)
+            if job.setting.use_packing:
+                scene.bake_status = f"Packing Channels... - {task.base_name}"
+                packed_res = self._handle_channel_packing(job.setting, task, baked_images, f_info, array_cache)
+                if packed_res:
+                    results.append(packed_res)
 
         # --- Post-Bake Logic: Apply & Export ---
         if not f_info: # Static bake
@@ -596,7 +595,6 @@ class BakePassExecutor:
 
     @staticmethod
     def _execute_blender_bake_op(setting, task, prop, bake_pass, mesh_type, chan_id):
-        from . import compat
         scene = bpy.context.scene
         try:
             # 1. Resolve Bake Type
@@ -717,10 +715,12 @@ class ModelExporter:
             fmt = setting.export_format
             abs_filepath = str(file_path_base.resolve())
             
-            # Pack textures condition setup
+            # C-07: 导出副本材质清理安全性 // Material clearing safety for export copies
             use_tex = getattr(setting, 'export_textures_with_model', True)
             if not use_tex:
-                obj.data.materials.clear()
+                # 仅对副本的材质槽进行清理，不影响共享的材质数据块 // Only clear slots of the instance
+                for slot in obj.material_slots:
+                    slot.material = None
             
             if fmt == 'FBX':
                 # HP-8: Check for io_scene_fbx addon

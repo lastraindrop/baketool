@@ -34,56 +34,26 @@ def robust_image_editor_context(context, image):
             
     if not area:
         yield False
-        return
-
-    old_type = area.type
-    try:
-        if old_type != 'IMAGE_EDITOR': area.type = 'IMAGE_EDITOR'
-        area.spaces.active.image = image
-        region = next((r for r in area.regions if r.type == 'WINDOW'), None)
-        
-        with context.temp_override(window=window, area=area, region=region, screen=screen, space_data=area.spaces.active):
-            yield True
-            
-    except Exception as e:
-        logger.error(f"Context hijack failed: {e}")
-        yield False
-    finally:
-        if area.type != old_type: area.type = old_type
-
-def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basiccolor=(0,0,0,0), clear=True, 
-              use_udim=False, udim_tiles=None, tile_resolutions=None):
-    """Get or create an image with specified settings and ensure it's cleared if requested."""
-    image = bpy.data.images.get(name)
-    
-    if image:
-        is_tiled = (image.source == 'TILED')
-        if is_tiled != use_udim:
-            bpy.data.images.remove(image)
-            image = None
-    
-    if not image:
-        init_x, init_y = x, y
-        if use_udim and tile_resolutions and 1001 in tile_resolutions:
-            init_x, init_y = tile_resolutions[1001]
-            
-        image = bpy.data.images.new(name, width=init_x, height=init_y, alpha=alpha, float_buffer=full, tiled=use_udim)
-        # Ensure at least one tile exists for UDIM to avoid "uninitialized image" error in older versions
-        if use_udim and hasattr(image, "tiles") and len(image.tiles) == 0:
-            image.tiles.new(1001)
-            image.update() # Force internal data sync for older versions like 3.3
     else:
-        target_w, target_h = x, y
-        if use_udim and tile_resolutions and 1001 in tile_resolutions:
-            target_w, target_h = tile_resolutions[1001]
-            
+        old_type = area.type
         try:
-            if image.size[0] != target_w or image.size[1] != target_h: 
-                image.scale(target_w, target_h)
-                if image.source == 'GENERATED':
-                    image.generated_width = target_w; image.generated_height = target_h
-        except Exception: pass
+            if old_type != 'IMAGE_EDITOR': area.type = 'IMAGE_EDITOR'
+            area.spaces.active.image = image
+            region = next((r for r in area.regions if r.type == 'WINDOW'), None)
+            
+            with context.temp_override(window=window, area=area, region=region, screen=screen, space_data=area.spaces.active):
+                yield True
+        except Exception as e:
+            logger.error(f"上下文切换失败 (Context hijack failed): {e}")
+            yield False
+        finally:
+            if area.type != old_type: area.type = old_type
 
+def set_image(name, x, y, alpha=True, full=False, space='sRGB', basiccolor=(0,0,0,0), clear=True, 
+              use_udim=False, udim_tiles=None, tile_resolutions=None):
+    """获取或创建指定设置的图像，并确保其格式正确 // Get/Create image with specified settings"""
+    image = _get_or_create_image_base(name, x, y, alpha, full, use_udim, tile_resolutions)
+    
     image.file_format = 'PNG' 
     image.use_fake_user = True
     
@@ -95,86 +65,124 @@ def set_image(name, x, y, alpha=True, full=False, space='sRGB', ncol=False, basi
     
     # 物理清除像素数据 // Physical Clear if requested
     if clear:
-        image.generated_color = basiccolor
-        # For non-tiled images, we can force clear pixels
-        if image.source != 'TILED':
-            import numpy as np
-            try:
-                num_pixels = image.size[0] * image.size[1]
-                arr = np.tile(np.array(basiccolor, dtype=np.float32), num_pixels)
-                image.pixels.foreach_set(arr)
-            except Exception: pass
+        _physical_clear_pixels(image, basiccolor)
 
     if use_udim and image.source == 'TILED':
-        target_tiles = set(udim_tiles) if udim_tiles else {1001}
-        existing_tiles = {t.number for t in image.tiles}
-        
-        if 1001 in existing_tiles and 1001 in target_tiles:
-            t_w, t_h = x, y
-            if tile_resolutions and 1001 in tile_resolutions: t_w, t_h = tile_resolutions[1001]
-            try:
-                if image.size[0] != t_w or image.size[1] != t_h:
-                    image.scale(t_w, t_h)
-            except Exception: pass
-
-        missing_tiles = target_tiles - existing_tiles
-        if missing_tiles:
-            with robust_image_editor_context(bpy.context, image) as valid:
-                for t_idx in missing_tiles:
-                    t_w, t_h = x, y
-                    if tile_resolutions and t_idx in tile_resolutions: t_w, t_h = tile_resolutions[t_idx]
-                    
-                    op_success = False
-                    if valid:
-                        try: 
-                            bpy.ops.image.tile_add(
-                                number=t_idx, count=1, label=str(t_idx), fill=True, 
-                                width=t_w, height=t_h, float=full, alpha=alpha,
-                                generated_type='BLANK', color=basiccolor
-                            )
-                            op_success = True
-                        except Exception: pass
-                    
-                    if not op_success:
-                        # Fallback for headless/legacy where operator poll fails
-                        try: 
-                            image.tiles.new(tile_number=t_idx)
-                            # Extra "touch" for 3.3/3.6 to ensure memory allocation
-                            image.generated_color = basiccolor
-                            image.update()
-                        except Exception as e:
-                            logger.error(f"Failed to add UDIM tile {t_idx} even with fallback: {e}")
-
-        extra_tiles = existing_tiles - target_tiles
-        for t_idx in extra_tiles:
-            tile_to_remove = next((t for t in image.tiles if t.number == t_idx), None)
-            if tile_to_remove:
-                try: image.tiles.remove(tile_to_remove)
-                except Exception: pass
+        _handle_udim_tiles(image, x, y, udim_tiles, tile_resolutions, full, alpha, basiccolor)
 
     try: image.update()
     except Exception: pass
 
-    # SPECIAL: Blender < 3.4 UDIM Baking "Uninitialized image" fix
+    # Blender < 3.4 UDIM 烘焙 "Uninitialized image" 修复 // UDIM Baking fix
     from . import compat
     if use_udim and compat.is_blender_3():
-        try:
-            import os
-            import tempfile
-            # Force a temporary path with <UDIM> token for older versions
-            if not image.filepath:
-                tmp_dir = tempfile.gettempdir()
-                image.filepath_raw = os.path.join(tmp_dir, f"{image.name}.<UDIM>.png")
+        _touch_udim_buffer_v3(image)
+
+    return image
+
+def _get_or_create_image_base(name, x, y, alpha, full, use_udim, tile_resolutions):
+    """基础图像创建逻辑"""
+    image = bpy.data.images.get(name)
+    
+    if image:
+        if (image.source == 'TILED') != use_udim:
+            bpy.data.images.remove(image)
+            image = None
+    
+    if not image:
+        init_x, init_y = x, y
+        if use_udim and tile_resolutions and 1001 in tile_resolutions:
+            init_x, init_y = tile_resolutions[1001]
             
-            # Pack is the most reliable way to 'touch' internal data in 3.3
-            try:
-                if not image.is_packed:
-                    image.pack()
-            except: pass
-            
+        image = bpy.data.images.new(name, width=init_x, height=init_y, alpha=alpha, float_buffer=full, tiled=use_udim)
+        if use_udim and hasattr(image, "tiles") and len(image.tiles) == 0:
+            image.tiles.new(1001)
             image.update()
-        except Exception as e:
-            logger.debug(f"3.3 UDIM buffer touch failed: {e}")
+    else:
+        target_w, target_h = x, y
+        if use_udim and tile_resolutions and 1001 in tile_resolutions:
+            target_w, target_h = tile_resolutions[1001]
+            
+        try:
+            if image.size[0] != target_w or image.size[1] != target_h: 
+                image.scale(target_w, target_h)
+                if image.source == 'GENERATED':
+                    image.generated_width = target_w; image.generated_height = target_h
+        except Exception: pass
+    return image
+
+def _physical_clear_pixels(image, basiccolor):
+    """物理清除像素数据"""
+    image.generated_color = basiccolor
+    if image.source != 'TILED':
+        import numpy as np
+        try:
+            num_pixels = image.size[0] * image.size[1]
+            arr = np.tile(np.array(basiccolor, dtype=np.float32), num_pixels)
+            image.pixels.foreach_set(arr)
+        except (AttributeError, ValueError): pass
+
+def _handle_udim_tiles(image, x, y, udim_tiles, tile_resolutions, full, alpha, basiccolor):
+    """管理 UDIM 瓦片的新增与移除"""
+    target_tiles = set(udim_tiles) if udim_tiles else {1001}
+    existing_tiles = {t.number for t in image.tiles}
+    
+    # 1. 缩放基础瓦片 (1001) // Scale 1001
+    if 1001 in existing_tiles and 1001 in target_tiles:
+        t_w, t_h = x, y
+        if tile_resolutions and 1001 in tile_resolutions: t_w, t_h = tile_resolutions[1001]
+        try:
+            if image.size[0] != t_w or image.size[1] != t_h: image.scale(t_w, t_h)
+        except Exception: pass
+
+    # 2. 添加缺失瓦片 // Add missing
+    missing_tiles = target_tiles - existing_tiles
+    if missing_tiles:
+        with robust_image_editor_context(bpy.context, image) as valid:
+            for t_idx in missing_tiles:
+                t_w, t_h = x, y
+                if tile_resolutions and t_idx in tile_resolutions: t_w, t_h = tile_resolutions[t_idx]
+                
+                op_success = False
+                if valid:
+                    try: 
+                        bpy.ops.image.tile_add(
+                            number=t_idx, count=1, label=str(t_idx), fill=True, 
+                            width=t_w, height=t_h, float=full, alpha=alpha,
+                            generated_type='BLANK', color=basiccolor
+                        )
+                        op_success = True
+                    except Exception: pass
+                
+                if not op_success:
+                    try: 
+                        image.tiles.new(tile_number=t_idx)
+                        image.generated_color = basiccolor
+                        image.update()
+                    except Exception as e:
+                        logger.error(f"无法添加瓦片 {t_idx} (Failed to add UDIM tile): {e}")
+
+    # 3. 移除多余瓦片 // Remove extra
+    extra_tiles = existing_tiles - target_tiles
+    for t_idx in extra_tiles:
+        tile_to_remove = next((t for t in image.tiles if t.number == t_idx), None)
+        if tile_to_remove:
+            try: image.tiles.remove(tile_to_remove)
+            except Exception: pass
+
+def _touch_udim_buffer_v3(image):
+    """Blender 3.x UDIM 缓冲区初始化修复"""
+    try:
+        import os, tempfile
+        if not image.filepath:
+            tmp_dir = tempfile.gettempdir()
+            image.filepath_raw = os.path.join(tmp_dir, f"{image.name}.<UDIM>.png")
+        if not image.is_packed:
+            try: image.pack()
+            except: pass
+        image.update()
+    except Exception as e:
+        logger.debug(f"3.3 UDIM buffer touch failed: {e}")
 
     return image
 

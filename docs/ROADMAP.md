@@ -67,57 +67,40 @@ This document outlines the long-term strategic vision for Simple Bake Tool (SBT)
 
 ### 3.3 Anti-Aliasing & Denoise Pipeline [DONE]
 - **Status**: Completed in v0.9.3.
-- **Feature**: Integrated OIDN (Open Image Denoise) via temporary compositor pipeline.
-
----
-
-## 🚀 Phase 4: Performance & Ecosystem (Focus: Scalability)
-*Goal: Handle massive datasets and multi-app workflows.*
+- **Feature**: Integrated OIDN (Open Image Denoise) via temporary compositor pipelin## 🚀 Phase 4: Performance & Ecosystem (Focus: Scalability) [STABLE v1.5.0]
+*Goal: Handle massive datasets and multi-app workflows with production-grade stability.*
 
 ### 4.1 Background Process Baking
 - **Concept**: Spawn a *separate* Blender background process to perform the bake while continuing work.
-- **Tech**: Subprocess management with IPC (Inter-Process Communication) for status reporting. 
-- **Implementation**: Uses a headless script and temp file serialization to pass bake job definitions.
-- **Status**: Planning (Target v1.1.0).
+- **Status**: Planning (Target v1.6.0).
 
 ### 4.2 UDIM Massive Batching (Refined) [DONE]
-- **Status**: Completed (v0.9.5).
-- **Optimization**: Specific optimizations for 100+ UDIM tiles, managing RAM and context robustness. Verified via E2E test suite.
+- **Status**: Completed (v1.5.0).
 
 ### 4.3 Production E2E Validation Loop [DONE]
-- **Status**: Completed (v0.9.5).
-- **Feature**: Full engine-level execution in automated tests for all architectures (Single, High-to-Low, UDIM).
-- **Benefit**: Zero-regression guarantee for core bake pipelines across 5 Blender versions.
+- **Status**: Completed (v1.5.0).
+- **Update**: Robust 100% pass rate across Blender 3.3, 3.6, 4.2, 4.5, 5.0 matrices.
 
-### 4.4 跨版本关键死角与核心避坑 (Version-Specific Pitfalls)
-针对 v0.9.5 修复的深层兼容性问题的总结：
-- **Blender 5.0 (Node Access)**: 自 5.0 起，场景节点树属性由 `node_tree` 迁移至 `compositing_node_group`（或在某些 context 下不可用）。代码中必须使用 `hasattr` 探测，并优先通过 `node_tree_add()` 确保对象存在。
-- **Blender 4.2+ (Bake Settings)**: 烘焙设置从 `scene.render` 迁移到了 `scene.render.bake`。必须通过 `compat.get_bake_settings()` 中转访问。
-- **Blender 3.3/3.6 (Bake Type Naming)**: 存在 `'NORMAL'` vs `'NORMALS'` 以及 `'EMIT'` vs `'EMISSION'` 的冲突。
-    - **避坑规范**: 必须使用 `compat.set_bake_type(scene, pass_id)` 设置烘焙类型。底层实现了“引擎强制锁定策略”：在设置前强制切换引擎为 Cycles 以确保 Cycles-specific 属性可见，并执行版本自适应映射。
-- **Blender 3.3/3.6 (UDIM Headless Init)**: 在旧版 Headless 环境下，仅仅创建 Tile 不足以触发内部缓冲区分配，会导致烘焙算子报 `Uninitialized image`。
-    - **避坑指南**: 必须执行“双重触发”：首先设置 `image.filepath_raw` 并调用 `image.save()`，同时在脚本层进行一次微小的像素触碰（如 `image.pixels[0] = 1.0`）。
+### 4.4 跨版本关键死角与核心避坑 (Version-Specific Pitfalls) [STABLE]
+针对 v1.5.0 修复的深层兼容性问题的总结：
+- **Blender 5.0 (Node Access)**: 自 5.0 起，场景节点树属性由 `node_tree` 迁移至 `compositing_node_group`（或在某些 context 下不可用）。代码中必须使用 `hasattr` 探测。
+- **Blender 4.2+ (Bake Settings)**: 烘焙设置从 `scene.render` 迁移到了 `scene.render.bake`。已通过 `compat.get_bake_settings()` 统一中转。
+- **Blender 3.3/3.6 (Bake Type Naming)**: 存在 `'NORMAL'` vs `'NORMALS'` 冲突。已通过 `compat.set_bake_type` 自动映射。
 
-### 4.5 动态对齐与参数一致性协议 (Triple-Point Alignment Protocol)
-为了彻底防范因拼写错误或逻辑遗漏导致的 `AttributeError`（特别在跨版本环境下的元数据丢失），新增任何烘焙指标（如 `vram_usage`）必须遵循以下 **“三点对齐”** 流程：
-1. **RNA 注册** (`property.py`): 在 `BakedImageResult` 定义属性。
-2. **数据生产** (`core/engine.py`): 在 `BakeStepRunner` 的 `meta` 字典中填入数值。
-3. **数据映射** (`core/execution.py`): 在 `add_bake_result_to_ui` 中将 `meta` 映射至已注册的 RNA 属性。
-4. **回归防御**: 在 `test_cases/suite_production_workflow.py` 增加断言验证字段完整性。
+### 4.5 动态对齐与参数一致性协议 (Triple-Point Alignment Protocol) [NEW]
+为了防范因拼写错误或逻辑遗漏导致的 `NameError`，新增任何烘焙参数必须遵循以下 **“三点对齐”** 流程：
+1. **常量注册** (`constants.py`): 定义所有底层映射、元数据和默认值。
+2. **导入校验** (`core/engine.py`): 在引擎入口显式导入并验证常量存在性，严禁使用硬编码字符串替代。
+3. **回归防御**: 在 `test_cases/suite_unit.py` 增加断言验证，并在 `multi_version_test.py` 中跨版本跑通。
 
-### 4.6 自动化测试架构与矩阵
-- **统一入口**: 使用 `automation/multi_version_test.py` 负责跨版本全量矩阵验证。
-- **环境隔离**: 所有的 E2E 测试必须配套 `DataLeakChecker` 确保内存安全。
-- **Benefit**: Unified engine code regardless of LTS target.
+### 4.6 UX 交互硬化 (UX Hardening) [NEW]
+- **ESC 取消确认**: 模态烘焙过程中按下 `ESC` 会进入二次确认状态，防止长时间误触导致进度全失。
+- **Operator 边界拦截**: 所有涉及列表索引的操作（`job_index`, `results_index`）均增加了严格的 `IndexError` 防护。
 
 ---
 
-## 🌐 Phase 5: Ecosystem & Interoperability (Focus: Broader Adoption)
-*Goal: Seamless integration with external tools and pipelines.*
-
-### 5.1 USD/GLTF Export Pipeline [DONE]
-- **Status**: Completed (v0.9.5).
-- **Feature**: Direct export of baked assets with PBR materials to USD or GLTF formats.
+## 🎨 Phase 7: UI & User Experience 2.0 (Planned v1.1.0)
+ with PBR materials to USD or GLTF formats.
 - **Benefit**: Streamlined asset transfer to game engines, other DCCs, or web viewers. Zero-friction delivery.
 
 ### 5.2 External Bake Engine Integration

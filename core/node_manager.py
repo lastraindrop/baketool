@@ -170,8 +170,8 @@ class NodeGraphHandler:
                     if m.library:
                         logger.debug(f"Skipping protection for library material: {m.name}")
                         continue
-                    # We add a node to the material's tree. 
-                    # The NodeGraphHandler will track this in temp_logic_nodes[m]
+                    # 将节点添加到材质的树中 // Add node to material's tree
+                    # NodeGraphHandler 将在 temp_logic_nodes[m] 中跟踪该节点
                     self._add_node(m, 'ShaderNodeTexImage', image=d, name=SYSTEM_NAMES['PROTECTION_NODE'], label=SYSTEM_NAMES['PROTECTION_LABEL'])
 
     def setup_for_pass(self, bake_pass, socket_name, image, mesh_type=None, attr_name=None, channel_settings=None):
@@ -217,8 +217,9 @@ class NodeGraphHandler:
         grp.node_tree = ng_data
         return grp.outputs.get(es.output_name) if es.output_name else (grp.outputs[0] if grp.outputs else None)
 
-    def _add_node(self, mat, type, **kwargs):
-        n = mat.node_tree.nodes.new(type)
+    def _add_node(self, mat, node_type, **kwargs):
+        """通用节点添加辅助函数，自动管理生命周期"""
+        n = mat.node_tree.nodes.new(node_type)
         n["is_bt_temp"] = True
         for k, v in kwargs.items():
             if hasattr(n, k): setattr(n, k, v)

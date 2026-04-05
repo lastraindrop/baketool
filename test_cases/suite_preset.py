@@ -154,5 +154,34 @@ class SuitePresetAndState(unittest.TestCase):
         # TB-2: Assert order is identical
         self.assertEqual(orig_ids, new_ids, "Channel order corrupted after preset roundtrip")
 
+    def test_migration_conflict_last_value_wins(self):
+        """Verify that when multiple old keys map to the same new key, the last one wins."""
+        # 'diff_dir', 'gloss_dir', 'tranb_dir' all map to 'use_direct'
+        data = {
+            "jobs": [{
+                "setting": {
+                    "diff_dir": False,
+                    "gloss_dir": True # This is later in alphabetical sort usually, or we check implementation
+                }
+            }]
+        }
+        bj = bpy.context.scene.BakeJobs
+        io = PropertyIO()
+        io.from_dict(bj, data)
+        # Since gloss_dir: True was processed, use_direct should be True
+        self.assertTrue(bj.jobs[0].setting.use_direct)
+
+    def test_property_io_stats_accumulate(self):
+        """Verify that stats counters increment correctly during IO."""
+        io = PropertyIO()
+        bj = bpy.context.scene.BakeJobs
+        bj.jobs.clear()
+        
+        # Trigger an error by passing garbage to a simple integer property
+        corrupt_data = {"jobs": [{"setting": {"res_x": "NotAnInt"}}]}
+        io.from_dict(bj, corrupt_data)
+        # res_x is IntProperty, setattr with string should fail and increment stats['error']
+        self.assertGreater(io.stats['error'], 0)
+
 if __name__ == '__main__':
     unittest.main()

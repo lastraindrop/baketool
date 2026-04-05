@@ -184,92 +184,55 @@ def setup_mesh_attribute(obj, id_type='ELEMENT', start_color=(1,0,0,1), iteratio
     current_mode = obj.mode
     if current_mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
     
-    # --- Fast Path: Material ID (NumPy) ---
+    # --- 快速路径：材质 ID (NumPy) ---
     if id_type == 'MAT':
-        poly_count = len(obj.data.polygons)
-        if poly_count == 0: return None
-        
-        mat_indices = np.zeros(poly_count, dtype=np.int32)
-        obj.data.polygons.foreach_get("material_index", mat_indices)
-        
-        unique_mats = np.unique(mat_indices)
-        palette = generate_optimized_colors(len(unique_mats), start_color, iterations, manual_start, seed)
-        
-        # Safe indexing
-        max_idx = np.max(mat_indices) if len(mat_indices) > 0 else 0
-        full_palette = np.zeros((max_idx + 1, 4), dtype=np.float32)
-        full_palette[unique_mats] = palette
-        
-        loop_totals = np.zeros(poly_count, dtype=np.int32)
-        obj.data.polygons.foreach_get("loop_total", loop_totals)
-        loop_colors = np.repeat(full_palette[mat_indices], loop_totals, axis=0)
-        
-        obj.data.attributes.new(name=attr_name, type='BYTE_COLOR', domain='CORNER')
-        obj.data.attributes[attr_name].data.foreach_set("color", loop_colors.flatten())
-        
-        if current_mode != 'OBJECT': bpy.ops.object.mode_set(mode=current_mode)
-        return attr_name
+        return _setup_material_id_numpy(obj, attr_name, start_color, iterations, manual_start, seed, current_mode)
 
-    # --- Islands (BMesh) ---
+    # --- 孤岛 ID (BMesh) ---
+    return _setup_island_id_bmesh(obj, id_type, attr_name, start_color, iterations, manual_start, seed, current_mode)
+
+def _setup_material_id_numpy(obj, attr_name, start_color, iterations, manual_start, seed, current_mode):
+    """使用 NumPy 快速生成材质 ID 属性"""
+    poly_count = len(obj.data.polygons)
+    if poly_count == 0: return None
+    
+    mat_indices = np.zeros(poly_count, dtype=np.int32)
+    obj.data.polygons.foreach_get("material_index", mat_indices)
+    
+    unique_mats = np.unique(mat_indices)
+    palette = generate_optimized_colors(len(unique_mats), start_color, iterations, manual_start, seed)
+    
+    # 安全索引：建立完整调色板以匹配材质索引
+    max_idx = np.max(mat_indices) if len(mat_indices) > 0 else 0
+    full_palette = np.zeros((max_idx + 1, 4), dtype=np.float32)
+    full_palette[unique_mats] = palette
+    
+    loop_totals = np.zeros(poly_count, dtype=np.int32)
+    obj.data.polygons.foreach_get("loop_total", loop_totals)
+    loop_colors = np.repeat(full_palette[mat_indices], loop_totals, axis=0)
+    
+    # 创建属性并写入数据 // Create attribute and write
+    obj.data.attributes.new(name=attr_name, type='BYTE_COLOR', domain='CORNER')
+    obj.data.attributes[attr_name].data.foreach_set("color", loop_colors.flatten())
+    
+    if current_mode != 'OBJECT': bpy.ops.object.mode_set(mode=current_mode)
+    return attr_name
+
+def _setup_island_id_bmesh(obj, id_type, attr_name, start_color, iterations, manual_start, seed, current_mode):
+    """基于 BMesh 拓扑分析生成孤岛 ID 属性"""
     bm = bmesh.new()
     try:
         bm.from_mesh(obj.data)
         bm.faces.ensure_lookup_table()
+        if len(bm.faces) == 0: return None
         
-        if len(bm.faces) == 0:
-            bm.free()
-            return None
-        
-        islands = [] 
-        # Reset tags
-        for f in bm.faces: f.tag = 0
-        visited_tag = 1
-
-        if id_type == 'ELEMENT':
-            try:
-                # Fast C-based island finding
-                res = bmesh.ops.find_adjacent_mesh_islands(bm, faces=bm.faces[:])
-                islands = res.get('faces', res.get('regions', []))
-            except Exception as e:
-                logger.warning(f"BMesh island op failed: {e}")
-                islands = []
-        
-        # Fallback / Other modes
-        if not islands:
-            uv_lay = bm.loops.layers.uv.active if id_type == 'UVI' else None
-            for f in bm.faces:
-                if f.tag == visited_tag: continue
-                island_faces = []
-                stack = [f]
-                f.tag = visited_tag
-                while stack:
-                    curr = stack.pop()
-                    island_faces.append(curr)
-                    for edge in curr.edges:
-                        if id_type == 'SEAM' and edge.seam: continue
-                        for other_f in edge.link_faces:
-                            if other_f.tag == visited_tag: continue
-                            
-                            if id_type == 'UVI' and uv_lay:
-                                is_continuous = True
-                                for v in edge.verts:
-                                    l1 = next((l for l in curr.loops if l.vert == v), None)
-                                    l2 = next((l for l in other_f.loops if l.vert == v), None)
-                                    if l1 and l2 and (l1[uv_lay].uv - l2[uv_lay].uv).length_squared > 1e-5:
-                                        is_continuous = False; break
-                                if not is_continuous: continue
-                                
-                            other_f.tag = visited_tag
-                            stack.append(other_f)
-                islands.append(island_faces)
-        
+        islands = _find_islands_bmesh(bm, id_type)
         island_count = len(islands)
         palette = generate_optimized_colors(max(1, island_count), start_color, iterations, manual_start, seed)
         
         face_to_color_idx = np.zeros(len(bm.faces), dtype=np.int32)
         for idx, island_faces in enumerate(islands):
-            for f in island_faces:
-                face_to_color_idx[f.index] = idx
+            for f in island_faces: face_to_color_idx[f.index] = idx
         
         loop_totals = np.zeros(len(obj.data.polygons), dtype=np.int32)
         obj.data.polygons.foreach_get("loop_total", loop_totals)
@@ -277,18 +240,57 @@ def setup_mesh_attribute(obj, id_type='ELEMENT', start_color=(1,0,0,1), iteratio
         
         obj.data.attributes.new(name=attr_name, type='BYTE_COLOR', domain='CORNER')
         obj.data.attributes[attr_name].data.foreach_set("color", loop_colors.flatten())
-        
     except Exception as e:
-        logger.exception("ID Map Gen Failed")
+        logger.exception(f"孤岛 ID 映射失败 (ID Map Gen Failed): {e}")
         attr_name = None
     finally:
         bm.free()
     
-    if current_mode != 'OBJECT': 
+    if current_mode != 'OBJECT':
         try: bpy.ops.object.mode_set(mode=current_mode)
         except Exception: pass
-        
     return attr_name
+
+def _find_islands_bmesh(bm, id_type):
+    """识别 BMesh 中的孤岛 (拓扑/UV/缝合线)"""
+    islands = [] 
+    for f in bm.faces: f.tag = 0
+    visited_tag = 1
+
+    if id_type == 'ELEMENT':
+        try:
+            res = bmesh.ops.find_adjacent_mesh_islands(bm, faces=bm.faces[:])
+            islands = res.get('faces', res.get('regions', []))
+        except Exception: pass
+    
+    if not islands:
+        uv_lay = bm.loops.layers.uv.active if id_type == 'UVI' else None
+        for f in bm.faces:
+            if f.tag == visited_tag: continue
+            island_faces = []
+            stack = [f]
+            f.tag = visited_tag
+            while stack:
+                curr = stack.pop()
+                island_faces.append(curr)
+                for edge in curr.edges:
+                    if id_type == 'SEAM' and edge.seam: continue
+                    for other_f in edge.link_faces:
+                        if other_f.tag == visited_tag: continue
+                        
+                        if id_type == 'UVI' and uv_lay:
+                            is_continuous = True
+                            for v in edge.verts:
+                                l1 = next((l for l in curr.loops if l.vert == v), None)
+                                l2 = next((l for l in other_f.loops if l.vert == v), None)
+                                if l1 and l2 and (l1[uv_lay].uv - l2[uv_lay].uv).length_squared > 1e-5:
+                                    is_continuous = False; break
+                            if not is_continuous: continue
+                            
+                        other_f.tag = visited_tag
+                        stack.append(other_f)
+            islands.append(island_faces)
+    return islands
 
 def calculate_cage_proximity(low_poly, high_poly_list, margin=0.1):
     """

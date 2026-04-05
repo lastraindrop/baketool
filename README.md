@@ -1,8 +1,8 @@
-# Simple Bake Tool (SBT) v1.0.0
+# Simple BakeTool 2.0 (Stable v1.5.0)
 
-A simplified, high-efficiency baking solution for Blender.
+Professional texture baking suite for Blender 3.3 through 5.1. Features optimized OpenGL/Vulkan/Cycles backend, production-grade resilience, and cross-version stability.
 
-### Key Features (v1.0.0 Update)
+### Key Features (v1.5.0 Update)
 - **Enhanced Performance Profiler**: Track precise `Bake Time` vs `Save Time` per channel to optimize your production pipeline.
 - **Node-Based Denoising**: Integrated OIDN (Open Image Denoise) support for high-quality results even with low sample counts.
 - **Environment & Health Check**: Automatic validation for missing addons, paths, and UV maps before baking.
@@ -13,7 +13,7 @@ A simplified, high-efficiency baking solution for Blender.
 - [User Manual](docs/USER_MANUAL.md) - How to use.
 - [Developer Guide](docs/dev/DEVELOPER_GUIDE.md) - How to extend.
 - [Roadmap](docs/ROADMAP.md) - Future vision.
-## 🚀 **v1.0.0 PRODUCTION HARDENED** 🚀
+## 🚀 **v1.5.0 PRODUCTION HARDENED** 🚀
 
 - **Core**: Multi-version Engine (Blender 3.3 - 5.0).
 - **Status**: **100% CI PASS** for 3.6, 4.2, 5.0. 

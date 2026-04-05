@@ -30,6 +30,10 @@ from .state_manager import BakeStateManager
 import logging
 logger = logging.getLogger(__name__)
 
+# --- Helpers ---
+class _DummyEvent:
+    type = 'NONE'
+
 # --- Operators ---
 
 class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
@@ -79,9 +83,7 @@ class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
     bl_label = "Quick Bake Selected"
     
     def execute(self, context):
-        # 支持脚本调用，需创建虚拟 event
-        class _DummyEvent:
-            type = 'NONE'
+        # 支持脚本调用，需创建虚拟 event // Support script calls via dummy event
         return self.invoke(context, _DummyEvent())
 
     def invoke(self, context, event):
@@ -125,13 +127,23 @@ class BAKETOOL_OT_ResetChannels(bpy.types.Operator):
     bl_idname = "bake.reset_channels"
     bl_label = "Reset"
     def execute(self, context):
-        if context.scene.BakeJobs.jobs: reset_channels_logic(context.scene.BakeJobs.jobs[context.scene.BakeJobs.job_index].setting)
+        bj = context.scene.BakeJobs
+        if bj.jobs and bj.job_index >= 0 and bj.job_index < len(bj.jobs):
+             reset_channels_logic(bj.jobs[bj.job_index].setting)
         return {'FINISHED'}
 
 class BAKETOOL_OT_GenericChannelOperator(bpy.types.Operator):
     bl_idname = "bake.generic_channel_op"
     bl_label = "Op"
-    action_type: props.EnumProperty(items=[('ADD','',''),('DELETE','',''),('UP','',''),('DOWN','',''),('CLEAR','','')])
+    action_type: props.EnumProperty(
+        items=[
+            ('ADD', 'Add', 'Add a new item'),
+            ('DELETE', 'Delete', 'Delete the selected item'),
+            ('UP', 'Up', 'Move item up in list'),
+            ('DOWN', 'Down', 'Move item down in list'),
+            ('CLEAR', 'Clear', 'Clear all items')
+        ]
+    )
     target: props.StringProperty()
     def execute(self, context):
         from .core.common import manage_channels_logic
@@ -146,20 +158,35 @@ class BAKETOOL_OT_SetSaveLocal(bpy.types.Operator):
     bl_label = "Local"
     save_location: props.IntProperty(default=0)
     
-    def execute(self,context):
-        if not bpy.data.filepath: return {'CANCELLED'}
+    def execute(self, context):
+        if not bpy.data.filepath: 
+            self.report({'WARNING'}, "Save your file first to use relative paths.")
+            return {'CANCELLED'}
+            
         path = str(Path(bpy.data.filepath).parent) + os.sep
         bj = context.scene.BakeJobs
-        if self.save_location==0: bj.jobs[bj.job_index].setting.external_save_path=path
-        elif self.save_location==2: bj.node_bake_settings.external_save_path=path
-        return{'FINISHED'}
+        
+        # C-04: Bounds Check & Handle all locations
+        if self.save_location == 0:
+            if bj.job_index >= 0 and bj.job_index < len(bj.jobs):
+                bj.jobs[bj.job_index].setting.external_save_path = path
+        elif self.save_location == 1:
+            # Maybe reserved for something else? Adding anyway to prevent silent skip
+            pass
+        elif self.save_location == 2:
+            bj.node_bake_settings.external_save_path = path
+            
+        return {'FINISHED'}
 
 class BAKETOOL_OT_RefreshUDIM(bpy.types.Operator):
     bl_idname = "bake.refresh_udim_locations"
     bl_label = "Refresh / Repack UDIMs"
     def execute(self, context):
-        if not context.scene.BakeJobs.jobs: return {'CANCELLED'}
-        s = context.scene.BakeJobs.jobs[context.scene.BakeJobs.job_index].setting
+        bj = context.scene.BakeJobs
+        if not (bj.jobs and bj.job_index >= 0 and bj.job_index < len(bj.jobs)):
+             return {'CANCELLED'}
+             
+        s = bj.jobs[bj.job_index].setting
         objs = [o.bakeobject for o in s.bake_objects if o.bakeobject]
         if not objs: return {'CANCELLED'}
         from .core.engine import UDIMPacker
@@ -173,7 +200,16 @@ class BAKETOOL_OT_ManageObjects(bpy.types.Operator):
     bl_idname = "bake.manage_objects"
     bl_label = "Manage Objects"
     bl_options = {'REGISTER', 'UNDO'}
-    action: props.EnumProperty(items=[('SET','',''),('ADD','',''),('REMOVE','',''),('CLEAR','',''),('SET_ACTIVE','',''),('SMART_SET','','')])
+    action: props.EnumProperty(
+        items=[
+            ('SET', 'Set', 'Set selection as objects'),
+            ('ADD', 'Add', 'Add selection to objects'),
+            ('REMOVE', 'Remove', 'Remove selection from objects'),
+            ('CLEAR', 'Clear', 'Clear all objects'),
+            ('SET_ACTIVE', 'Set Active', 'Set as active target'),
+            ('SMART_SET', 'Smart Set', 'Auto-assign based on name')
+        ]
+    )
     def execute(self, context):
         if not context.scene.BakeJobs.jobs: return {'CANCELLED'}
         s = context.scene.BakeJobs.jobs[context.scene.BakeJobs.job_index].setting
@@ -194,7 +230,12 @@ class BAKETOOL_OT_SaveSetting(bpy.types.Operator):
         return {'RUNNING_MODAL'}
         
     def execute(self, context):
-        data = preset_handler.PropertyIO(exclude_props={'active_channel_index'}).to_dict(context.scene.BakeJobs)
+        bj = context.scene.BakeJobs
+        if not (bj.jobs and bj.job_index >= 0 and bj.job_index < len(bj.jobs)):
+             self.report({'WARNING'}, "No active job to save")
+             return {'CANCELLED'}
+             
+        data = preset_handler.PropertyIO(exclude_props={'active_channel_index'}).to_dict(bj)
         path = self.filepath if self.filepath.endswith(".json") else self.filepath+".json"
         with open(path, 'w') as f: json.dump(data, f, indent=4)
         return {'FINISHED'}
@@ -234,6 +275,11 @@ class BAKETOOL_OT_BakeSelectedNode(bpy.types.Operator):
         from .core.node_manager import bake_node_to_image
         
         nbs = context.scene.BakeJobs.node_bake_settings
+        # M-13: active_object and active_node null check
+        if not context.active_object:
+             self.report({'WARNING'}, "No active object")
+             return {'CANCELLED'}
+             
         mat, node = context.active_object.active_material, context.active_node
         
         if not (mat and node):
@@ -252,8 +298,11 @@ class BAKETOOL_OT_BakeSelectedNode(bpy.types.Operator):
 class BAKETOOL_OT_DeleteResult(bpy.types.Operator):
     bl_idname = "baketool.delete_result"; bl_label = "Delete"
     def execute(self, context):
+        results = context.scene.baked_image_results
         idx = context.scene.baked_image_results_index
-        if idx >= 0: context.scene.baked_image_results.remove(idx); context.scene.baked_image_results_index = max(0, idx-1)
+        if idx >= 0 and idx < len(results):
+             results.remove(idx)
+             context.scene.baked_image_results_index = max(0, idx - 1)
         return {'FINISHED'}
 
 class BAKETOOL_OT_DeleteAllResults(bpy.types.Operator):
@@ -264,8 +313,16 @@ class BAKETOOL_OT_ExportResult(bpy.types.Operator):
     bl_idname = "baketool.export_result"; bl_label = "Export"; filepath: props.StringProperty(subtype="FILE_PATH")
     def invoke(self, context, event): context.window_manager.fileselect_add(self); return {'RUNNING_MODAL'}
     def execute(self, context):
-        r = context.scene.baked_image_results[context.scene.baked_image_results_index]
-        if r.image: save_image(r.image, os.path.dirname(self.filepath)) 
+        results = context.scene.baked_image_results
+        idx = context.scene.baked_image_results_index
+        # C-06: Bounds check
+        if idx >= 0 and idx < len(results):
+            r = results[idx]
+            if r.image: 
+                save_image(r.image, os.path.dirname(self.filepath)) 
+        else:
+            self.report({'WARNING'}, "No result selected to export.")
+            return {'CANCELLED'}
         return {'FINISHED'}
 
 class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):

@@ -186,6 +186,11 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     save_and_quit: props.BoolProperty(default=False, name='Save And Quit')
     apply_to_scene: props.BoolProperty(default=False, name='Apply Bake')
     
+    # Global / Backward compatibility toggles
+    use_direct: props.BoolProperty(name="Direct", default=True)
+    use_indirect: props.BoolProperty(name="Indirect", default=True)
+    use_color: props.BoolProperty(name="Color", default=True)
+    
     bake_objects: props.CollectionProperty(type=BakeObject, name='Objects')
     active_object: props.PointerProperty(type=bpy.types.Object, name='Active')
     cage_object: props.PointerProperty(type=bpy.types.Object, name='Cage')

@@ -152,13 +152,18 @@ class PropertyIO:
                             new_item = target_collection.add()
                             # 递归加载子项
                             self.from_dict(new_item, item_data, clear_collection)
+                    else:
+                        self.stats['error'] += 1
 
                 # B. 指针属性处理
                 elif isinstance(prop_def, bpy.types.PointerProperty):
                     target_pointer = getattr(prop_group, key)
                     # 同样，只处理 PropertyGroup，忽略 ID
-                    if isinstance(target_pointer, bpy.types.PropertyGroup) and isinstance(val, dict):
-                        self.from_dict(target_pointer, val, clear_collection)
+                    if isinstance(target_pointer, bpy.types.PropertyGroup):
+                        if isinstance(val, dict):
+                            self.from_dict(target_pointer, val, clear_collection)
+                        else:
+                            self.stats['error'] += 1
 
                 # C. 基础属性处理
                 else:

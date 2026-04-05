@@ -61,7 +61,7 @@ class BakeToolPreferences(AddonPreferences):
 bl_info = {
     "name": "Simple Bake Tool",
     "author": "lastraindrop",
-    "version": (0, 9, 5),
+    "version": (1, 5, 0),
     "blender": (3, 6, 0),
     "location": "3D VIEW > N panel > Baking",
     "description": "A simplified, high-efficiency baking solution for Blender. Robust architecture with cross-version compatibility.",

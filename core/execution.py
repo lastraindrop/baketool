@@ -3,11 +3,13 @@ Bake Execution Logic
 Contains the modal operator mixin and execution flow management.
 Extracted from ops.py for better separation of concerns.
 """
+import os
 import bpy
 import logging
 from ..state_manager import BakeStateManager
 from .engine import BakeStepRunner
 from .common import log_error
+from . import compat
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +19,6 @@ def add_bake_result_to_ui(context, img, type_name, obj_name, path, meta=None):
     Standardized utility to add a bake result to the scene's UI collection
     and populate metadata (resolution, time, file size).
     """
-    import os
     results = context.scene.baked_image_results
     # Prevent duplicates
     if any(r.image == img for r in results): 
@@ -59,16 +60,16 @@ class BakeModalOperator:
     and crash recovery for any bake operation.
     Subclasses must populate `self.bake_queue` in `invoke`.
     """
-    _timer = None
-    state_mgr = None
-    bake_queue = None
     
     def init_modal(self, context, start_idx=0):
         """Initialize state and start modal timer."""
-        if self.bake_queue is None:
+        # Initialize instance variables defensively
+        self._timer = None
+        self.state_mgr = BakeStateManager()
+        
+        if not hasattr(self, "bake_queue") or self.bake_queue is None:
             self.bake_queue = []
             
-        self.state_mgr = BakeStateManager()
         self.total_steps = len(self.bake_queue)
         self.current_step_idx = start_idx
         self.sequence_tracking = {}
@@ -88,13 +89,24 @@ class BakeModalOperator:
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
+        # C-03: Cancel Confirmation Logic
+        if hasattr(self, "waiting_confirmation") and self.waiting_confirmation:
+            if event.type in {'RET', 'NUMPAD_ENTER', 'Y'}:
+                 self.cancel(context)
+                 return {'CANCELLED'}
+            elif event.type in {'ESC', 'N', 'BACK_SPACE'}:
+                 self.waiting_confirmation = False
+                 context.scene.bake_status = getattr(self, "_last_status", "Resuming...")
+                 return {'RUNNING_MODAL'}
+            return {'RUNNING_MODAL'}
+
         if event.type == 'TIMER':
             if self.current_step_idx >= self.total_steps: 
                 self.finish(context)
                 return {'FINISHED'}
             
             try: 
-                # Check cancellation flag
+                # Check cancellation flag (from UI button)
                 if not context.scene.is_baking: 
                     self.cancel(context)
                     return {'CANCELLED'}
@@ -109,8 +121,10 @@ class BakeModalOperator:
             context.scene.bake_progress = (self.current_step_idx / max(1, self.total_steps)) * 100.0
             
         elif event.type == 'ESC': 
-            self.cancel(context)
-            return {'CANCELLED'}
+            self.waiting_confirmation = True
+            self._last_status = context.scene.bake_status
+            context.scene.bake_status = "!! STOP BAKING? Press Y/Enter to Stop, N/Esc to Resume !!"
+            return {'RUNNING_MODAL'}
             
         return {'RUNNING_MODAL'}
 
@@ -132,12 +146,12 @@ class BakeModalOperator:
             if img:
                 try:
                     # CB-4: gl_free() is removed in Blender 5.0+
-                    if bpy.app.version < (5, 0, 0) and hasattr(img, 'gl_free'):
+                    if not compat.is_blender_5() and hasattr(img, 'gl_free'):
                         img.gl_free()
                     
                     if hasattr(img, 'buffers_free'):
                         img.buffers_free()
-                except Exception as e:
+                except (AttributeError, RuntimeError) as e:
                     logger.debug(f"GC Guard Free Error on {img.name}: {e}")
 
             if f_info and res['path']:
@@ -168,7 +182,8 @@ class BakeModalOperator:
             try:
                 img.source, img.filepath, img.frame_duration = 'SEQUENCE', info['first_path'], info['count']
                 img.reload()
-            except Exception: pass
+            except RuntimeError as e:
+                logger.error(f"Failed to reload sequence: {e}")
         self.sequence_tracking.clear()
         
         if self.bake_queue and hasattr(self.bake_queue[0].job, 'setting'):
@@ -181,6 +196,8 @@ class BakeModalOperator:
 
     def _remove_timer(self, context):
         if self._timer: 
-            try: context.window_manager.event_timer_remove(self._timer)
-            except Exception: pass
+            try: 
+                context.window_manager.event_timer_remove(self._timer)
+            except (AttributeError, RuntimeError): 
+                pass
             self._timer = None

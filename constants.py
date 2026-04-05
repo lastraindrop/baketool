@@ -383,10 +383,10 @@ PRESET_MIGRATION_MAP = {
     # WARNING: 下列映射存在一对多冲突。旧版每个通道有独立开关（diff_dir, gloss_dir），
     # 新版共享 pass_settings.use_direct。加载旧预设时，最后一个值将生效。
     # 这是一个已知的向后兼容限制，不影响新版预设。
-    # Render Pass mappings
-    'diff_dir': 'pass_settings.use_direct', 'diff_ind': 'pass_settings.use_indirect', 'diff_col': 'pass_settings.use_color',
-    'gloss_dir': 'pass_settings.use_direct', 'gloss_ind': 'pass_settings.use_indirect', 'gloss_col': 'pass_settings.use_color',
-    'tranb_dir': 'pass_settings.use_direct', 'tranb_ind': 'pass_settings.use_indirect', 'tranb_col': 'pass_settings.use_color',
+    # Render Pass mappings (Job-level compatibility)
+    'diff_dir': 'use_direct', 'diff_ind': 'use_indirect', 'diff_col': 'use_color',
+    'gloss_dir': 'use_direct', 'gloss_ind': 'use_indirect', 'gloss_col': 'use_color',
+    'tranb_dir': 'use_direct', 'tranb_ind': 'use_indirect', 'tranb_col': 'use_color',
     # Combine mappings
     'com_dir': 'combine_settings.use_direct', 'com_ind': 'combine_settings.use_indirect',
     'com_diff': 'combine_settings.use_diffuse', 'com_gloss': 'combine_settings.use_glossy',
@@ -430,9 +430,9 @@ UI_MESSAGES = {
     'CAGE_MISSING': "Warning: Cage object missing for selective bake.",
     'VALIDATION_SUCCESS': "All bake settings are valid and ready.",
     'VALIDATION_ERROR': "Validation failed: {}",
-    'B5_SYNC_NOTICE': "BakeTool v1.0.0 optimized for Blender 5.0 rendering pipeline.",
+    'B5_SYNC_NOTICE': "BakeTool v1.5.0 optimized for Blender 5.0 rendering pipeline.",
 }
 
 # --- API & Versioning ---
-API_VERSION = "1.0.0"
+API_VERSION = "1.5.0"
 SYSTEM_ID = "BAKETOOL_CORE"
