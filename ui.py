@@ -345,326 +345,258 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
     bl_category = 'Baking'
     
     def draw(self, context):
-        l = self.layout
-        draw_crash_report(l)
-        
+        layout = self.layout
         scene = context.scene
         bj = scene.BakeJobs
         
-        # --- Global Developer / Debug Mode ---
-        row = l.row(align=True)
-        row.alignment = 'RIGHT'
-        row.prop(bj, "debug_mode", text="", icon='CONSOLE')
+        # --- 1. Top Dashboard (Crash Recover & Dev Zone) ---
+        draw_crash_report(layout)
         
+        # Dev Zone - More subtle UI
         if bj.debug_mode:
-            box = l.box()
-            box.label(text="Developer Zone", icon='CONSOLE')
-            box.alert = True
-            box.label(text="⚠ Warning: Developer use only!", icon='ERROR')
-            box.label(text="Operations may reset scene data.", icon='INFO')
-            
+            col = layout.column(align=True)
+            box = col.box()
             row = box.row(align=True)
-            row.operator("bake.run_dev_tests", text="Run Test Suite", icon='CHECKBOX_HLT')
+            row.label(text="DEV MODE", icon='CONSOLE')
+            row.operator("bake.run_dev_tests", text="Run Safety Audit", icon='CHECKBOX_HLT')
             
             if scene.last_test_info:
-                sub = box.box()
-                if not scene.test_pass: sub.alert = True
+                sub = box.row()
+                sub.scale_y = 0.8
+                sub.alert = not scene.test_pass
                 sub.label(text=scene.last_test_info, icon='INFO' if scene.test_pass else 'ERROR')
-            l.separator()
-        
-        if scene.is_baking:
-            col = l.column(align=True)
-            col.label(text=scene.bake_status, icon='RENDER_STILL')
-            col.prop(scene, "bake_progress", text="Progress", slider=True)
-            l.separator()
-            
-        if scene.bake_error_log:
-            box = l.box()
-            box.alert = True
-            box.label(text="Bake Errors:", icon='ERROR')
-            for line in scene.bake_error_log.split('\n')[-5:]:
-                if line: box.label(text=line)
-            op = box.operator("wm.context_set_string", text="Clear Errors", icon='TRASH')
-            op.data_path = "scene.bake_error_log"
-            op.value = ""
+            layout.separator()
 
-        # Roadmap 2.3: Visual Preset Library
-        b = l.box()
-        draw_header(b, "Preset Library", 'ASSET_MANAGER')
-        row = b.row(align=True)
+        # --- 2. Preset & Quick Actions ---
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        row.scale_y = 1.2
         row.template_icon_view(bj, "library_preset", show_labels=True)
-        row.operator("bake.refresh_presets", text="", icon='FILE_REFRESH')
-        row.operator("bake.one_click_pbr", text="One-Click PBR", icon='MATERIAL')
-
-        b = l.box()
-        r = b.row()
         
-        r.template_list("LIST_UL_JobsList", "", bj, "jobs", bj, "job_index", rows=3)
-        draw_template_list_ops(r, "jobs_channel")
-
-        row = b.row(align=True)
-        row.operator("bake.save_setting", text="Save Preset", icon='IMPORT')
-        row.operator("bake.load_setting", text="Load Preset", icon='EXPORT')
+        sub = row.column(align=True)
+        sub.operator("bake.refresh_presets", text="", icon='FILE_REFRESH')
+        sub.operator("bake.one_click_pbr", text="", icon='MATERIAL')
+        sub.prop(bj, "debug_mode", text="", icon='CONSOLE', toggle=True)
         
+        layout.separator(factor=0.5)
+
+        # --- 3. Job Manager Sub-Panel ---
+        main_box = layout.box()
+        row = main_box.row()
+        row.label(text="JOB MANAGER", icon='PREFERENCES')
+        
+        row = main_box.row(align=True)
+        row.template_list("LIST_UL_JobsList", "", bj, "jobs", bj, "job_index", rows=2)
+        
+        side_col = row.column(align=True)
+        draw_template_list_ops(side_col, "jobs_channel")
+        
+        footer = main_box.row(align=True)
+        footer.operator("bake.save_setting", text="Export", icon='EXPORT')
+        footer.operator("bake.load_setting", text="Import", icon='IMPORT')
+
         if not bj.jobs:
-            b.label(text="Add job to start", icon='INFO')
+            layout.label(text="Create a job to define bake parameters", icon='INFO')
             return
             
-        j = bj.jobs[bj.job_index]
-        s = j.setting
+        # --- 4. Detailed Configuration (Active Job) ---
+        job = bj.jobs[bj.job_index]
+        s = job.setting
         
-        draw_env_status(l, s)
+        # Env Status Warnings
+        draw_env_status(layout, s)
         
-        b.prop(j, "name", text="")
+        # Active Job Config
+        col = layout.column(align=True)
+        col.prop(job, "name", text="Config Name", icon='SYNCHRONIZED')
         
-        self.draw_inputs(context, l, bj, s)
-        self.draw_channels(context, l, bj, s)
-        self.draw_saves(context, l, bj, s)
-        self.draw_others(context, l, bj, s)
+        self.draw_inputs(context, col, bj, s)
+        self.draw_channels(context, col, bj, s)
+        self.draw_saves(context, col, bj, s)
+        self.draw_others(context, col, bj, s)
         
-        l.separator()
-        r = l.row()
-        r.scale_y = 2.0
-        r.operator("bake.bake_operator", text="START BAKE", icon='RENDER_STILL')
+        # --- 5. Main Execution ---
+        layout.separator(factor=1.5)
+        
+        if scene.is_baking:
+            status_box = layout.box()
+            col = status_box.column(align=True)
+            col.label(text=scene.bake_status, icon='RENDER_STILL')
+            col.prop(scene, "bake_progress", text="", slider=True)
+        else:
+            row = layout.row()
+            row.scale_y = 2.0
+            row.operator("bake.bake_operator", text="START BAKE PIPELINE", icon='PLAY')
 
     def draw_inputs(self, context, l, bj, s):
-        l.prop(bj, "open_inputs", text="Inputs", icon="DISCLOSURE_TRI_DOWN" if bj.open_inputs else "DISCLOSURE_TRI_RIGHT", emboss=False)
+        row = l.row(align=True)
+        row.prop(bj, "open_inputs", text="1. SETUP & TARGETS", icon="DISCLOSURE_TRI_DOWN" if bj.open_inputs else "DISCLOSURE_TRI_RIGHT", emboss=False)
         if not bj.open_inputs: return
         
-        b = l.box()
-        col = b.column(align=True)
+        col = l.column(align=True)
+        # resolution & bit depth
         r = col.row(align=True)
-        r.prop(s, "res_x")
-        r.prop(s, "res_y")
+        r.prop(s, "res_x", text="X")
+        r.prop(s, "res_y", text="Y")
+        r.prop(s, "use_float32", text="HDR", toggle=True)
         
         r = col.row(align=True)
-        r.prop(s, "use_float32", text="32 Bit")
-        r.prop(s, "use_denoise", text="Denoise")
+        r.prop(s, "bake_type", text="")
+        r.prop(s, "bake_mode", text="")
         
-        col.prop(s, "bake_type")
-        col.prop(s, "bake_mode")
-        
-        draw_header(b, "Targets", 'OUTLINER_OB_MESH')
-        
+        # Targets Area
+        sub = col.box()
+        r = sub.row()
+        r.label(text="Bake Objects", icon='OUTLINER_OB_MESH')
         if len(s.bake_objects) == 0:
-            box = b.box()
-            box.alert = True
-            box.label(text="List is empty!", icon='ERROR')
-            box.label(text="Add objects to bake.", icon='INFO')
+            r.label(text="(Empty)", icon='ERROR')
             
-        r = b.row()
+        r = sub.row(align=True)
         r.template_list("UI_UL_ObjectList", "", s, "bake_objects", s, "active_object_index", rows=3)
         
         c = r.column(align=True)
-        op = c.operator("bake.manage_objects", icon='FILE_REFRESH', text="")
-        op.action = 'SET'
-        op = c.operator("bake.manage_objects", icon='ADD', text="")
-        op.action = 'ADD'
-        op = c.operator("bake.manage_objects", icon='REMOVE', text="")
-        op.action = 'REMOVE'
-        op = c.operator("bake.manage_objects", icon='TRASH', text="")
-        op.action = 'CLEAR'
+        c.operator("bake.manage_objects", icon='ADD', text="").action = 'ADD'
+        c.operator("bake.manage_objects", icon='REMOVE', text="").action = 'REMOVE'
+        c.operator("bake.manage_objects", icon='TRASH', text="").action = 'CLEAR'
         
-        # --- UV & Layout Settings ---
-        sb = b.box()
-        draw_header(sb, "UV Settings", 'GROUP_UVS')
-        
-        # Smart UV Toggle
-        sb.prop(s, "use_auto_uv", toggle=True)
-        if s.use_auto_uv:
-            col = sb.column(align=True)
-            row = col.row(align=True)
-            row.prop(s, "auto_uv_angle")
-            row.prop(s, "auto_uv_margin")
-        
-        # UDIM Settings
-        if s.bake_mode == 'UDIM':
-            sb.separator()
-            draw_header(sb, "UDIM Tiling", 'FILE_IMAGE')
-            
-            col = sb.column(align=True)
-            col.prop(s, "udim_mode", text="Method")
-            
-            if s.udim_mode == 'DETECT':
-                col.label(text="Auto-detects tiles from object UVs", icon='INFO')
-            elif s.udim_mode == 'CUSTOM':
-                col.label(text="Assign tiles in the object list above", icon='INFO')
-            elif s.udim_mode == 'REPACK':
-                col.label(text="Re-packs 1001 objects to new tiles", icon='INFO')
-
-            col.operator("bake.refresh_udim_locations", icon='FILE_REFRESH', text="Refresh / Repack UDIMs")
-
-        # Common UV Output Settings (Name)
-        # Show if we are creating new UVs (Smart UV) OR modifying them (UDIM)
+        # Smart UV & UDIM Logic
         if s.use_auto_uv or s.bake_mode == 'UDIM':
-            sb.separator()
-            sb.prop(s, "auto_uv_name", text="Target UV Name")
-
-        if any(c.id.startswith('ID_') for c in s.channels if c.enabled):
-            sb = b.box(); draw_header(sb, "ID Map Optimization", 'COLOR')
+            grid = col.grid_flow(columns=2, align=True)
+            grid.prop(s, "use_auto_uv", text="Auto UV", toggle=True)
+            if s.bake_mode == 'UDIM':
+                grid.prop(s, "udim_mode", text="")
             
-            sb.prop(s, "id_manual_start_color")
-            if s.id_manual_start_color:
-                sb.prop(s, "id_start_color", text="")
-                
-            sb.prop(s, "id_seed")
+            if s.use_auto_uv:
+                r = col.row(align=True)
+                r.prop(s, "auto_uv_angle", text="Angle")
+                r.prop(s, "auto_uv_margin", text="Margin")
+            
+            if s.bake_mode == 'UDIM':
+                col.operator("bake.refresh_udim_locations", icon='FILE_REFRESH', text="Sync UDIM Tiles")
 
         if s.bake_mode == 'SELECT_ACTIVE':
-            sb = b.box()
-            sb.label(text="Target (Active)", icon='TARGET')
-            
-            row = sb.row()
-            row.scale_y = 1.2
-            op = row.operator("bake.manage_objects", text="Smart Set (Sel -> Act)", icon='PIVOT_ACTIVE')
-            op.action = 'SMART_SET'
-            
-            row = sb.row(align=True)
-            row.prop(s, "active_object", text="")
-            op = row.operator("bake.manage_objects", icon='EYEDROPPER', text="")
-            op.action = 'SET_ACTIVE'
+            sub = col.box()
+            r = sub.row(align=True)
+            r.prop(s, "active_object", text="Target")
+            r.operator("bake.manage_objects", icon='EYEDROPPER', text="").action = 'SET_ACTIVE'
+            sub.operator("bake.manage_objects", text="Smart Match (High -> Low)", icon='PIVOT_ACTIVE').action = 'SMART_SET'
 
     def draw_channels(self, context, l, bj, s):
-        l.prop(bj, "open_channels", text="Channels", icon="DISCLOSURE_TRI_DOWN" if bj.open_channels else "DISCLOSURE_TRI_RIGHT", emboss=False)
+        row = l.row(align=True)
+        row.prop(bj, "open_channels", text="2. BAKE CHANNELS", icon="DISCLOSURE_TRI_DOWN" if bj.open_channels else "DISCLOSURE_TRI_RIGHT", emboss=False)
         if not bj.open_channels: return
         
-        b = l.box()
-        r = b.row()
-        r.template_list("BAKETOOL_UL_ChannelList", "", s, "channels", s, "active_channel_index", rows=5)
-        r.column().operator("bake.reset_channels", icon='FILE_REFRESH', text="")
+        col = l.column(align=True)
+        r = col.row(align=True)
+        r.template_list("BAKETOOL_UL_ChannelList", "", s, "channels", s, "active_channel_index", rows=4)
+        r.column(align=True).operator("bake.reset_channels", icon='FILE_REFRESH', text="")
         
         if s.channels and 0 <= s.active_channel_index < len(s.channels):
-            draw_active_channel_properties(b, s.channels[s.active_channel_index], s)
+            draw_active_channel_properties(col, s.channels[s.active_channel_index], s)
             
-        row = b.row(align=True)
-        row.prop(s, "use_light_map", text="Light Maps", icon='LIGHT_SUN', toggle=True)
-        row.prop(s, "use_mesh_map", text="Mesh Maps", icon='MESH_DATA', toggle=True)
-        row.prop(s, "use_extension_map", text="Extension (PBR Conv)", icon='NODE_COMPOSITING', toggle=True)
+        r = col.row(align=True)
+        r.scale_y = 0.8
+        r.prop(s, "use_light_map", text="Light", toggle=True)
+        r.prop(s, "use_mesh_map", text="Mesh", toggle=True)
+        r.prop(s, "use_extension_map", text="PBR", toggle=True)
 
     def draw_saves(self, context, l, bj, s):
-        l.prop(bj, "open_saves", text="Save & Export", icon="DISCLOSURE_TRI_DOWN" if bj.open_saves else "DISCLOSURE_TRI_RIGHT", emboss=False)
+        row = l.row(align=True)
+        row.prop(bj, "open_saves", text="3. OUTPUT & EXPORT", icon="DISCLOSURE_TRI_DOWN" if bj.open_saves else "DISCLOSURE_TRI_RIGHT", emboss=False)
         if not bj.open_saves: return
         
-        b = l.box()
-        # --- 1. Naming & Global Toggle ---
-        draw_header(b, "Workflows", 'PREFERENCES')
-        row = b.row(align=True)
-        row.prop(s, "apply_to_scene", text="Apply to Scene", icon='MATERIAL')
+        col = l.column(align=True)
+        r = col.row(align=True)
+        r.prop(s, "apply_to_scene", text="Auto-Apply", icon='MATERIAL', toggle=True)
+        r.prop(s, "use_external_save", text="To Disk", icon='DISK_DRIVE', toggle=True)
         
-        # Constraint: Export Mesh requires External Save
-        sub = row.row(align=True)
-        sub.active = s.use_external_save
-        sub.prop(s, "export_model", text="Export Mesh", icon='EXPORT')
-        
-        if s.export_model:
-            row = b.row(align=True)
-            row.separator()
-            sub = row.row(align=True)
-            sub.prop(s, "export_format", expand=True)
+        if s.use_external_save:
+            sub = col.box()
+            draw_file_path(sub, s, "external_save_path", 0)
             
-            row = b.row(align=True)
-            row.separator()
-            row.prop(s, "export_textures_with_model")
+            r = sub.row(align=True)
+            r.prop(s, "name_setting", text="Naming")
+            if s.name_setting == 'CUSTOM':
+                r.prop(s, "custom_name", text="")
             
-        b.separator()
-        
-        # --- 2. Files & Formats ---
-        draw_header(b, "Output Files", 'DISK_DRIVE')
-        b.prop(s, "use_external_save", text="External Save", toggle=True)
-        
-        if s.use_external_save or s.export_model:
-            sb = b.box()
-            if s.export_model and not s.use_external_save:
-                sb.alert = True
-                sb.label(text="Warning: External Save recommended for export", icon='ERROR')
+            draw_image_format_options(sub, s)
             
-            draw_file_path(sb, s, "external_save_path", 0)
-            
-            row = sb.row(align=True)
-            row.label(text="Naming:")
-            row.prop(s, "name_setting", text="")
-            if s.name_setting=='CUSTOM':
-                row.prop(s, "custom_name", text="")
-                
-            draw_image_format_options(sb, s)
-
-            # --- Smart Intelligence (Roadmap 1.1) ---
-            sb.separator()
-            draw_header(sb, "Smart Intelligence", 'LIGHTPROBE_CUBEMAP')
-            box = sb.box()
-            box.prop(s, "auto_cage_mode")
-            if s.auto_cage_mode == 'PROXIMITY':
-                box.prop(s, "auto_cage_margin")
-            else:
-                box.prop(s, "extrusion")
-            
-            row = box.row(align=True)
-            row.prop(s, "texel_density")
-            
-            row = box.row(align=True)
-            row.prop(s, "auto_switch_vertex_paint")
-            box.operator("bake.analyze_cage", text="Analyze Cage Overlap", icon='RAYCAST')
-            
-            # --- Channel Packing (ORM) ---
-            sb.separator()
-            sb.prop(s, "use_packing", text="Auto Pack Channels (ORM)", icon='NODE_COMPOSITING')
+            # ORM & Pack
+            sub.separator()
+            sub.prop(s, "use_packing", text="ORM Packing (R+G+B+A)", icon='NODE_COMPOSITING')
             if s.use_packing:
-                grid = sb.grid_flow(columns=2, align=True)
+                grid = sub.grid_flow(columns=4, align=True)
                 grid.prop(s, "pack_r", text="R")
                 grid.prop(s, "pack_g", text="G")
                 grid.prop(s, "pack_b", text="B")
                 grid.prop(s, "pack_a", text="A")
-                sb.prop(s, "pack_suffix")
                 
-                # Roadmap 1.1: Preview Toggle
-                row = sb.row()
-                row.operator("bake.toggle_preview", 
-                             text="Stop Preview" if s.use_preview else "Preview Packing", 
-                             icon='RESTRICT_VIEW_OFF' if s.use_preview else 'RESTRICT_VIEW_ON',
-                             depress=s.use_preview)
+        if s.use_external_save:
+            r = col.row(align=True)
+            r.prop(s, "export_model", text="Export Mesh", icon='EXPORT', toggle=True)
+            if s.export_model:
+                r.prop(s, "export_format", text="")
 
-            # --- 3. Animation Sequence ---
-            sb.separator()
-            sb.prop(s, "bake_motion", text="Bake Image Sequence", icon='RENDER_ANIMATION')
+        # Smart Intelligence
+        sub = col.box()
+        r = sub.row()
+        r.label(text="Smart Intelligence", icon='LIGHTPROBE_CUBEMAP')
+        
+        row = sub.row(align=True)
+        row.prop(s, "auto_cage_mode", text="Cage")
+        if s.auto_cage_mode == 'PROXIMITY':
+            row.prop(s, "auto_cage_margin", text="Margin")
+        else:
+            row.prop(s, "extrusion", text="Ext")
+            
+        row = sub.row(align=True)
+        row.prop(s, "texel_density", text="Texel")
+        row.prop(s, "auto_switch_vertex_paint", text="Auto-VP", toggle=True)
+        
+        sub.operator("bake.analyze_cage", text="Analyze Overlap", icon='RAYCAST')
 
     def draw_others(self, context, l, bj, s):
-        l.prop(bj, "open_other", text="Custom Maps", icon="DISCLOSURE_TRI_DOWN" if bj.open_other else "DISCLOSURE_TRI_RIGHT", emboss=False)
+        row = l.row(align=True)
+        row.prop(bj, "open_other", text="4. CUSTOM MAPS", icon="DISCLOSURE_TRI_DOWN" if bj.open_other else "DISCLOSURE_TRI_RIGHT", emboss=False)
         if not bj.open_other: return
         
-        b = l.box()
+        col = l.column(align=True)
         j = bj.jobs[bj.job_index]
-        b.prop(s, "use_custom_map", text="Enable Custom Map Logic", toggle=True)
+        
+        col.prop(s, "use_custom_map", text="Enable Custom Map Logic", icon='NODE_COMPOSITING', toggle=True)
         
         if s.use_custom_map:
-            r = b.row()
-            r.template_list("LIST_UL_CustomBakeChannelList", "", j, "custom_bake_channels", j, "custom_bake_channels_index", rows=4)
-            draw_template_list_ops(r, "job_custom_channel")
+            sub = col.box()
+            r = sub.row()
+            r.template_list("LIST_UL_CustomBakeChannelList", "", j, "custom_bake_channels", j, "custom_bake_channels_index", rows=3)
+            draw_template_list_ops(r.column(align=True), "job_custom_channel")
             
             if j.custom_bake_channels and 0 <= j.custom_bake_channels_index < len(j.custom_bake_channels):
                 c = j.custom_bake_channels[j.custom_bake_channels_index]
-                db = b.box()
-                col = db.column(align=True)
+                cfg = sub.column(align=True)
+                cfg.prop(c, "name")
                 
-                col.prop(c, "name")
-                col.prop(c, "color_space", text="CS")
-                col.prop(c, "bw", text="BW Mode", toggle=True)
+                r = cfg.row(align=True)
+                r.prop(c, "color_space", text="CS")
+                r.prop(c, "bw", text="B&W", toggle=True)
                 
-                r = col.row(align=True)
+                r = cfg.row(align=True)
                 r.prop(c, "prefix", text="Pre")
                 r.prop(c, "suffix", text="Suf")
                 
+                # Channel mapping logic
+                cfg.separator()
                 channels_to_draw = ['bw'] if c.bw else ['r','g','b','a']
                 for char in channels_to_draw:
-                    settings = getattr(c, f"{char}_settings")
-                    r = db.row(align=True)
-                    r.prop(settings, "use_map", text=char.upper(), toggle=True)
-                    
-                    if settings.use_map:
-                        r.prop(settings, "source", text="")
-                        r.prop(settings, "invert", text="", icon='ARROW_LEFTRIGHT')
-                        r.prop(settings, "sep_col", text="", icon='COLOR')
-                        
-                        if settings.sep_col:
-                            r.prop(settings, "col_chan", text="")
+                    chan_settings = getattr(c, f"{char}_settings")
+                    r = cfg.row(align=True)
+                    r.prop(chan_settings, "use_map", text=char.upper(), toggle=True)
+                    if chan_settings.use_map:
+                        r.prop(chan_settings, "source", text="")
+                        r.prop(chan_settings, "invert", text="", icon='ARROW_LEFTRIGHT', toggle=True)
+                        r.prop(chan_settings, "sep_col", text="", icon='COLOR', toggle=True)
+                        if chan_settings.sep_col:
+                            r.prop(chan_settings, "col_chan", text="")
 
 class BAKETOOL_PT_BakedResults(bpy.types.Panel):
     bl_label = "Baked Results"
