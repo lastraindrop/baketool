@@ -36,6 +36,42 @@ class _DummyEvent:
 
 # --- Operators ---
 
+class BAKETOOL_OT_RunDevTests(bpy.types.Operator):
+    """Run all internal test suites and report results to UI"""
+    bl_idname = "bake.run_dev_tests"
+    bl_label = "Run Development Tests"
+    
+    def execute(self, context):
+        import unittest
+        import io
+        from .test_cases import suite_unit, suite_shading, suite_negative
+        
+        # 1. 组装测试集 / Assemble Suites
+        loader = unittest.TestLoader()
+        suites = [
+            loader.loadTestsFromTestCase(suite_unit.SuiteUnit),
+            loader.loadTestsFromTestCase(suite_shading.SuiteShading),
+            loader.loadTestsFromTestCase(suite_negative.SuiteNegative)
+        ]
+        consolidated = unittest.TestSuite(suites)
+        
+        # 2. 静默运行并捕获输出 / Run silently and capture output
+        stream = io.StringIO()
+        runner = unittest.TextTestRunner(stream=stream, verbosity=1)
+        result = runner.run(consolidated)
+        
+        # 3. 更新场景反馈属性 / Update scene attributes
+        info = f"Ran {result.testsRun} tests. {len(result.errors)} Errors, {len(result.failures)} Fails."
+        context.scene.last_test_info = info
+        context.scene.test_pass = result.wasSuccessful()
+        
+        if result.wasSuccessful():
+            self.report({'INFO'}, f"All {result.testsRun} tests passed!")
+        else:
+            self.report({'ERROR'}, f"Tests Failed: {info}")
+            
+        return {'FINISHED'}
+
 class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
     bl_label = "Bake"
     bl_idname = "bake.bake_operator"

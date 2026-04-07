@@ -114,6 +114,34 @@ class SuiteUnit(unittest.TestCase):
         except Exception as e:
              self.fail(f"BakeJobSetting instance check failed: {e}")
 
+    def test_ui_operator_integrity(self):
+        """Audit all operators referenced in ui.py to ensure they exist in Blender."""
+        import os
+        import re
+        
+        # 1. Get all operator IDs from ui.py
+        ui_path = os.path.join(os.path.dirname(__file__), "..", "ui.py")
+        if not os.path.exists(ui_path): return # Skip if not local
+        
+        with open(ui_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        operator_ids = re.findall(r'\.operator\("([^"]+)"', content)
+        
+        # 2. Check if they are registered in bpy.ops
+        for op_id in operator_ids:
+            # Operator ID "bake.xxx" -> bpy.ops.bake.xxx
+            parts = op_id.split('.')
+            if len(parts) != 2: continue
+            
+            # Special case: some standard Blender ops
+            if parts[0] in {'wm', 'object', 'screen'}: continue
+            
+            # Check existence in bpy.ops
+            self.assertTrue(hasattr(bpy.ops, parts[0]), f"Operator module '{parts[0]}' not found for '{op_id}'")
+            sub = getattr(bpy.ops, parts[0])
+            self.assertTrue(hasattr(sub, parts[1]), f"Operator '{parts[1]}' missing in 'bpy.ops.{parts[0]}' (from UI: {op_id})")
+
     # --- Auto-Cage 2.0 Proximity Logic ---
     def test_cage_proximity_analysis(self):
         low = create_test_object("Low")
