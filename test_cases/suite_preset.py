@@ -22,7 +22,7 @@ class SuitePresetAndState(unittest.TestCase):
 
     # --- Preset Roundtrip ---
     def test_preset_roundtrip(self):
-        """Serialize â†?Deserialize â†?Verify consistency."""
+        """Serialize ?Deserialize ?Verify consistency."""
         obj = create_test_object("PresetObj")
         builder = JobBuilder("RoundtripJob")
         builder.add_objects(obj).mode('SINGLE_OBJECT').type('BSDF')
@@ -60,7 +60,7 @@ class SuitePresetAndState(unittest.TestCase):
 
     # --- State Manager Lifecycle ---
     def test_state_manager_lifecycle(self):
-        """start â†?update â†?finish â†?verify cleanup."""
+        """start ?update ?finish ?verify cleanup."""
         mgr = BakeStateManager()
         # Ensure clean start
         mgr.finish_session()

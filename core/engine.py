@@ -142,7 +142,7 @@ class BakePostProcessor:
             links = tree.links
             nodes.clear()
 
-            # 2. 构建合成�?// Setup nodes
+            # 2. Setup nodes
             n_img = nodes.new("CompositorNodeImage")
             n_img.image = image
 
@@ -161,7 +161,7 @@ class BakePostProcessor:
             n_viewer = nodes.new("CompositorNodeViewer")
             links.new(n_denoise.outputs[0], n_viewer.inputs[0])
 
-            # 3. 执行单帧“合成�?// Execute "render" to process pixels
+            # 3. Execute "render" to process pixels
             with bpy.context.temp_override(scene=tmp_scene):
                 bpy.ops.render.render()
 
@@ -174,7 +174,7 @@ class BakePostProcessor:
                 )
 
             if viewer_img:
-                # 兼容性修�? 避免删除 IMViewer 节点导致的用户残留错�?(Prevent user residue errors)
+                # 兼容性修复：避免删除 Viewer 节点导致的用户残留错误
                 if (
                     viewer_img.size[0] == image.size[0]
                     and viewer_img.size[1] == image.size[1]
@@ -187,28 +187,28 @@ class BakePostProcessor:
                         image.update()
                     except Exception as e:
                         logger.error(
-                            f"无法回写降噪像素 (Failed to write back denoised pixels): {e}"
+                            f"无法回写降噪像素: {e}"
                         )
 
         finally:
             # Important: Only remove if we created it locally
             if is_temp:
-                # 强力清理所�?BT_Denoise_Temp 前缀的辅助场�?(Aggressive cleanup of all helper scenes)
+                # 强力清理所有 BT_Denoise_Temp 前缀的辅助场景
                 for s in list(bpy.data.scenes):
                     if s.name.startswith("BT_Denoise_Temp"):
                         try:
-                            # 1. 解除节点引用的像素数�?(Release node-held image/scene data)
+                            # 1. 解除节点引用的像素数据
                             if s.use_nodes:
                                 for attr in ["node_tree", "compositing_node_group"]:
                                     tree = getattr(s, attr, None)
                                     if tree and hasattr(tree, "nodes"):
                                         tree.nodes.clear()
 
-                            # 2. B5.0 环境下解除场景用�?(Clear scene users for B5.0)
+                            # 2. B5.0 环境下解除场景用户
                             if hasattr(s, "user_clear"):
                                 s.user_clear()
 
-                            # 3. 彻底删除 (Force removal)
+                            # 3. 彻底删除
                             bpy.data.scenes.remove(s, do_unlink=True)
                         except (ReferenceError, RuntimeError) as e:
                             logger.debug(f"Failed to remove temp scene '{s.name}': {e}")
@@ -1259,13 +1259,19 @@ class ModelExporter:
                 try:
                     if o and o.name in bpy.data.objects:
                         o.select_set(True)
-                except (ReferenceError, AttributeError): pass
+                except (ReferenceError, AttributeError):
+                    pass
             if prev_act and prev_act.name in bpy.data.objects:
-                try: context.view_layer.objects.active = prev_act
-                except (AttributeError, RuntimeError): pass
+                try:
+                    context.view_layer.objects.active = prev_act
+                except (AttributeError, RuntimeError):
+                    pass
             for name, was_hidden in hide_states.items():
                 try:
                     obj_by_name = bpy.data.objects.get(name)
-                    if obj_by_name: obj_by_name.hide_set(was_hidden)
-                except (ReferenceError, AttributeError): pass
-        except (ReferenceError, AttributeError): pass
+                    if obj_by_name:
+                        obj_by_name.hide_set(was_hidden)
+                except (ReferenceError, AttributeError):
+                    pass
+        except Exception as e:
+            logger.error(f"Failed to restore state: {e}")

@@ -131,8 +131,8 @@ class SuiteUnit(unittest.TestCase):
 
         arr = np.empty(8 * 8 * 4, dtype=np.float32)
         target.pixels.foreach_get(arr)
-        # metal = (0.5 - 0.04) / (1.0 - 0.04) = 0.46 / 0.96 â‰?0.479
-        # Precision: 8-bit color rounding (128/255 â‰?0.5019)
+        # metal = (0.5 - 0.04) / (1.0 - 0.04) = 0.46 / 0.96 ?0.479
+        # Precision: 8-bit color rounding (128/255 ?0.5019)
         self.assertAlmostEqual(arr[0], 0.4791666, places=2)
 
     def test_process_pbr_numpy_specular_threshold(self):
