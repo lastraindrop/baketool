@@ -174,7 +174,7 @@ def register():
         description="Currently selected index in the baked image results list",
     )
 
-    # 进度与状态反�?/ Progress and Status
+    # Progress and Status / 进度与状态反馈
     bpy.types.Scene.is_baking = props.BoolProperty(name="Is Baking", default=False)
     bpy.types.Scene.bake_progress = props.FloatProperty(
         name="Progress", default=0.0, min=0.0, max=100.0, subtype="PERCENTAGE"

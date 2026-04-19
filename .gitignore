@@ -134,11 +134,8 @@ cython_debug/
 .vscode/
 
 # other
-doc/
 logs/
 reports/
 test_output/
-*.json
-*.txt
-code_review.txt
+docs/legacy/
 # code_review.md - now tracked in version control

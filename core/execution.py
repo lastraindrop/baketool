@@ -204,7 +204,7 @@ class BakeModalOperator:
              s = self.bake_queue[0].job.setting
              if getattr(s, 'save_and_quit', False): 
                 if not bpy.data.is_dirty:
-                    logger.warning("BakeTool: save_and_quit enabled â€?saving and exiting Blender now.")
+                    logger.warning("BakeTool: save_and_quit enabled - saving and exiting Blender now.")
                     bpy.ops.wm.save_mainfile(exit=True)
                 else:
                     logger.critical("BakeTool: Save and Quit ABORTED. Unsaved changes detected in the scene.")

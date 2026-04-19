@@ -187,7 +187,7 @@ class SuiteCodeReviewFixes(unittest.TestCase):
             "suite_export", "suite_api", "suite_cleanup", "suite_code_review",
             "suite_compat", "suite_context_lifecycle", "suite_denoise",
             "suite_parameter_matrix", "suite_preset", "suite_production_workflow",
-            "suite_udim_advanced", "suite_ui_logic"
+            "suite_udim_advanced", "suite_ui_logic", "suite_verification"
         ]
         for name in suites:
             mod = importlib.import_module(f"baketool.test_cases.{name}")

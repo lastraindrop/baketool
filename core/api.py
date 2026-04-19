@@ -48,18 +48,21 @@ def bake(objects, use_selection=True):
     
     # Generate the execution queue
     queue = JobPreparer.prepare_quick_bake_queue(bpy.context, job, objects, active_obj)
-    
+
     if not queue:
         logger.warning("API Warning: No bake steps generated for the given objects.")
         return False
-        
+
     # Run the bake steps synchronously
-    # Note: In UI this will block Blender, but for API usage (especially CLI/background) 
+    # Note: In UI this will block Blender, but for API usage (especially CLI/background)
     # this is often the expected behavior for programmatic control.
     runner = BakeStepRunner(bpy.context)
     for step in queue:
-        runner.run(step)
-        
+        success = runner.run(step)
+        if not success:
+            logger.error(f"API Error: Bake step failed for {step.channel_id}")
+            return False
+
     return True
 
 def get_udim_tiles(objects):

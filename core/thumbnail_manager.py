@@ -3,57 +3,54 @@ import bpy.utils.previews
 import os
 from pathlib import Path
 
-# 全局预览集合字典 // Global preview collections
 preview_collections = {}
 
+
 def get_preview_collection(name="main"):
-    """获取或创建一个预览集�?""
+    """Get or create a preview collection."""
     global preview_collections
     if name not in preview_collections:
         pcoll = bpy.utils.previews.new()
         preview_collections[name] = pcoll
     return preview_collections[name]
 
+
 def clear_preview_collection(name="main"):
-    """清理特定的预览集�?""
+    """Clear a specific preview collection."""
     global preview_collections
     if name in preview_collections:
         bpy.utils.previews.remove(preview_collections[name])
         del preview_collections[name]
 
+
 def load_preset_thumbnails(directory):
-    """
-    扫描目录下的 .png 文件并将其作为预览图标加载�?
-    文件名应�?.json 预设文件名匹配�?
-    """
-    pcoll = get_preview_collection("presets")
-    dir_path = Path(directory)
-    if not dir_path.exists():
+    """Load preset thumbnails from a directory."""
+    import logging
+
+    logger = logging.getLogger(__name__)
+    directory = Path(directory)
+
+    if not directory.exists() or not directory.is_dir():
+        logger.warning(f"Preset directory does not exist: {directory}")
         return
 
-    # 支持的文件扩展名
-    valid_exts = {'.png', '.jpg', '.jpeg'}
-    
-    for f in dir_path.iterdir():
-        if f.suffix.lower() in valid_exts:
-            # 使用文件名作为标识符
-            name = f.stem
-            if name not in pcoll:
-                try:
-                    pcoll.load(name, str(f.resolve()), 'IMAGE')
-                except Exception as e:
-                    import logging
-                    logging.getLogger(__name__).warning(f"Failed to load preview '{name}': {e}")
+    pcoll = get_preview_collection("presets")
 
-def get_icon_id(name, collection="presets"):
-    """获取加载图标的整�?ID"""
-    pcoll = get_preview_collection(collection)
-    if name in pcoll:
-        return pcoll[name].icon_id
-    return 0
+    for f in directory.glob("*.png"):
+        try:
+            pcoll.load(f.stem, str(f.resolve()), "IMAGE")
+        except Exception as e:
+            logger.warning(f"Failed to load preset icon {f.name}: {e}")
+
+
+def get_icon_id(name):
+    """Get preview icon ID for a preset name."""
+    pcoll = get_preview_collection("presets")
+    return pcoll.get(name).icon_id if pcoll.get(name) else 0
+
 
 def clear_all_previews():
-    """清理所有已注册的预览集�?""
+    """Clear all preview collections."""
     global preview_collections
     for pcoll in preview_collections.values():
         bpy.utils.previews.remove(pcoll)

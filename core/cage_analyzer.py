@@ -1,9 +1,8 @@
 import bpy
 import bmesh
 from mathutils.bvhtree import BVHTree
-from mathutils import Vector
 import logging
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +43,9 @@ class CageAnalyzer:
         depsgraph = context.evaluated_depsgraph_get()
 
         # 1. Build BVH Trees for High objects
+        # Note: BVHTree.FromBMesh creates an independent tree structure,
+        # it does not hold references to the source BMesh, so freeing
+        # BMesh after BVHTree creation is safe.
         bvh_trees = []
         for obj in high_objects:
             if obj.type == "MESH" and not obj.hide_render:

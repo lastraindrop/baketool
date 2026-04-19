@@ -3,7 +3,7 @@ import logging
 import traceback
 from collections import namedtuple
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 from ..constants import (
     BAKE_CHANNEL_INFO,
     BSDF_COMPATIBILITY_MAP,
@@ -130,9 +130,6 @@ def reset_channels_logic(setting: Any) -> None:
 
     target_ids = {d["id"]: d for d in defs}
 
-    # Non-destructive sync
-    existing_map = {c.id: c for c in setting.channels}
-
     # 1. Update existing and remove invalid (destructive sync for lean property data)
     for i in range(len(setting.channels) - 1, -1, -1):
         c = setting.channels[i]
@@ -142,7 +139,10 @@ def reset_channels_logic(setting: Any) -> None:
         else:
             setting.channels.remove(i)
 
-    # 2. Add missing
+    # 2. Build map AFTER destructive sync to correctly detect missing channels
+    existing_map = {c.id: c for c in setting.channels}
+
+    # 3. Add missing
     for d in defs:
         d_id = d["id"]
         if d_id not in existing_map:

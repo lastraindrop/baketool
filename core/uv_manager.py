@@ -230,6 +230,9 @@ class UVLayoutManager:
         prev_act = bpy.context.view_layer.objects.active
 
         try:
+            if not self.objects:
+                logger.warning("UVLayoutManager: No objects to apply Smart UV")
+                return
             bpy.ops.object.select_all(action="DESELECT")
             for o in self.objects:
                 o.select_set(True)
