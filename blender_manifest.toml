@@ -1,8 +1,8 @@
 schema_version = "1.0.0"
 id = "baketool"
-version = "1.0.0-rc"
-name = "BakeTool (AI-Assisted)"
-tagline = "Experimental AI-Assisted Baking Utility for Blender (RC)"
+version = "1.0.0"
+name = "BakeTool"
+tagline = "Professional Texture Baking Suite for Blender"
 maintainer = "BakeTool Team"
 type = "add-on"
 
@@ -10,7 +10,7 @@ type = "add-on"
 blender_version_min = "3.3.0"
 
 [web_resources]
-website = "https://example.com/baketool"
+website = "https://github.com/lastraindrop/baketool"
 
 [permissions]
 files = "Required for saving baked textures and export results."

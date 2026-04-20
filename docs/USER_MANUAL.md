@@ -1,477 +1,521 @@
-﻿# BakeTool 鐢ㄦ埛鍙傝€冩墜锟?## Simple Bake Tool (SBT) - User Reference Manual
+# BakeTool User Manual
+## Professional Texture Baking Suite for Blender
 
-**鐗堟湰**: 1.0.0 (Production Hardened Release)
-**鏀寔 Blender**: 3.3 - 5.0+
-**鍒嗙被**: 3D VIEW > N Panel > Baking
-
----
-
-## 姒傝堪
-
-> **椤圭洰鐘舵€佸０锟?*: 鏈彃浠跺凡閫氳繃娑电洊 70+ 娴嬭瘯濂椾欢 (80+ 涓埆鐢ㄤ緥) 鐨勫叏閲忚法鐗堟湰鐭╅樀楠岃瘉锟?*100% 鎴愬姛锟?* 瑕嗙洊 Blender 3.3, 3.6, 4.2 LTS, 4.5, 浠ュ強 5.0.1+ (鍖呭惈 5.0 鐨勫悎鎴愬櫒鏋舵瀯閲嶅ぇ鏇存柊鍏煎锟?锟?
-Simple Bake Tool (SBT) 鏄竴濂椾笓锟?Blender 璁捐鐨勯潪鐮村潖鎬с€佸叏鑷姩绾圭悊鐑樼剻瑙ｅ喅鏂规銆傚畠鎺ョ浜嗙箒鐞愮殑鑺傜偣杩炴帴銆佸浘鍍忓垱寤哄拰淇濆瓨宸ヤ綔锛岃鎮ㄤ笓娉ㄤ簬鍙傛暟璁剧疆锟?
-### 涓昏鐗癸拷?
-- **闈炵牬鍧忔€у伐浣滄祦**: 鏃犻渶鎵嬪姩杩炴帴鑺傜偣
-- **鑷姩鍖栬祫浜у垱锟?*: 鑷姩鍒涘缓鍥惧儚銆乁V 灞傚拰鏉愯川
-- **澶氶€氶亾鏀寔**: 鏀寔 PBR銆佸厜鐓с€佺綉鏍煎湴鍥剧瓑澶氱閫氶亾绫诲瀷
-- **鏅鸿兘鍒嗘瀽**: 鑷姩鍒嗘瀽 Principled BSDF 鑺傜偣閰嶇疆
-- **瀹炴椂棰勮**: 鍦ㄧ儤鐒欏墠棰勮閫氶亾鎵撳寘鏁堟灉
-- **璺ㄧ増鏈吋锟?*: 鏀寔 Blender 3.3 锟?5.0+
+**Version:** 1.0.0
+**Supported Blender:** 3.3 - 5.0+
+**Location:** 3D View > N Panel > Baking
 
 ---
 
-## 绗竴绔狅細鐣岄潰姒傝
+## Overview
 
-### 1.1 闈㈡澘甯冨眬
+BakeTool is a comprehensive texture baking solution designed for Blender that automates the complex process of generating texture maps from 3D scenes. Whether you're preparing assets for game engines, real-time rendering, or archviz projects, BakeTool streamlines the workflow with intelligent automation and multi-channel support.
 
-BakeTool 鐨勪富闈㈡澘浣嶄簬 Blender 锟?N 闈㈡澘 (渚ф爮) 涓紝鎸夊姛鑳藉垎涓轰互涓嬪嚑涓尯鍩燂細
+### Key Features
+- **Non-Destructive Workflow**: No manual node connections required
+- **Automatic Resource Creation**: Auto-creates images, UVs, and materials
+- **Multi-Channel Support**: PBR, Light, Mesh, and Custom channels
+- **Smart Analysis**: Auto-detects Principled BSDF configurations
+- **Interactive Preview**: Real-time channel packing preview in viewport
+- **Cross-Version Support**: Supports Blender 3.3 through 5.0+
+
+---
+
+## Section 1: Interface Overview
+
+### 1.1 Panel Layout
+
+The BakeTool panel is located in Blender's N Panel (sidebar) and organized into the following collapsible sections:
 
 ```
-鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?BakeTool v1.0.0                    [Debug] 锟?鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?[Environment & Health Check]                锟?锟?鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?锟?锟?锟?Addon Dependencies: FBX 锟?GLB 锟?     锟?锟?锟?锟?锟?Output Path: Valid 锟?                 锟?锟?锟?鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?[Preset Library]                   [Refresh]锟?锟?鈹屸攢鈹€鈹€锟?鈹屸攢鈹€鈹€锟?鈹屸攢鈹€鈹€锟?鈹屸攢鈹€鈹€锟?                   锟?锟?锟?P1锟?锟?P2锟?锟?P3锟?锟?..锟?                   锟?锟?鈹斺攢鈹€鈹€锟?鈹斺攢鈹€鈹€锟?鈹斺攢鈹€鈹€锟?鈹斺攢鈹€鈹€锟?                   锟?鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?[Job Management]                            锟?锟?[+ Add] [- Remove] [Save] [Load]           锟?锟?鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?锟?锟?Job 1 锟?                          [One] 锟?锟?锟?锟?Job 2                                 锟?锟?锟?鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?[Object List]                              锟?锟?[+ Add] [- Remove] [Auto-Select]           锟?锟?鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?锟?锟?Cube 锟?UVMap 锟?                   [Err] 锟?锟?锟?锟?Sphere 锟?UVMap 锟?                     锟?锟?锟?鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?[Input Settings]                           锟?锟?Resolution: [1024] x [1024]               锟?锟?Bake Type: [BSDF 鈻糫                        锟?锟?Bake Mode: [SINGLE 鈻糫                      锟?鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?[Channel List]                             锟?锟?锟?Base Color    suffix: _color            锟?锟?锟?Roughness     suffix: _rough             锟?锟?锟?Normal       suffix: _normal            锟?锟?锟?Metallic     suffix: _metal             锟?鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?[Advanced Settings]                        锟?锟?[Denoise] [Cage Settings] [Texel Density] 锟?鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?[Save & Export]                           锟?锟?锟?Apply to Scene  锟?External Save        锟?锟?Path: [//textures/        ] [Browse]      锟?鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?锟?          [ BAKE ]    [ Quick Bake ]       锟?鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€锟?```
+┌──────────────────────────────────────────────┐
+│ [ENVIRONMENT CHECK]                          │
+│  ├ Addon Dependencies: FBX ✓ GLB ✓          │
+│  └ Output Path: Valid ✓                      │
+├──────────────────────────────────────────────┤
+│ [PRESET LIBRARY]           [Refresh] [+ Add] │
+├──────────────────────────────────────────────┤
+│ [JOB MANAGEMENT]                            │
+│  ├ Job 1 ● [One-Click PBR]                   │
+│  └ [+ Add] [- Remove] [Save] [Load]            │
+├──────────────────────────────────────────────┤
+│ 1. SETUP & TARGETS        [▼]                 │
+│ 2. BAKE CHANNELS        [▼]                  │
+│ 3. OUTPUT & EXPORT     [▼]                  │
+│ 4. CUSTOM MAPS        [▼]                  │
+├──────────────────────────────────────────────┤
+│ [START BAKE PIPELINE]                         │
+└──────────────────────────────────────────────┘
+```
 
-### 1.2 鐜鍋ュ悍妫€锟?
-闈㈡澘椤堕儴鐨勭幆澧冨仴搴锋鏌ュ尯鍩熷疄鏃剁洃鎺х郴缁熺姸鎬侊細
+### 1.2 Environment Health Check
 
-| 鐘舵€佸浘锟?| 鍚箟 | 鎿嶄綔 |
-|----------|------|------|
-| 锟?缁胯壊 | 姝ｅ父 | 鏃犻渶鎿嶄綔 |
-| 锟?榛勮壊 | 璀﹀憡 | 寤鸿妫€锟?|
-| 锟?绾㈣壊 | 閿欒 | 闇€瑕佷慨锟?|
+The top section performs real-time system validation:
 
-**妫€鏌ラ」锟?*:
-- **Addon Dependencies**: 楠岃瘉瀵煎嚭鎻掍欢 (FBX/GLB/USD) 鏄惁鍚敤
-- **Path Validation**: 楠岃瘉杈撳嚭璺緞鏄惁鍚堟硶
-- **UV Detection**: 妫€娴嬪璞℃槸鍚﹀寘锟?UV 锟?
----
+| Status Icon | Meaning | Action Required |
+|-------------|---------|-----------------|
+| Green ✓ | Normal | No action needed |
+| Orange ⚠ | Warning | Check settings |
+| Red ✗ | Error | Fix before baking |
 
-## 绗簩绔狅細浠诲姟绠＄悊
-
-### 2.1 鍒涘缓鍜岀鐞嗕换锟?
-浠诲姟鏄繚瀛樺拰澶嶇敤鐑樼剻閰嶇疆鐨勫鍣拷?
-**鍒涘缓鏂颁换锟?*:
-1. 鐐瑰嚮 `+ Add` 鎸夐挳
-2. 鍦ㄤ换鍔″垪琛ㄤ腑閫夋嫨鏂板垱寤虹殑浠诲姟
-3. 閰嶇疆鐑樼剻鍙傛暟
-
-**淇濆瓨棰勮**:
-1. 閰嶇疆瀹屾墍鏈夊弬鏁板悗锛岀偣锟?`Save`
-2. 閫夋嫨淇濆瓨浣嶇疆
-3. 棰勮淇濆瓨锟?`.json` 鏂囦欢锛屽寘鍚墍鏈夐€氶亾閰嶇疆
-
-**鍔犺浇棰勮**:
-1. 鐐瑰嚮 `Load`
-2. 娴忚骞堕€夋嫨棰勮鏂囦欢
-3. 鍙傛暟鑷姩鍔犺浇鍒板綋鍓嶄换锟?
-### 2.2 One-Click PBR 璁剧疆
-
-鐐瑰嚮 `One-Click PBR Setup` 鎸夐挳锛岀郴缁熻嚜鍔ㄩ厤缃爣锟?PBR 鐑樼剻閫氶亾锟?
-- 锟?Base Color
-- 锟?Roughness
-- 锟?Normal
-- 锟?Metallic
-- 锟?Ambient Occlusion (鍙拷?
-
-鑷姩璁剧疆鎺ㄨ崘鐨勫悗缂€鍚嶏紝渚夸簬锟?Substance Painter 绛夎蒋浠朵腑鑷姩璇嗗埆锟?
----
-
-## 绗笁绔狅細瀵硅薄绠＄悊
-
-### 3.1 娣诲姞鐑樼剻瀵硅薄
-
-**鎵嬪姩娣诲姞**:
-1. 锟?3D 瑙嗗浘涓€夋嫨瀵硅薄
-2. 鐐瑰嚮 `+ Add` 鎸夐挳
-3. 瀵硅薄娣诲姞鍒板垪锟?
-**鑷姩閫夋嫨**:
-1. 锟?3D 瑙嗗浘涓€夋嫨鎵€鏈夐渶瑕佺儤鐒欑殑瀵硅薄
-2. 鐐瑰嚮 `Auto-Select`
-3. 鎵€鏈夐€変腑鐨勫璞¤嚜鍔ㄦ坊鍔犲埌鍒楄〃
-
-### 3.2 鏅鸿兘瀵硅薄璇婃柇
-
-瀵硅薄鍒楄〃瀹炴椂鏄剧ず璇婃柇淇℃伅锟?
-| 鍥炬爣 | 鍚箟 | 璇存槑 |
-|------|------|------|
-| 锟?缁胯壊 | UV 姝ｅ父 | 瀵硅薄鍖呭惈鏈夋晥锟?UV 锟?|
-| 锟?榛勮壊 | 锟?UV | 瀵硅薄缂哄皯 UV 灞傦紝闇€瑕佹坊锟?|
-| 锟?绾㈣壊 | 閿欒 | 瀵硅薄鏈夐棶棰橈紝鏃犳硶鐑樼剻 |
-
-**娣诲姞 UV**:
-1. 閫夋嫨缂哄皯 UV 鐨勫锟?2. 锟?3D 瑙嗗浘涓寜 `U` 锟?3. 閫夋嫨锟?UV 鏂瑰紡 (Smart UV Project / Unwrap)
-
-### 3.3 閫夋嫨婵€娲绘ā锟?(Select to Active)
-
-鐢ㄤ簬楂樻ā鐑樼剻浣庢ā鐨勫伐浣滄祦锟?
-1. 閫夋嫨鎵€鏈夐珮妯＄墿锟?2. 鎸変綇 `Shift` 骞堕€夋嫨浣庢ā鐗╀綋锛堜綔涓烘縺娲诲璞★級
-3. 璁剧疆 `Bake Mode` 锟?`Select to Active`
-4. 鐑樼剻
-
-**浼樺娍**: 楂樻ā鐗╀綋鏃犻渶 UV 灞傦紝绯荤粺鑷姩澶勭悊
+**Checks Performed:**
+- **Addon Dependencies**: Verifies export addons (FBX/GLB/USD) are enabled
+- **Path Validation**: Confirms export path exists and is writable
+- **UV Detection**: Checks objects have valid UV maps
 
 ---
 
-## 绗洓绔狅細閫氶亾閰嶇疆
+## Section 2: Job Management
 
-### 4.1 PBR 閫氶亾
+### 2.1 Creating and Managing Jobs
 
-| 閫氶亾 | 鎻忚堪 | Blender 鐑樼剻绫诲瀷 |
-|------|------|-----------------|
-| Base Color | 鍩烘湰棰滆壊/Albedo | Diffuse |
-| Roughness | 绮楃硻锟?| Roughness |
-| Metallic | 閲戝睘锟?| Glossy ( Metallic ) |
-| Specular | 楂樺厜 | Specular |
-| Normal | 娉曠嚎璐村浘 | Normal |
-| Height | 楂樺害璐村浘 | Displacement |
-| Ambient Occlusion | 鐜鍏夐伄锟?| Ambient Occlusion |
-| Emit | 鑷彂锟?| Emit |
+Jobs are templates that store and reuse bake configurations:
 
-### 4.2 缃戞牸閫氶亾
+**Create New Job:**
+1. Click `+ Add` button
+2. Select the newly created job from the list
+3. Configure bake parameters
 
-| 閫氶亾 | 鎻忚堪 | Blender 鐑樼剻绫诲瀷 |
-|------|------|-----------------|
-| Curvature | 鏇茬巼 | Cursor to Depth |
-| Normal | 椤剁偣娉曠嚎 | Normal |
-| Position | 浣嶇疆 | Position |
-| UV | UV 鍧愭爣鍙锟?| UV |
+**Save Preset:**
+1. Configure all parameters
+2. Click `Save` button
+3. Choose save location
+4. Preset saves as `.json` file containing all channel configurations
 
-### 4.3 ID 閫氶亾
+**Load Preset:**
+1. Click `Load` button
+2. Browse to preset file
+3. Parameters auto-load to current job
 
-| 閫氶亾 | 鎻忚堪 | Blender 鐑樼剻绫诲瀷 |
-|------|------|-----------------|
-| Material ID | 鏉愯川 ID | Diffuse |
-| Fac | 琛板噺 | Fac |
+### 2.2 One-Click PBR Setup
 
-### 4.4 閫氶亾鍚庣紑
+Click `One-Click PBR Setup` to automatically configure standard PBR bake channels:
+- Base Color
+- Roughness
+- Normal
+- Metallic
+- Ambient Occlusion
 
-涓烘瘡涓€氶亾閰嶇疆杈撳嚭鏂囦欢鐨勫悗缂€锟?
-| 閫氶亾 | 榛樿鍚庣紑 |
-|------|----------|
+This is recommended for Substance Painter/Substance Painter workflow automatic texturing.
+
+---
+
+## Section 3: Object Management
+
+### 3.1 Adding Bake Objects
+
+**Manual Addition:**
+1. Select objects in 3D viewport
+2. Click `+ Add` button
+3. Objects added to list
+
+**Auto-Select:**
+1. Select all objects that need baking in 3D viewport
+2. Click `Auto-Select`
+3. All selected mesh objects added to list
+
+### 3.2 Object List Indicators
+
+The object list displays real-time status information:
+
+| Icon | Meaning | Description |
+|------|---------|-------------|
+| ✓ Green | UV Valid | Object has valid UV maps |
+| ⚠ Orange | No UV | Object missing UV, needs creation |
+| ✗ Red | Error | Object has issues, cannot bake |
+
+### 3.3 Adding UVs
+
+1. Select objects lacking UVs
+2. Press `U` in 3D viewport
+3. Choose UV method (Smart UV Project / Unwrap)
+
+### 3.4 High-to-Low Baking (Selected to Active)
+
+For high-poly to low-poly baking workflow:
+1. Select all high-poly objects
+2. Hold `Shift` and select low-poly object (becomes active)
+3. Set `Bake Mode` to `Select to Active`
+4. Bake
+
+**Advantage**: High-poly objects don't need UVs; system auto-handles processing
+
+---
+
+## Section 4: Channel Configuration
+
+### 4.1 PBR Channels
+
+| Channel | Description | Blender Bake Type |
+|---------|------------|-------------------|
+| Base Color | Base color/Albedo | Diffuse |
+| Roughness | Surface roughness | Roughness |
+| Metallic | Metalness | Glossy (Metallic) |
+| Specular | Specular level | Specular |
+| Normal | Normal map | Normal |
+| Height | Displacement | Displacement |
+| Ambient Occlusion | Ambient occlusion | Ambient Occlusion |
+| Emit | Emission | Emit |
+
+### 4.2 Light/Render Channels
+
+| Channel | Description |
+|---------|-------------|
+| Curvature | Edge wear detection |
+| Normal | Point normal |
+| Position | Object position |
+| UV | UV coordinates viewable |
+
+### 4.3 Mesh Analysis Channels
+
+| Channel | Description |
+|---------|-------------|
+| Material ID | Material identification |
+| Fac | Face count |
+| Element ID | Element identification |
+
+### 4.4 Channel Suffixes
+
+Configure output file suffixes:
+| Channel | Default Suffix |
+|---------|----------------|
 | Base Color | `_color` |
 | Roughness | `_rough` |
 | Normal | `_normal` |
 | Metallic | `_metal` |
 
-### 4.5 鑷畾涔夐€氶亾
+### 4.5 Custom Channels
 
-鏀寔鍒涘缓鑷畾涔夐€氶亾锟?
-1. 鐐瑰嚮 `+ Add Channel`
-2. 閫夋嫨閫氶亾绫诲瀷
-3. 閰嶇疆鍚庣紑鍜屽弬锟?4. 鎷栧姩璋冩暣椤哄簭
-
----
-
-## 绗簲绔狅細楂樼骇璁剧疆
-
-### 5.1 绗煎瓙璁剧疆 (Cage Settings)
-
-绗煎瓙鏄敤浜庢姇褰辩儤鐒欑殑涓棿澹充綋锟?
-**妯″紡**:
-- **Uniform**: 缁熶竴鎸ゅ嚭锛屾墍鏈夐潰绛夎窛绂绘尋锟?- **Proximity**: 鏅鸿兘閭昏繎搴︼紝鑷姩鍒嗘瀽楂樻ā涓庝綆妯￠棿锟?
-**璁剧疆**:
-- **Cage Extrusion**: 鎸ゅ嚭璺濈 (榛樿 0.01)
-- **Cage Offset**: 绗煎瓙鍋忕Щ锟?- **Cage Object**: 浣跨敤鑷畾涔夌瀛愬锟?
-### 5.2 绗煎瓙鍒嗘瀽 (Cage Analysis)
-
-鐐瑰嚮 `Analyze Cage` 杩涜棰勭儤鐒欒瘖鏂細
-
-**鐑姏鍥炬樉锟?*:
-- 馃煝 缁胯壊: 瀹夊叏鍖哄煙锛岀儤鐒欐锟?- 馃敶 绾㈣壊: 纰版挒鍖哄煙锛屽彲鑳戒骇鐢熺憰锟?- 馃煛 榛勮壊: 璀﹀憡鍖哄煙锛屽缓璁锟?
-**鍒嗘瀽鎶ュ憡**:
-- 閿欒鎬绘暟
-- 閲嶅彔鐧惧垎锟?- 寤鸿鎸ゅ嚭璺濈
-
-### 5.3 鍍忕礌瀵嗗害 (Texel Density)
-
-瀹氫箟鐩爣鍍忕礌瀵嗗害锛岀‘淇濊祫浜у簱璐ㄩ噺涓€鑷达拷?
-**璁＄畻鍏紡**:
-```
-Resolution = Texel Density 脳 Object Size
-```
-
-**璁剧疆鏂规硶**:
-1. 杈撳叆鐩爣瀵嗗害 (锟?512 px/unit)
-2. 绯荤粺鑷姩璁＄畻鎺ㄨ崘鍒嗚鲸锟?3. 鐐瑰嚮搴旂敤鎺ㄨ崘锟?
-### 5.4 闄嶅櫔璁剧疆 (Denoise)
-
-鍚敤 Intel Open Image Denoise (OIDN) 杩涜鍚庡鐞嗭細
-
-1. 鍕撅拷?`Denoise`
-2. 閫夋嫨闄嶅櫔寮哄害 (1-10)
-3. 鍙拷? 璁剧疆鍘诲櫔鍚庣殑閿愬寲绋嬪害
-
-**閫傜敤鍦烘櫙**:
-- 浣庨噰鏍风巼蹇€熼锟?- 澶嶆潅鍏夌収鐑樼剻
-- 鍑忓皯鍣偣
-
-### 5.5 鎬ц兘鍒嗘瀽 (Performance Profiler)
-
-鐑樼剻瀹屾垚鍚庢煡鐪嬫瘡涓€氶亾鐨勬€ц兘鏁版嵁锟?
-| 鎸囨爣 | 鎻忚堪 |
-|------|------|
-| Bake Time | 璁＄畻鑰楁椂 |
-| Save Time | 淇濆瓨鑰楁椂 |
-| Total Time | 鎬昏€楁椂 |
-| Memory Peak | 鍐呭瓨宄帮拷?|
+Support for custom channel building:
+1. Click `+ Add Channel`
+2. Choose channel type
+3. Configure suffix and parameters
+4. Drag to adjust order
 
 ---
 
-## 绗叚绔狅細淇濆瓨涓庡锟?
-### 6.1 搴旂敤鍒板満锟?
-鍕鹃€夊悗锛岀儤鐒欑粨鏋滃垱寤烘柊鐗╀綋骞惰祴浜堟潗璐細
+## Section 5: Advanced Settings
 
-**鏅鸿兘鏇存柊**:
-- 濡傛灉鍦烘櫙涓凡瀛樺湪璇ョ粨鏋滅墿锟?- 绯荤粺鐩存帴鏇存柊鍏舵潗璐ㄥ拰缃戞牸
-- 涓嶉噸澶嶅垱寤虹墿浣擄紝淇濇寔鍦烘櫙鏁存磥
+### 5.1 Cage Settings (Cage)
 
-**鍛藉悕瑙勫垯**:
-- 鐗╀綋锟? `{鍘熺墿浣撳悕}_Baked`
-- 鏉愯川锟? `{鍘熸潗璐ㄥ悕}_Baked`
+Cage is an intermediate body for raycasting between high and low poly.
 
-### 6.2 澶栭儴淇濆瓨
+**Modes:**
+- **Uniform**: Uniform extrusion, all faces same distance
+- **Proximity**: Smart nearest neighbor analysis, auto-detects high-poly to low-poly distance
 
-鍕鹃€夊悗锛岀儤鐒欑粨鏋滀繚瀛樺埌纾佺洏锟?
-**鏀寔鏍煎紡**:
-- PNG (榛樿锛屾帹锟?
+**Settings:**
+- **Cage Extrusion**: Extrusion distance (default 0.01)
+- **Cage Offset**: Additional cage offset
+- **Cage Object**: Use custom cage object
+
+### 5.2 Cage Analysis
+
+Click `Analyze Cage` to perform raycast analysis between high and low poly meshes.
+
+**Visual Feedback:**
+- 🟢 Green: Safe areas, baking safe
+- 🟡 Yellow: Proximity areas,可能出现间隙
+- 🟠 Orange: Warning areas, review recommended
+
+**Analysis Report:**
+- Error count
+- Warning percentage
+- Recommended extrusion distance
+
+### 5.3 Texel Density
+
+Define target texel density to maintain consistent texture quality.
+
+**Formula:**
+```
+Resolution = Texel Density × Object Size
+```
+
+**Configuration:**
+1. Enter target density (e.g., 512 px/unit)
+2. System auto-calculates recommended resolution
+3. Click apply recommendation
+
+### 5.4 Denoise Settings
+
+Enable Intel Open Image Denoise (OIDN) for post-processing:
+
+1. Enable `Denoise`
+2. Choose denoise strength (1-10)
+3. Configure strength affects smoothing
+
+**Best Use Cases:**
+- Low sampling fast preview
+- Complex multi-bounce baking
+- Reduce noise artifacts
+
+### 5.5 Performance Profiling
+
+After baking, view each channel's performance metrics:
+
+| Metric | Description |
+|--------|-------------|
+| Bake Time | Calculation time |
+| Save Time | File save time |
+| Total Time | Total elapsed time |
+| Memory Peak | Maximum memory used |
+
+---
+
+## Section 6: Saving and Exporting
+
+### 6.1 Apply to Scene
+
+After baking, create new material and assign to objects automatically.
+
+**Automatic Update:**
+- If material exists in scene, system directly updates material and node connections
+- No recreation, keeping scene clean
+
+**Naming Convention:**
+- Material: `{Original Material Name}_Baked`
+- Material: `{Original Material Name}_Baked`
+
+### 6.2 External Save
+
+Save baking results to disk after completion.
+
+**Supported Formats:**
+- PNG (default, recommended)
 - JPEG
-- EXR (32 浣嶏紝鏀寔 HDR)
+- EXR (32-bit, supports HDR)
 - TIFF
 
-**璺緞璁剧疆**:
-- 鏀寔缁濆璺緞: `C:/textures/`
-- 鏀寔鐩稿璺緞: `//textures/` (鐩稿锟?.blend 鏂囦欢)
+**Path Configuration:**
+- Absolute path: `C:/textures/`
+- Relative path: `//textures/` (relative to .blend file)
 
-### 6.3 涓€閿氦锟?(Zero-Friction Delivery)
+### 6.3 One-File Delivery (GLB/GLTF Export)
 
-鑷姩瀵煎嚭鐑樼剻缁撴灉涓哄彲绔嬪嵆浣跨敤鐨勬牸寮忥細
+Auto-export baked results to immediately usable formats:
 
-**鏀寔鏍煎紡**:
-- **GLB/GLTF**: 鐢ㄤ簬 Web銆乀hree.js銆佹父鎴忓紩锟?- **USD**: 鐢ㄤ簬鐢靛奖鍒朵綔銆丏CC 杞欢
+**Supported Formats:**
+- **GLB/GLTF**: For Web, Three.js, game engines
+- **USD**: For film/compositing, DC workflow
 
-**宸ヤ綔锟?*:
-1. 鍕撅拷?`Export Model`
-2. 閫夋嫨瀵煎嚭鏍煎紡
-3. 閫夋嫨瀵煎嚭璺緞
-4. 鐑樼剻瀹屾垚鍚庤嚜鍔ㄦ墽琛屽锟?
-**PBR 鏉愯川鑷姩灏佽**:
-- 鑷姩鍒涘缓绗﹀悎宸ヤ笟鏍囧噯锟?PBR 鏉愯川
-- 鑷姩杩炴帴鎵€鏈夌儤鐒欒创锟?- 鍙洿鎺ュ湪 Substance銆乁nity銆乁nreal 涓娇锟?
+**Workflow:**
+1. Enable `Export Model`
+2. Choose export format
+3. Choose export path
+4. Baking completes and auto-executes export
+
+**PBR Automatic Binding:**
+- Auto-create industry-standard PBR material
+- Auto-link all baked textures
+- Usable directly in Substance, Unity, Unreal, etc.
+
 ---
 
-## 绗竷绔狅細蹇€熺儤锟?
-### 7.1 Quick Bake 鍔熻兘
+## Section 7: Quick Baking
 
-鏃犻渶閰嶇疆澶嶆潅浠诲姟锛岀洿鎺ョ儤鐒欓€変腑鐨勫璞★細
+### 7.1 Quick Bake Feature
 
-1. 锟?3D 瑙嗗浘涓€夋嫨瀵硅薄
-2. 鐐瑰嚮 `Quick Bake`
-3. 浣跨敤褰撳墠婵€娲讳换鍔＄殑璁剧疆锛堟垨榛樿璁剧疆锛夊紑濮嬬儤锟?
-**鐗圭偣**:
-- **闆跺壇浣滅敤**: 浣跨敤鍐呭瓨浠ｇ悊鎵ц锛屼笉淇敼褰撳墠浠诲姟璁剧疆
-- **蹇€熼锟?*: 閫傚悎蹇€熸鏌ョ儤鐒欐晥锟?- **涓€閿搷锟?*: 鏃犻渶鍒囨崲闈㈡澘
+Bake without configuring complex task - directly bake selected objects:
 
-### 7.2 UDIM 鐑樼剻
+1. Select objects in 3D viewport
+2. Click `Quick Bake`
+3. Uses current job settings (or default settings if none)
 
-涓撲负 UDIM 娴佺▼璁捐锟?
-1. 纭繚妯″瀷浣跨敤 UDIM 鏍煎紡 UV
-2. 鍦ㄥ垪琛ㄤ腑鏄剧ず鎵€鏈夋娴嬪埌鐨勭摝锟?3. 姣忎釜鐡︾墖鑷姩鍒涘缓瀵瑰簲鐨勫浘锟?4. 涓€娆℃€х儤鐒欐墍鏈夌摝锟?
+**Characteristics:**
+- **Memory Mode**: Uses in-memory execution without modifying current job settings
+- **Fast Preview**: Suitable for quick quality checks
+- **No Panel Switch**: No need to switch panels
+
+### 7.2 UDIM Baking
+
+Designed for UDIM workflow:
+1. Ensure model uses UDIM format UVs
+2. Display all detected tiles in list
+3. Each tile auto-creates corresponding image
+4. Single bake outputs all tiles
+
 ---
 
-## 绗叓绔狅細瀹炴椂棰勮
+## Section 8: Interactive Preview
 
-### 8.1 浜や簰寮忛锟?
-鍦ㄧ儤鐒欏墠棰勮閫氶亾鎵撳寘鏁堟灉锟?
-1. 鍕撅拷?`Preview Packing`
-2. 锟?3D 瑙嗗浘涓疄鏃舵煡锟?ORM 鏁堟灉
-3. 璋冩暣鍙傛暟鍚庤嚜鍔ㄦ洿鏂伴锟?
-**鏀寔閫氶亾**:
-- Occlusion (R)
-- Roughness (G)
-- Metallic (B)
+### 8.1 Interactive Preview Mode
 
-### 8.2 鑷姩鎭㈠
+Preview channel packing results in viewport before baking:
+1. Click `Preview Packing`
+2. View 3D viewport see ORM result in real-time
+3. Adjust parameters and auto-update preview
+- Occlusion (R channel)
+- Roughness (G channel)
+- Metallic (B channel)
 
-鍏抽棴棰勮鍚庯紝绯荤粺鑷姩鎭㈠鍘熷鏉愯川锟?
-- 涓嶄繚鐣欎复鏃剁潃鑹插櫒
-- 涓嶅奖鍝嶅満鏅暟锟?- 100% 闈炵牬鍧忥拷?
+### 8.2 Auto-Recovery
+
+After closing preview, system auto-restores original material:
+- No persistent viewport artifacts
+- Non-destructive workflow
+- 100% safe
+
 ---
 
-## 绗節绔狅細鍛戒护琛屼笌 API
+## Section 9: Command Line and API
 
-### 9.1 鏃犲ご鐑樼剻 (Headless CLI)
+### 9.1 Headless Baking (CLI)
 
-鍦ㄦ湇鍔″櫒鎴栨覆鏌撳啘鍦轰腑杩愯鐑樼剻锟?
+Execute baking in server or headless environments:
 ```bash
-# 鍩烘湰鐢ㄦ硶
+# Basic command
 blender -b project.blend -P headless_bake.py
 
-# 鎸囧畾浠诲姟
+# Specify job
 blender -b project.blend -P headless_bake.py -- --job "PBR_Job"
 
-# 鎸囧畾杈撳嚭鐩綍
+# Specify output directory
 blender -b project.blend -P headless_bake.py -- --output "C:/baked/"
 
-# 缁勫悎鍙傛暟
+# Combined parameters
 blender -b project.blend -P headless_bake.py -- --job "PBR" --output "C:/baked/"
 ```
 
 ### 9.2 Python API
 
-鍦ㄨ剼鏈腑鐩存帴璋冪敤鐑樼剻鍔熻兘锟?
+Call baking functions directly in scripts:
 ```python
 import bpy
 from baketool.core import api
 
-# 鍩虹鐑樼剻 - 浣跨敤褰撳墠鍦烘櫙涓殑 Job 璁剧疆
-# 鐑樼剻褰撳墠閫変腑鐨勫璞?api.bake(objects=bpy.context.selected_objects)
+# Basic baking - use current scene's Job settings
+# Bake currently selected objects
+api.bake(objects=bpy.context.selected_objects)
 
-# 鎴栬€呬娇鐢ㄨ鍙ｅ綋鍓嶉€夋嫨
+# Or use viewport selection
 api.bake(use_selection=True)
 
-# 鑾峰彇 UDIM tiles
+# Get UDIM tiles
 tiles = api.get_udim_tiles(bpy.context.selected_objects)
 print(f"UDIM tiles: {tiles}")
 
-# 楠岃瘉璁剧疆
+# Validate settings
 is_valid, msg = api.validate_settings(bpy.context.scene.BakeJobs.jobs[0])
 print(f"Valid: {is_valid}, Message: {msg}")
 ```
 
-### 9.3 API 鍙傦拷?
-| 鍑芥暟 | 鎻忚堪 | 鍙傛暟 |
-|------|------|------|
-| `api.bake()` | 鎵ц鐑樼剻 | objects (鍙€?, use_selection (榛樿False) |
-| `api.get_udim_tiles()` | 鑾峰彇 UDIM tiles | objects 鍒楄〃 |
-| `api.validate_settings()` | 楠岃瘉 Job 璁剧疆 | job 瀵硅薄 |
+### 9.3 API Reference
+| Function | Description | Parameters |
+|----------|-------------|------------|
+| `api.bake()` | Execute baking | objects (optional), use_selection (default False) |
+| `api.get_udim_tiles()` | Get UDIM tiles | objects list |
+| `api.validate_settings()` | Validate Job settings | job object |
 
 ---
 
-## 绗崄绔狅細鏁呴殰鎺掓煡
+## Section 10: Troubleshooting
 
-### 10.1 宕╂簝鎭㈠
+### 10.1 Crash Recovery
 
-濡傛灉 Blender 鍦ㄧ儤鐒欒繃绋嬩腑鎰忓鍏抽棴锟?
-1. 閲嶆柊鎵撳紑 Blender
-2. 闈㈡澘椤堕儴鏄剧ず绾㈣壊璀﹀憡锟?3. 鏄剧ず鏈€鍚庝竴娆″鐞嗙殑鐗╀綋鍜岄€氶亾
-4. 鏍规嵁淇℃伅鎺掓煡妯″瀷闂
+If Blender crashes during baking:
+1. Reopen Blender
+2. Red warning appears in panel header
+3. Shows last executed asset and channel
+4. Follow information to check issues
 
-### 10.2 绱ф€ユ竻锟?
-濡傛灉鍦烘櫙涓嚭鐜颁复鏃舵暟鎹畫鐣欙細
+### 10.2 Cleanup
 
-1. 锟?`F3` (鎼滅储)
-2. 杈撳叆 `Clean Up Bake Junk`
-3. 鍥炶溅鎵ц娓呯悊
+If scene has leftover temporary data:
+1. Press `F3` (Search)
+2. Enter `Clean Up Bake Junk`
+3. Click to execute cleanup
 
-**娓呯悊鍐呭**:
-- `BT_Bake_Temp_UV` - 涓存椂 UV 锟?- `BT_Protection_*` - 淇濇姢鑺傜偣
-- `BT_*` 鍥惧儚 - 涓存椂鍥惧儚
+**Cleanup Contents:**
+- `BT_Bake_Temp_UV` - Temporary UV layers
+- `BT_Protection_*` - Protection nodes
+- `BT_*` Images - Temporary images
 
-### 10.3 甯歌闂
+### 10.3 Common Issues
 
-| 闂 | 鍘熷洜 | 瑙ｅ喅鏂规 |
-|------|------|----------|
-| 娉曠嚎璐村浘鏈夋帴锟?| Color Space 璁剧疆閿欒 | 纭繚璁句负 `Non-Color` |
-| 鐑樼剻缁撴灉鍏ㄩ粦 | 鐗╀綋鏈€変腑鎴栨棤 UV | 娣诲姞 UV 灞傚苟閫変腑鐗╀綋 |
-| 閾炬帴璧勪骇宕╂簝 | 澶栭儴璧勪骇寮曠敤澶辨晥 | 瑙ｉ櫎閾炬帴鎴栦慨澶嶈矾锟?|
-| 鍐呭瓨涓嶈冻 | 鍒嗚鲸鐜囪繃锟?| 闄嶄綆鍒嗚鲸鐜囨垨鍒嗗潡鐑樼剻 |
-| 瀵煎嚭澶辫触 | 鎻掍欢鏈惎锟?| 鍚敤 glTF/USD 鎻掍欢 |
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Normal map incorrect | Incorrect Color Space | Ensure Color Space is `Non-Color` |
+| Baking results black | Object not selected or no UV | Add UVs and select objects |
+| Missing textures | Image path reference broken | Unlink and fix paths |
+| Memory insufficient | High resolution too large | Reduce resolution or tile baking |
+| Export failed | Addon not enabled | Enable glTF/USD addon |
 
-### 10.4 鎬ц兘浼樺寲
+### 10.4 Performance Optimization
 
-| 闂 | 浼樺寲鏂规硶 |
-|------|----------|
-| 鐑樼剻澶參 | 浣跨敤 GPU 娓叉煋銆侀檷浣庨噰鏍风巼 |
-| 鍐呭瓨涓嶈冻 | 鍒嗘壒鐑樼剻銆侀檷浣庡垎杈ㄧ巼 |
-| 棰勮鍗￠】 | 鍏抽棴瀹炴椂棰勮銆侀檷浣庨瑙堝垎杈ㄧ巼 |
-
----
-
-## 闄勫綍 A: 蹇嵎锟?
-| 蹇嵎锟?| 鍔熻兘 |
-|--------|------|
-| `F3` | 鎼滅储鎿嶄綔 (杈撳叆 `Bake` 蹇€熻锟? |
-| `Ctrl + Shift + B` | 鎵撳紑 BakeTool 闈㈡澘 |
-| `U` | 锟?UV (锟?UV Editor 锟? |
+| Issue | Optimization Method |
+|-------|-------------------|
+| Baking too slow | Use GPU baking, reduce sample count |
+| Memory insufficient | Reduce resolution or use tiled baking |
+| Preview too slow | Disable preview, use lower sample count |
 
 ---
 
-## 闄勫綍 B: 鏂囦欢缁撴瀯
+## Appendix A: Keyboard Shortcuts
+| Shortcut | Action |
+|----------|-------|
+| `F3` | Search (enter `Bake` to find options) |
+| `Ctrl + Shift + B` | Open BakeTool panel |
+| `U` | UV in UV Editor |
+
+---
+
+## Appendix B: File Structure
 
 ```
 baketool/
-鈹溾攢鈹€ __init__.py          # 鎻掍欢鍏ュ彛
-鈹溾攢鈹€ ops.py               # 鎿嶄綔绗﹀畾涔?鈹溾攢鈹€ ui.py                # UI 闈㈡澘
-鈹溾攢鈹€ property.py          # 灞炴€у畾涔?鈹溾攢鈹€ constants.py         # 甯搁噺
-鈹溾攢鈹€ translations.py      # 缈昏瘧
-鈹溾攢鈹€ state_manager.py     # 鐘舵€佺鐞?鈹溾攢鈹€ preset_handler.py    # 棰勮澶勭悊
-鈹溾攢鈹€ core/                # 鏍稿績妯″潡
-鈹?  鈹溾攢鈹€ __init__.py     # 妯″潡瀵煎嚭
-鈹?  鈹溾攢鈹€ api.py          # 鍏叡 API
-鈹?  鈹溾攢鈹€ engine.py       # 鐑樼剻寮曟搸
-鈹?  鈹溾攢鈹€ execution.py    # 鎵ц鍣?鈹?  鈹溾攢鈹€ image_manager.py # 鍥惧儚绠＄悊
-鈹?  鈹溾攢鈹€ node_manager.py # 鑺傜偣绠＄悊
-鈹?  鈹溾攢鈹€ uv_manager.py   # UV 绠＄悊
-鈹?  鈹溾攢鈹€ shading.py     # 鐫€鑹插櫒宸ュ叿
-鈹?  鈹溾攢鈹€ cage_analyzer.py # 绗煎瓙鍒嗘瀽
-鈹?  鈹溾攢鈹€ common.py       # 閫氱敤宸ュ叿
-鈹?  鈹溾攢鈹€ cleanup.py    # 娓呯悊宸ュ叿
-鈹?  鈹溾攢鈹€ compat.py       # 鐗堟湰鍏煎
-鈹?  鈹溾攢鈹€ math_utils.py  # 鏁板宸ュ叿
-鈹?  鈹斺攢鈹€ thumbnail_manager.py # 缂╃暐鍥?鈹溾攢鈹€ automation/          # 鑷姩鍖栧伐鍏?鈹?  鈹溾攢鈹€ cli_runner.py   # CLI 娴嬭瘯鍏ュ彛
-鈹?  鈹溾攢鈹€ multi_version_test.py # 璺ㄧ増鏈祴璇?鈹?  鈹斺攢鈹€ headless_bake.py # 鏃犲ご鐑樼剻
-鈹溾攢鈹€ dev_tools/         # 寮€鍙戝伐鍏?鈹?  鈹斺攢鈹€ extract_translations.py
-鈹溾攢鈹€ docs/              # 鏂囨。
-鈹溾攢鈹€ test_cases/          # 娴嬭瘯濂椾欢
-鈹?  鈹溾攢鈹€ __init__.py
-鈹?  鈹溾攢鈹€ helpers.py
-鈹?  鈹溾攢鈹€ suite_unit.py
-鈹?  鈹溾攢鈹€ suite_memory.py
-鈹?  鈹斺攢鈹€ ...
-鈹斺攢鈹€ presets/           # 棰勮搴擄紙鍙€夛級
-```
-baketool/
-鈹溾攢鈹€ __init__.py          # 鎻掍欢鍏ュ彛
-鈹溾攢鈹€ ops.py               # 鎿嶄綔绗﹀畾锟?鈹溾攢鈹€ ui.py                # UI 闈㈡澘
-鈹溾攢鈹€ property.py          # 灞炴€у畾锟?鈹溾攢鈹€ constants.py         # 甯搁噺
-鈹溾攢鈹€ translations.py      # 缈昏瘧
-鈹溾攢鈹€ state_manager.py     # 鐘舵€佺锟?鈹溾攢鈹€ preset_handler.py    # 棰勮澶勭悊
-鈹溾攢鈹€ core/                # 鏍稿績妯″潡
-锟?  鈹溾攢鈹€ api.py          # 鍏叡 API
-锟?  鈹溾攢鈹€ engine.py       # 鐑樼剻寮曟搸
-锟?  鈹溾攢鈹€ image_manager.py # 鍥惧儚绠＄悊
-锟?  鈹溾攢鈹€ node_manager.py # 鑺傜偣绠＄悊
-锟?  鈹溾攢鈹€ uv_manager.py   # UV 绠＄悊
-锟?  鈹溾攢鈹€ shading.py     # 鐫€鑹插櫒宸ュ叿
-锟?  鈹溾攢鈹€ cage_analyzer.py # 绗煎瓙鍒嗘瀽
-锟?  鈹溾攢鈹€ common.py       # 閫氱敤宸ュ叿
-锟?  鈹斺攢鈹€ compat.py       # 鐗堟湰鍏煎
-鈹溾攢鈹€ automation/          # 鑷姩鍖栧伐锟?锟?  鈹溾攢鈹€ cli_runner.py   # CLI 娴嬭瘯鍏ュ彛
-锟?  鈹溾攢鈹€ multi_version_test.py # 璺ㄧ増鏈祴锟?锟?  鈹斺攢鈹€ headless_bake.py # 鏃犲ご鐑樼剻
-鈹斺攢鈹€ test_cases/          # 娴嬭瘯濂椾欢
-    鈹溾攢鈹€ suite_unit.py   # 鍗曞厓娴嬭瘯
-    鈹溾攢鈹€ suite_memory.py # 鍐呭瓨娴嬭瘯
-    鈹斺攢鈹€ ...
+├── __init__.py           # Addon entry point
+├── ops.py                # Operator definitions
+├── ui.py                 # UI panel
+├── property.py           # Property definitions
+├── constants.py          # Constants
+├── translations.py        # Translation system
+├── state_manager.py       # State management
+├── preset_handler.py    # Preset handling
+├── core/                 # Core modules
+│   ├── api.py          # Public API
+│   ├── engine.py       # Baking engine
+│   ├── execution.py    # Execution context
+│   ├── image_manager.py # Image management
+│   ├── node_manager.py # Node management
+│   ├── uv_manager.py   # UV management
+│   ├── shading.py     # Shading utilities
+│   ├── cage_analyzer.py # Cage analysis
+│   ├── common.py       # Common utilities
+│   ├── compat.py       # Version compatibility
+│   ├── math_utils.py   # Math utilities
+│   ├── thumbnail_manager.py # Thumbnail manager
+├── automation/           # Automation tools
+│   ├── cli_runner.py   # CLI test runner
+│   ├── multi_version_test.py # Multi-version test
+│   ├── headless_bake.py # Headless baking
+├── dev_tools/           # Development tools
+│   ├── extract_translations.py
+├── docs/                # Documentation
+├── test_cases/          # Test suites
 ```
 
 ---
 
-## 闄勫綍 C: 鏈锟?
-| 鏈 | 鎻忚堪 |
-|------|------|
-| UDIM | 澶氳薄闄愯创鍥剧郴缁燂紝鏀寔 1001, 1002, ... 鐡︾墖 |
-| Cage | 绗煎瓙锛岀敤浜庢姇褰辩儤鐒欑殑涓棿澹充綋 |
-| Texel Density | 鍍忕礌瀵嗗害锛屽崟浣嶉潰绉儚绱犳暟 |
-| PBR | 鍩轰簬鐗╃悊鐨勬覆锟?|
-| ORM | Occlusion + Roughness + Metallic 閫氶亾鎵撳寘 |
-| OIDN | Intel Open Image Denoise锛岄檷鍣簱 |
+## Appendix C: Glossary
+
+| Term | Definition |
+|------|-----------|
+| UDIM | Multi-tile image system supporting 1001, 1002, ... tiles |
+| Cage | Intermediate body for raycasting between high and low poly |
+| Texel Density | Texture pixel density per unit area |
+| PBR | Physics-Based Rendering |
+| ORM | Occlusion + Roughness + Metallic channel packing |
+| OIDN | Intel Open Image Denoise, GPU-based denoiser |
 
 ---
 
-## 闄勫綍 D: 鏀寔涓庡弽锟?
-- **闂鍙嶉**: GitHub Issues
-- **鍔熻兘璇锋眰**: GitHub Discussions
-- **鏂囨。绾犻敊**: Pull Request
+## Appendix D: Support and Feedback
+- **Issue Reports**: [GitHub Issues](https://github.com/lastraindrop/baketool/issues)
+- **Feature Requests**: [GitHub Discussions](https://github.com/lastraindrop/baketool/discussions)
+- **Documentation Fixes**: Pull Request
 
 ---
 
-*鐢ㄦ埛鎵嬪唽鐗堟湰 1.0.0*
-*鏈€鍚庢洿锟? 2026-04-17*
+*User Manual Version 1.0.0*
+*Last Updated: 2026-04-17*

@@ -1,0 +1,28 @@
+# MANIFEST.in - BakeTool Release Package
+# Include all Python modules and assets
+recursive-include baketool *.py
+recursive-include baketool *.json
+recursive-include baketool *.md
+recursive-include baketool LICENSE
+recursive-include baketool blender_manifest.toml
+
+# Exclude development and testing files
+exclude automation/*
+exclude dev_tools/*
+exclude test_cases/*
+exclude docs/legacy/*
+exclude docs/dev/*
+exclude .git*
+exclude *.md
+exclude CHANGELOG*
+exclude STYLE_GUIDE*
+exclude CODE_REVIEW*
+
+# Include core subdirectories
+recursive-include baketool/core *.py
+recursive-include baketool/core/__pycache__ __init__.py
+
+# Include known image format support
+global-exclude __pycache__
+global-exclude *.pyc
+global-exclude *.pyo

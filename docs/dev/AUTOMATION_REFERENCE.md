@@ -1,22 +1,21 @@
----
+# BakeTool Automation Tools Reference
 
-# BakeTool 自动化工具参考
-
-**版本:** 1.0.0
+**Version:** 1.0.0
 
 ---
 
-## 快速参考
-### 测试命令
+## Quick Reference
+
+### Test Commands
 
 ```bash
 # Blender UI
-N 面板 -> Baking -> Debug Mode -> Run Test Suite
+N Panel -> Baking -> Debug Mode -> Run Test Suite
 
 # CLI
 blender -b --python automation/cli_runner.py -- --suite all
 
-# 跨版本测试
+# Cross-version testing
 python automation/multi_version_test.py --verification
 ```
 
@@ -24,72 +23,72 @@ python automation/multi_version_test.py --verification
 
 ## 1. CLI Runner (`cli_runner.py`)
 
-统一测试入口点。
+Unified test entry point.
 
-### 基本用法
+### Basic Usage
 
 ```bash
-blender -b --python automation/cli_runner.py [选项]
+blender -b --python automation/cli_runner.py [options]
 ```
 
-### 选项
+### Options
 
-| 选项 | 描述 | 示例 |
-|------|------|------|
-| `--suite` | 指定测试套件 | `--suite unit` |
-| `--category` | 按类别运行 | `--category memory` |
-| `--test` | 运行单个测试 | `--test suite_api.SuiteAPI.test_example` |
-| `--discover` | 自动发现所有测试 | `--discover` |
-| `--json` | 输出 JSON 报告 | `--json report.json` |
-| `--list` | 列出所有套件 | `--list` |
+| Option | Description | Example |
+|-------|-------------|----------|
+| `--suite` | Specify test suite | `--suite unit` |
+| `--category` | Run by category | `--category memory` |
+| `--test` | Run single test | `--test suite_api.SuiteAPI.test_example` |
+| `--discover` | Auto-discover all tests | `--discover` |
+| `--json` | Output JSON report | `--json report.json` |
+| `--list` | List all suites | `--list` |
 
-### 可用套件
+### Available Suites
 
-| 套件 | 描述 |
-|------|------|
-| `unit` | 核心单元测试 |
-| `shading` | 着色逻辑测试 |
-| `negative` | 负面/边界测试 |
-| `memory` | 内存泄漏检测 |
-| `export` | 导出安全性测试 |
-| `api` | API 稳定性测试 |
-| `context_lifecycle` | 上下文生命周期 |
-| `cleanup` | 资源清理测试 |
-| `denoise` | 降噪器测试 |
-| `parameter_matrix` | 参数矩阵测试 |
-| `preset` | 预设功能测试 |
-| `production_workflow` | 端到端流程 |
-| `udim_advanced` | UDIM 高级功能 |
-| `ui_logic` | UI 逻辑测试 |
-| `code_review` | 代码审查 |
-| `all` | 所有套件 |
+| Suite | Description |
+|-------|-------------|
+| `unit` | Core unit tests |
+| `shading` | Shading logic tests |
+| `negative` | Negative/edge case tests |
+| `memory` | Memory leak detection |
+| `export` | Export safety tests |
+| `api` | API stability tests |
+| `context_lifecycle` | Context lifecycle |
+| `cleanup` | Resource cleanup tests |
+| `denoise` | Denoiser tests |
+| `parameter_matrix` | Parameter matrix tests |
+| `preset` | Preset functionality tests |
+| `production_workflow` | End-to-end workflow |
+| `udim_advanced` | UDIM advanced features |
+| `ui_logic` | UI logic tests |
+| `code_review` | Code review |
+| `all` | All suites |
 
-### 可用类别
+### Available Categories
 
-| 类别 | 包含的套件 |
-|------|------------|
+| Category | Included Suites |
+|----------|---------------|
 | `core` | unit, negative, api, cleanup, compat, parameter_matrix |
 | `memory` | memory |
 | `export` | export |
 | `ui` | ui_logic |
 | `integration` | production_workflow, context_lifecycle |
 
-### 示例
+### Examples
 
 ```bash
-# 运行单个套件
+# Run single suite
 blender -b --python automation/cli_runner.py -- --suite unit
 
-# 运行多个类别
+# Run multiple categories
 blender -b --python automation/cli_runner.py -- --category memory
 
-# 发现并运行所有测试
+# Discover and run all tests
 blender -b --python automation/cli_runner.py -- --discover
 
-# 生成 JSON 报告
+# Generate JSON report
 blender -b --python automation/cli_runner.py -- --json test_report.json --suite all
 
-# 列出所有可用套件
+# List all available suites
 blender -b --python automation/cli_runner.py -- --list
 ```
 
@@ -97,56 +96,56 @@ blender -b --python automation/cli_runner.py -- --list
 
 ## 2. Multi-Version Test (`multi_version_test.py`)
 
-Blender 版本测试运行器。
+Blender version test runner.
 
-### 基本用法
+### Basic Usage
 
 ```bash
-python automation/multi_version_test.py [选项]
+python automation/multi_version_test.py [options]
 ```
 
-### 选项
+### Options
 
-| 选项 | 描述 |
-|------|------|
-| `--verification` | 运行综合验证脚本 |
-| `--suite` | 指定测试套件 |
-| `--category` | 按类别运行 |
-| `--list` | 列出可用 Blender 版本 |
-| `--json` | 保存详细 JSON 报告 |
+| Option | Description |
+|--------|-------------|
+| `--verification` | Run comprehensive verification |
+| `--suite` | Specify test suite |
+| `--category` | Run by category |
+| `--list` | List available Blender versions |
+| `--json` | Save detailed JSON report |
 
-### 环境变量
+### Environment Variables
 
 ```bash
-# 自定义 Blender 路径
+# Custom Blender paths
 export BLENDER_PATHS="D:\Blender\3.6\blender.exe;D:\Blender\4.2\blender.exe"
 python automation/multi_version_test.py
 ```
 
-### 默认测试版本
+### Default Test Versions
 
-- Blender 3.3.21
-- Blender 3.6.23
+- Blender 3.3.21 LTS
+- Blender 3.6.23 LTS
 - Blender 4.2.14 LTS
 - Blender 4.5.3 LTS
 - Blender 5.0.1
 
-### 示例
+### Examples
 
 ```bash
-# 完整验证
+# Full verification
 python automation/multi_version_test.py --verification
 
-# 运行单元测试
+# Run unit tests
 python automation/multi_version_test.py --suite unit
 
-# 内存测试
+# Memory tests
 python automation/multi_version_test.py --category memory
 
-# 列出可用版本
+# List available versions
 python automation/multi_version_test.py --list
 
-# JSON 输出
+# JSON output
 python automation/multi_version_test.py --json cross_version_report.json
 ```
 
@@ -154,25 +153,25 @@ python automation/multi_version_test.py --json cross_version_report.json
 
 ## 3. Comprehensive Verification (`comprehensive_verification.py`)
 
-**状态**: 规划中 - 尚未实现
+**Status**: Planning - Not yet implemented
 
-此脚本旨在运行完整的代码审查验证。当前可通过测试套件覆盖：
+This script is intended to run complete code review verification. Currently covered via test suites:
 ```bash
 blender -b --python automation/cli_runner.py -- --suite all
 ```
 
-### 验证项目
+### Verification Items
 
-| 编号 | 验证项 | 描述 |
-|------|--------|------|
-| FIX-1 | Memory Leak | `use_fake_user` 默认行为 |
-| FIX-2 | Image Cleanup | `DeleteResult` 移除数据块 |
-| FIX-3 | NumPy Memory | `_physical_clear_pixels` 内存优化 |
-| FIX-4 | Export Safety | 隐藏对象导出安全 |
-| FIX-5 | UI Poll Safety | `context.space_data` 安全访问 |
-| FIX-6 | Mesh Cleanup | `do_unlink=True` 正确清理 |
+| ID | Verification Item | Description |
+|----|----------------|-------------|
+| FIX-1 | Memory Leak | `use_fake_user` default behavior |
+| FIX-2 | Image Cleanup | `DeleteResult` removes datablock |
+| FIX-3 | NumPy Memory | `_physical_clear_pixels` memory optimization |
+| FIX-4 | Export Safety | Hidden object export safety |
+| FIX-5 | UI Poll Safety | `context.space_data` safe access |
+| FIX-6 | Mesh Cleanup | `do_unlink=True` correct cleanup |
 
-### 输出示例
+### Example Output
 
 ```
 ======================================================================
@@ -207,34 +206,34 @@ blender -b --python automation/cli_runner.py -- --suite all
 
 ## 4. Headless Bake (`headless_bake.py`)
 
-无头模式烘焙 CLI 工具。
+Headless mode bake CLI tool.
 
-### 基本用法
+### Basic Usage
 
 ```bash
-blender -b scene.blend -P automation/headless_bake.py -- [选项]
+blender -b scene.blend -P automation/headless_bake.py -- [options]
 ```
 
-### 选项
+### Options
 
-| 选项 | 描述 | 示例 |
-|------|------|------|
-| `--job` | 指定任务名称 | `--job "MainBake"` |
-| `--output` | 输出目录 | `--output "C:/baked/"` |
+| Option | Description | Example |
+|--------|-------------|----------|
+| `--job` | Specify job name | `--job "MainBake"` |
+| `--output` | Output directory | `--output "C:/baked/"` |
 
-### 示例
+### Examples
 
 ```bash
-# 运行所有启用的任务
+# Run all enabled jobs
 blender -b scene.blend -P automation/headless_bake.py
 
-# 指定任务
+# Specify job
 blender -b scene.blend -P automation/headless_bake.py -- --job "PBR_Job"
 
-# 指定输出目录
+# Specify output directory
 blender -b scene.blend -P automation/headless_bake.py -- --output "C:/output/"
 
-# 组合
+# Combined
 blender -b scene.blend -P automation/headless_bake.py -- --job "PBR" --output "C:/baked/"
 ```
 
@@ -242,13 +241,13 @@ blender -b scene.blend -P automation/headless_bake.py -- --job "PBR" --output "C
 
 ## 5. Environment Setup (`env_setup.py`)
 
-**状态**: 规划中 - 尚未实现
+**Status**: Planning - Not yet implemented
 
-测试环境初始化模块 (规划中)。
+Test environment initialization module (planned).
 
-### 当前替代方案
+### Current Alternative
 
-直接使用 CLI Runner 加载测试环境：
+Use CLI Runner to load test environment directly:
 ```bash
 blender -b --python automation/cli_runner.py -- --suite all
 ```
@@ -257,46 +256,46 @@ blender -b --python automation/cli_runner.py -- --suite all
 
 ## 6. Translation Extractor (`dev_tools/extract_translations.py`)
 
-翻译字符串提取与同步工具。
+Translation string extraction and sync tool.
 
-### 基本用法
+### Basic Usage
 
 ```bash
-python dev_tools/extract_translations.py [选项]
+python dev_tools/extract_translations.py [options]
 ```
 
-### 选项
+### Options
 
-| 选项 | 描述 |
-|------|------|
-| `--mode` | 同步模式 |
-| `--path` | 扫描根目录 |
+| Option | Description |
+|--------|-------------|
+| `--mode` | Sync mode |
+| `--path` | Scan root directory |
 
-### 模式
+### Modes
 
-| 模式 | 描述 |
-|------|------|
-| `update` | 添加新 key，保留旧 key (默认) |
-| `sync` | 删除未使用的 key |
-| `clean` | 删除所有 key 并重置翻译 |
+| Mode | Description |
+|------|-------------|
+| `update` | Add new keys, keep old keys (default) |
+| `sync` | Delete unused keys |
+| `clean` | Delete all keys and reset translations |
 
-### 示例
+### Examples
 
 ```bash
-# 扫描并更新翻译文件
+# Scan and update translations
 python dev_tools/extract_translations.py
 
-# 同步：删除未使用的 key
+# Sync: delete unused keys
 python dev_tools/extract_translations.py --mode sync
 
-# 清理：重置所有翻译
+# Clean: reset all translations
 python dev_tools/extract_translations.py --mode clean
 
-# 指定路径
+# Specify path
 python dev_tools/extract_translations.py --path /path/to/addon
 ```
 
-### 输出
+### Output
 
 ```json
 {
@@ -314,17 +313,17 @@ python dev_tools/extract_translations.py --path /path/to/addon
 
 ---
 
-## 7. 测试辅助工具 (`test_cases/helpers.py`)
+## 7. Test Utilities (`test_cases/helpers.py`)
 
 ### DataLeakChecker
 
-检测 Blender 数据块泄漏：
+Detects Blender datablock leaks:
 
 ```python
 from test_cases.helpers import DataLeakChecker
 
 checker = DataLeakChecker()
-# ... 执行操作 ...
+# ... perform operation ...
 leaks = checker.check()
 if leaks:
     print(f"Leaks: {leaks}")
@@ -332,7 +331,7 @@ if leaks:
 
 ### assert_no_leak
 
-上下文管理器检测泄漏：
+Context manager for leak detection:
 
 ```python
 from test_cases.helpers import assert_no_leak
@@ -345,7 +344,8 @@ def test_example(self):
 
 ### JobBuilder
 
-流畅 API 构建测试任务：
+Fluent API for building test jobs:
+
 ```python
 from test_cases.helpers import JobBuilder
 
@@ -360,16 +360,18 @@ job = (JobBuilder("TestJob")
 
 ### cleanup_scene
 
-深度清理场景：
+Deep scene cleanup:
+
 ```python
 from test_cases.helpers import cleanup_scene
 
-cleanup_scene()  # 清理所有测试数据
+cleanup_scene()  # Clean all test data
 ```
 
 ### create_test_object
 
-创建标准测试对象：
+Create standard test object:
+
 ```python
 from test_cases.helpers import create_test_object
 
@@ -385,7 +387,8 @@ obj = create_test_object(
 
 ### MockSetting
 
-Mock 设置对象：
+Mock setting object:
+
 ```python
 from test_cases.helpers import MockSetting
 
@@ -400,18 +403,18 @@ setting = MockSetting(
 
 ---
 
-## 8. 环境变量
+## 8. Environment Variables
 
-| 变量 | 描述 | 示例 |
-|------|------|------|
-| `BLENDER_PATHS` | 自定义 Blender 路径 (分号分隔) | `D:\Blender\3.6\blender.exe;D:\Blender\4.2\blender.exe` |
-| `PYTHONIOENCODING` | Python 输出编码 | `utf-8` |
+| Variable | Description | Example |
+|----------|-------------|----------|
+| `BLENDER_PATHS` | Custom Blender paths (semicolon-separated) | `D:\Blender\3.6\blender.exe;D:\Blender\4.2\blender.exe` |
+| `PYTHONIOENCODING` | Python output encoding | `utf-8` |
 
 ---
 
-## 9. 退出码
+## 9. Exit Codes
 
-| 退出码 | 描述 |
-|--------|------|
-| 0 | 所有测试验证通过 |
-| 1 | 有测试失败或错误 |
+| Exit Code | Description |
+|-----------|-------------|
+| 0 | All tests verified successfully |
+| 1 | Some tests failed or errored |

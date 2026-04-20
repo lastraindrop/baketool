@@ -318,12 +318,13 @@ def calculate_cage_proximity(low_poly, high_polys, margin=0.0):
         extrusions = np.zeros(len(lp_mesh.vertices), dtype=np.float32)
 
         for i, v in enumerate(lp_mesh.vertices):
+            # Query in WORLD SPACE to match the BVHTree which was built in world space
             world_co = low_poly.matrix_world @ v.co
             min_dist = float("inf")
 
             for hp_obj, hp_tree in hp_data:
-                local_co = hp_obj.matrix_world.inverted() @ world_co
-                _, _, _, dist = hp_tree.find_nearest(local_co)
+                # Query in world space (no coordinate transformation)
+                _, _, _, dist = hp_tree.find_nearest(world_co)
                 if dist is not None and dist < min_dist:
                     min_dist = dist
 
@@ -348,9 +349,27 @@ class TexelDensityCalculator:
         try:
             uv_data = uv_layer.data
             total_uv_area = 0.0
-            for loop in uv_data:
-                x1, y1 = loop.uv
-                total_uv_area += abs(x1 * (loop[1].uv.y - loop[2].uv.y))
+
+            # Calculate UV area by iterating over polygons (not individual loops)
+            # Each polygon has vertices that map to UV coordinates
+            for poly in mesh.polygons:
+                if not poly.select:
+                    continue
+                # Get the loop indices for this polygon
+                loop_indices = poly.loop_indices
+                if len(loop_indices) < 3:
+                    continue
+                # Calculate polygon UV area using cross product method
+                uv_coords = []
+                for li in loop_indices:
+                    uv_coords.append(uv_data[li].uv)
+                # Shoelace formula for polygon area
+                n = len(uv_coords)
+                for i in range(n):
+                    j = (i + 1) % n
+                    total_uv_area += uv_coords[i].x * uv_coords[j].y
+                    total_uv_area -= uv_coords[j].x * uv_coords[i].y
+                total_uv_area = abs(total_uv_area) / 2.0
 
             world_area = sum(
                 poly.area for poly in mesh.polygons if poly.select
@@ -359,8 +378,8 @@ class TexelDensityCalculator:
             if world_area <= 1e-6 or total_uv_area <= 1e-6:
                 return 0.0
 
-            res = mesh.uv_layers.active.name
-            avg_res = float(res) if isinstance(res, (int, float)) else 1024.0
+            # Default resolution if not specified
+            avg_res = 1024.0
             return (avg_res * total_uv_area) / world_area
 
         except Exception:

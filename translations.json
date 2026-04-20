@@ -1,8 +1,8 @@
 {
     "header": {
-        "author": "Simple Bake Tool Team",
-        "version": "1.3",
-        "description": "Finalized translations for Simple Bake Tool"
+        "author": "BakeTool Team",
+        "version": "1.0.0",
+        "description": "BakeTool v1.0.0 translations"
     },
     "data": {
         "+X": {
@@ -3334,6 +3334,60 @@
             "fr_FR": "use_preview",
             "ru_RU": "use_preview",
             "ja_JP": "use_preview"
+        },
+        "Settings": {
+            "zh_CN": "设置",
+            "fr_FR": "Paramètres",
+            "ru_RU": "Настройки",
+            "ja_JP": "設定"
+        },
+        "Res & Save": {
+            "zh_CN": "分辨率与保存",
+            "fr_FR": "Résolution et sauvegarde",
+            "ru_RU": "Разрешение и сохранение",
+            "ja_JP": "解像度と保存"
+        },
+        "Missing": {
+            "zh_CN": "缺失",
+            "fr_FR": "Manquant",
+            "ru_RU": "Отсутствует",
+            "ja_JP": "欠落"
+        },
+        "Invalid Export Path!": {
+            "zh_CN": "导出路径无效！",
+            "fr_FR": "Chemin d'export invalide !",
+            "ru_RU": "Неверный путь экспорта !",
+            "ja_JP": "無効なエクスポートパス！"
+        },
+        "Target or source objects invalid.": {
+            "zh_CN": "目标或源物体无效。",
+            "fr_FR": "Les objets cible ou source sont invalides.",
+            "ru_RU": "Целевые или исходные объекты недействительны.",
+            "ja_JP": "ターゲットまたはソースオブジェクトが無効です。"
+        },
+        "No valid high poly geometry found.": {
+            "zh_CN": "未找到有效的高多边形几何体。",
+            "fr_FR": "Aucune géométrie high-poly valide trouvée.",
+            "ru_RU": "Не найдена допустимая геометрия высокополигональная.",
+            "ja_JP": "有効なハイポリジオメトリが見つかりません。"
+        },
+        "No result selected": {
+            "zh_CN": "未选择结果",
+            "fr_FR": "Aucun résultat sélectionné",
+            "ru_RU": "Результат не выбран",
+            "ja_JP": "結果が選択されていません"
+        },
+        "No image to export": {
+            "zh_CN": "没有要导出的图像",
+            "fr_FR": "Pas d'image à exporter",
+            "ru_RU": "Нет изображения для экспорта",
+            "ja_JP": "エクスポートする画像がありません"
+        },
+        "No results to export": {
+            "zh_CN": "没有可导出的结果",
+            "fr_FR": "Aucun résultat à exporter",
+            "ru_RU": "Нет результатов для экспорта",
+            "ja_JP": "エクスポートする結果がありません"
         }
     }
 }

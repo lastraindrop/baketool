@@ -1,91 +1,102 @@
-# BakeTool 生态集成指?## Ecosystem Integration Guide
+# BakeTool Ecosystem Integration Guide
 
-**版本:** 1.0.0
-**更新日期:** 2026-04-17
-
----
-
-## 目录
-
-1. [生态概述](#1-生态概?
-2. [Blender 测试生态](#2-blender-测试生?
-3. [BakeTool 测试框架](#3-baketool-测试框架)
-4. [自动化工具链](#4-自动化工具链)
-5. [CI/CD 集成](#5-cicd-集成)
-6. [国际化工作流](#6-国际化工作流)
-7. [维护指南](#7-维护指南)
-8. [最佳实践](#8-最佳实?
+**Version:** 1.0.0
+**Updated:** 2026-04-20
 
 ---
 
-## 1. 生态概?
-BakeTool 拥有一套完整的开发工具链，包括：
+## Table of Contents
+
+1. [Ecosystem Overview](#1-ecosystem-overview)
+2. [Blender Testing Ecosystem](#2-blender-testing-ecosystem)
+3. [BakeTool Testing Framework](#3-baketool-testing-framework)
+4. [Automation Toolchain](#4-automation-toolchain)
+5. [CI/CD Integration](#5-cicd-integration)
+6. [Internationalization Workflow](#6-internationalization-workflow)
+7. [Maintenance Guide](#7-maintenance-guide)
+8. [Best Practices](#8-best-practices)
+
+---
+
+## 1. Ecosystem Overview
+
+BakeTool provides a complete development toolchain:
 
 ```
 baketool/
-├── automation/           # 自动化工??  ├── cli_runner.py           # 统一 CLI 测试入口
-?  ├── comprehensive_verification.py  # 综合验证脚本
-?  ├── multi_version_test.py   # 跨版本测??  ├── headless_bake.py        # 无头烘焙 CLI
-?  └── env_setup.py            # 环境配置
-├── test_cases/          # 测试套件
-?  ├── helpers.py              # 测试辅助工具
-?  ├── suite_unit.py           # 单元测试
-?  ├── suite_memory.py         # 内存测试
-?  ├── suite_export.py         # 导出测试
-?  ├── suite_api.py            # API 测试
-?  └── ... (15+ 测试套件)
+├── automation/           # Automation tools
+│   ├── cli_runner.py           # Unified CLI test entry
+│   ├── comprehensive_verification.py  # Verification scripts
+│   ├── multi_version_test.py   # Cross-version testing
+│   ├── headless_bake.py        # Headless bake CLI
+│   └── env_setup.py            # Environment setup
+├── test_cases/          # Test suites
+│   ├── helpers.py              # Test utilities
+│   ├── suite_unit.py           # Unit tests
+│   ├── suite_memory.py         # Memory tests
+│   ├── suite_export.py        # Export tests
+│   ├── suite_api.py           # API tests
+│   └── ... (15+ test suites)
 ├── dev_tools/
-?  └── extract_translations.py  # 翻译提取工具
+│   └── extract_translations.py  # Translation extraction
 └── docs/dev/
-    ├── DEVELOPER_GUIDE.md      # 开发者指?    └── STANDARDIZATION_GUIDE.md # 标准化指?```
+    ├── DEVELOPER_GUIDE.md      # Developer guide
+    └── STANDARDIZATION_GUIDE.md # Standardization guide
+```
 
 ---
 
-## 2. Blender 测试生?
-### 2.1 Blender 官方测试方式
+## 2. Blender Testing Ecosystem
 
-Blender 插件开发主要有以下测试方式?
-| 方式 | 描述 | 适用场景 |
-|------|------|----------|
-| **unittest (内置)** | Blender 内置 `unittest` 模块 | 基础单元测试 |
-| **pytest-blender** | pytest 插件 | 高级测试框架 |
-| **Headless CLI** | `blender -b --python` | CI/CD 自动?|
-| **Manual Testing** | Blender GUI | 手动验收测试 |
+### 2.1 Official Blender Testing Methods
 
-### 2.2 Blender 测试最佳实?
+| Method | Description | Use Case |
+|--------|-------------|----------|
+| **unittest (built-in)** | Blender's built-in `unittest` module | Basic unit tests |
+| **pytest-blender** | pytest plugin for Blender | Advanced testing framework |
+| **Headless CLI** | `blender -b --python` | CI/CD automation |
+| **Manual Testing** | Blender GUI | Manual acceptance tests |
+
+### 2.2 Blender Testing Best Practices
+
 ```python
-# 标准 Blender 测试模板
+# Standard Blender test template
 import bpy
 import unittest
 
 class TestMyAddon(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Blender 环境初始?        bpy.ops.mesh.primitive_cube_add()
+        # Initialize Blender environment
+        bpy.ops.mesh.primitive_cube_add()
 
     def setUp(self):
-        # 每个测试前清?        bpy.ops.object.select_all(action='SELECT')
+        # Clean before each test
+        bpy.ops.object.select_all(action='SELECT')
         bpy.ops.object.delete()
 
     def tearDown(self):
-        # 测试后清?        bpy.ops.object.select_all(action='SELECT')
+        # Clean after each test
+        bpy.ops.object.select_all(action='SELECT')
         bpy.ops.object.delete()
 
     def test_example(self):
         self.assertIsNotNone(bpy.context.object)
 ```
 
-### 2.3 Blender 版本兼容性策?
+### 2.3 Blender Version Compatibility Strategy
+
 ```python
-# core/compat.py 示例
+# core/compat.py example
 import bpy
 
-# 版本检?IS_BLENDER_5 = bpy.app.version >= (5, 0, 0)
+# Version checks
+IS_BLENDER_5 = bpy.app.version >= (5, 0, 0)
 IS_BLENDER_4 = bpy.app.version >= (4, 0, 0)
 IS_BLENDER_3 = bpy.app.version >= (3, 0, 0)
 
 def get_bake_settings(scene):
-    """统一访问烘焙设置（兼?3.3 - 5.0+?""
+    """Unified access to bake settings (compatible 3.3 - 5.0+)."""
     if IS_BLENDER_5:
         return scene.render.bake
     return scene.render
@@ -93,45 +104,74 @@ def get_bake_settings(scene):
 
 ---
 
-## 3. BakeTool 测试框架
+## 3. BakeTool Testing Framework
 
-### 3.1 框架架构
+### 3.1 Framework Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────??                   CLI 入口?                                ?? automation/cli_runner.py                                    ?? - --suite, --category, --json, --list                     ?└─────────────────────────────────────────────────────────────?                              ?                              ?┌─────────────────────────────────────────────────────────────??                   测试套件?                                ?? test_cases/suite_*.py                                      ?? - suite_unit.py      # 核心逻辑                            ?? - suite_memory.py    # 内存泄漏检?                       ?? - suite_export.py    # 导出安全?                         ?? - suite_api.py       # API 稳定?                         ?? - ...                                                  ?└─────────────────────────────────────────────────────────────?                              ?                              ?┌─────────────────────────────────────────────────────────────??                   辅助工具?                                ?? test_cases/helpers.py                                      ?? - DataLeakChecker    # 数据泄漏检?                       ?? - JobBuilder         # 流畅 API 构建测试任务               ?? - MockSetting        # Mock 对象                           ?? - cleanup_scene()     # 场景清理                           ?└─────────────────────────────────────────────────────────────?```
+┌─────────────────────────────────────────────────────────────┐
+│                     CLI Entry Point                         │
+│         automation/cli_runner.py                            │
+│         - --suite, --category, --json, --list               │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                      Test Suites                          │
+│            test_cases/suite_*.py                          │
+│            - suite_unit.py      # Core logic               │
+│            - suite_memory.py    # Memory leak detection   │
+│            - suite_export.py    # Export safety         │
+│            - suite_api.py       # API stability       │
+│            - ...                                            │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                     Utilities                             │
+│            test_cases/helpers.py                          │
+│            - DataLeakChecker    # Leak detection        │
+│            - JobBuilder         # Fluent API for jobs    │
+│            - MockSetting       # Mock objects          │
+│            - cleanup_scene()   # Scene cleanup       │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### 3.2 核心组件详解
+### 3.2 Core Component Details
 
 #### 3.2.1 DataLeakChecker
 
-检?Blender 数据块泄漏：
+Detects Blender datablock leaks:
 
 ```python
-from test_cases.helpers import DataLeakChecker, assert_no_leak
+from test_cases.helpers import DataLeakChecker
 
 class TestMemoryLeaks(unittest.TestCase):
     def test_no_image_leak(self):
         checker = DataLeakChecker()
 
-        # 执行操作
+        # Perform operation
         img = bpy.data.images.new("TestImg", 64, 64)
 
-        # 检查泄?        leaks = checker.check()
+        # Check for leaks
+        leaks = checker.check()
         self.assertEqual(len(leaks), 0, f"Leaks detected: {leaks}")
 ```
 
-#### 3.2.2 assert_no_leak (上下文管理器)
+#### 3.2.2 assert_no_leak (Context Manager)
 
 ```python
 from test_cases.helpers import assert_no_leak
 
 def test_operations(self):
     with assert_no_leak(self, aggressive=True):
-        # 执行可能泄漏的操?        create_bake_result()
+        # Perform potentially leaking operation
+        create_bake_result()
         apply_baked_result()
-    # 自动检测泄?```
+    # Automatically detects leaks
+```
 
-#### 3.2.3 JobBuilder (流畅 API)
+#### 3.2.3 JobBuilder (Fluent API)
 
 ```python
 from test_cases.helpers import JobBuilder
@@ -145,128 +185,135 @@ job = (JobBuilder("TestJob")
     .build())
 ```
 
-### 3.3 测试套件清单
+### 3.3 Test Suite Inventory
 
-| 套件 | 文件 | 描述 | 分类 |
-|------|------|------|------|
-| 单元测试 | `suite_unit.py` | 核心组件逻辑测试 | core |
-| 内存测试 | `suite_memory.py` | 内存泄漏检?| memory |
-| 导出测试 | `suite_export.py` | 导出安全?| export |
-| API 测试 | `suite_api.py` | 公共 API 稳定?| core |
-| UI 测试 | `suite_ui_logic.py` | 面板绘制逻辑 | ui |
-| 预设测试 | `suite_preset.py` | 序列化与迁移 | core |
-| 负面测试 | `suite_negative.py` | 边界条件 | core |
-| 降噪测试 | `suite_denoise.py` | 降噪器集?| core |
-| 生产流测?| `suite_production_workflow.py` | 端到端流?| integration |
-| 上下文生命周?| `suite_context_lifecycle.py` | 上下文管?| integration |
-| 清理测试 | `suite_cleanup.py` | 资源清理 | core |
-| 兼容性测?| `suite_compat.py` | 版本兼容?| core |
-| 参数矩阵 | `suite_parameter_matrix.py` | 参数组合测试 | core |
-| UDIM 高级 | `suite_udim_advanced.py` | UDIM 功能 | core |
-| 着色测?| `suite_shading.py` | 着色器逻辑 | core |
-| 代码审查 | `suite_code_review.py` | 静态检?| core |
+| Suite | File | Description | Category |
+|-------|------|-------------|----------|
+| Unit Tests | `suite_unit.py` | Core component logic tests | core |
+| Memory Tests | `suite_memory.py` | Memory leak detection | memory |
+| Export Tests | `suite_export.py` | Export safety verification | export |
+| API Tests | `suite_api.py` | Public API stability | core |
+| UI Tests | `suite_ui_logic.py` | Panel drawing logic | ui |
+| Preset Tests | `suite_preset.py` | Serialization and migration | core |
+| Negative Tests | `suite_negative.py` | Edge conditions | core |
+| Denoise Tests | `suite_denoise.py` | Denoiser sets | core |
+| Production Flow | `suite_production_workflow.py` | End-to-end flow tests | integration |
+| Context Lifecycle | `suite_context_lifecycle.py` | Context management | integration |
+| Cleanup Tests | `suite_cleanup.py` | Resource cleanup | core |
+| Compatibility Tests | `suite_compat.py` | Version compatibility | core |
+| Parameter Matrix | `suite_parameter_matrix.py` | Parameter combinations | core |
+| UDIM Advanced | `suite_udim_advanced.py` | UDIM features | core |
+| Shading Tests | `suite_shading.py` | Shader logic | core |
+| Code Review | `suite_code_review.py` | Static analysis | core |
 
-### 3.4 运行测试
+### 3.4 Running Tests
 
-#### 3.4.1 Blender UI 运行
+#### 3.4.1 Running via Blender UI
 
 ```
-Blender ?N 面板 ?Baking ?Debug Mode ?Run Test Suite
+Blender UI → N Panel → Baking → Debug Mode → Run Test Suite
 ```
 
-#### 3.4.2 CLI 运行
+#### 3.4.2 Running via CLI
 
 ```bash
-# 单个测试套件
+# Single test suite
 blender -b --python automation/cli_runner.py -- --suite unit
 
-# 所有测试套?blender -b --python automation/cli_runner.py -- --suite all
+# All test suites
+blender -b --python automation/cli_runner.py -- --suite all
 
-# 按类别运?blender -b --python automation/cli_runner.py -- --category memory
+# Run by category
+blender -b --python automation/cli_runner.py -- --category memory
 
-# 列出所有套?blender -b --python automation/cli_runner.py -- --list
+# List all suites
+blender -b --python automation/cli_runner.py -- --list
 
-# 输出 JSON 报告
+# Output JSON report
 blender -b --python automation/cli_runner.py -- --json report.json
 ```
 
-#### 3.4.3 跨版本测?
+#### 3.4.3 Cross-Version Testing
+
 ```bash
 python automation/multi_version_test.py --verification
 
-# 指定类别
+# Specific category
 python automation/multi_version_test.py --category memory
 ```
 
 ---
 
-## 4. 自动化工具链
+## 4. Automation Toolchain
 
-### 4.1 工具清单
+### 4.1 Tool Inventory
 
-| 工具 | 路径 | 用?|
-|------|------|------|
-| **cli_runner.py** | `automation/` | 统一测试入口 |
-| **multi_version_test.py** | `automation/` | ?Blender 版本测试 |
-| **comprehensive_verification.py** | `automation/` | 修复验证 |
-| **headless_bake.py** | `automation/` | 无头烘焙 CLI |
-| **extract_translations.py** | `dev_tools/` | 翻译提取与同?|
+| Tool | Path | Usage |
+|------|------|-------|
+| **cli_runner.py** | `automation/` | Unified test entry point |
+| **multi_version_test.py** | `automation/` | Cross-Blender version testing |
+| **comprehensive_verification.py** | `automation/` | Fix verification |
+| **headless_bake.py** | `automation/` | Headless bake CLI |
+| **extract_translations.py** | `dev_tools/` | Translation extraction and sync |
 
-### 4.2 CLI Runner 详解
+### 4.2 CLI Runner Details
 
 ```bash
-# 基本用法
-blender -b --python automation/cli_runner.py [选项]
+# Basic usage
+blender -b --python automation/cli_runner.py [options]
 
-# 选项
+# Options
 --suite {unit|shading|negative|memory|export|api|all}
-    指定运行的测试套?
+    Specify test suite to run
 --category {all|core|memory|export|ui|integration}
-    按类别运行测?
+    Run tests by category
 --test <test_name>
-    运行指定测试用例
+    Run specific test case
 
 --discover
-    自动发现所?suite_*.py 文件
+    Auto-discover all suite_*.py files
 
 --json <path>
-    保存 JSON 格式报告
+    Save JSON format report
 
 --list
-    列出所有可用测试套?```
-
-### 4.3 综合验证脚本
-
-用于验证代码审查中识别的修复?
-```bash
-# 运行验证
-blender -b --python automation/comprehensive_verification.py
-
-# 多版本验?python automation/multi_version_test.py --verification
+    List all available test suites
 ```
 
-**验证覆盖?*
-1. 内存泄漏修复 (`use_fake_user`)
-2. 图像清理修复 (`DeleteResult`)
-3. NumPy 内存优化 (`_physical_clear_pixels`)
-4. 导出安全?(`hidden_object_export`)
-5. UI 安全 (`space_data` 访问)
-6. 网格清理 (`do_unlink=True`)
+### 4.3 Comprehensive Verification Script
 
-### 4.4 无头烘焙
+Used to verify fixes identified in code review:
+```bash
+# Run verification
+blender -b --python automation/comprehensive_verification.py
+
+# Multi-version verification
+python automation/multi_version_test.py --verification
+```
+
+**Verification Coverage:**
+1. Memory leak fix (`use_fake_user`)
+2. Image cleanup fix (`DeleteResult`)
+3. NumPy memory optimization (`_physical_clear_pixels`)
+4. Export safety (`hidden_object_export`)
+5. UI safety (`space_data` access)
+6. Mesh cleanup (`do_unlink=True`)
+
+### 4.4 Headless Bake
 
 ```bash
-# 基本用法
+# Basic usage
 blender -b scene.blend -P automation/headless_bake.py -- --job "JobName" --output "C:/output"
 
-# 无参数（运行所有启用的任务?blender -b scene.blend -P automation/headless_bake.py
+# Run all enabled tasks without parameters
+blender -b scene.blend -P automation/headless_bake.py
 ```
 
 ---
 
-## 5. CI/CD 集成
+## 5. CI/CD Integration
 
-### 5.1 GitHub Actions 示例
+### 5.1 GitHub Actions Example
 
 ```yaml
 # .github/workflows/test.yml
@@ -310,7 +357,8 @@ jobs:
         run: python automation/multi_version_test.py --verification
 ```
 
-### 5.2 预提交钩?
+### 5.2 Pre-commit Hooks
+
 ```yaml
 # .pre-commit-config.yaml
 repos:
@@ -330,113 +378,123 @@ repos:
         files: \.py$
 ```
 
-### 5.3 本地开发工作流
+### 5.3 Local Development Workflow
 
 ```bash
-# 1. 安装 pre-commit
+# 1. Install pre-commit
 pip install pre-commit
 pre-commit install
 
-# 2. 运行所有测?make test
+# 2. Run all tests
+make test
 
-# 3. 运行跨版本测?make test-multi-version
+# 3. Run cross-version tests
+make test-multi-version
 
-# 4. 生成翻译
+# 4. Generate translations
 python dev_tools/extract_translations.py --mode sync
 ```
 
 ---
 
-## 6. 国际化工作流
+## 6. Internationalization Workflow
 
-### 6.1 翻译提取工具
+### 6.1 Translation Extraction Tool
 
 ```bash
-# 扫描代码，提取需要翻译的字符?python dev_tools/extract_translations.py --mode update
+# Scan code, extract translatable strings
+python dev_tools/extract_translations.py --mode update
 
-# 同步：删除未使用?key
+# Sync: remove unused keys
 python dev_tools/extract_translations.py --mode sync
 
-# 清理：重置所有翻?python dev_tools/extract_translations.py --mode clean
+# Clean: reset all translations
+python dev_tools/extract_translations.py --mode clean
 ```
 
-### 6.2 工具特点
+### 6.2 Tool Features
 
-**SmartFilter 智能过滤?*
-- ?保留：用户可见文?(`"Bake"`, `"Select Object"`)
-- ?忽略：内?ID (`"BAKETOOL_OT_Bake"`)
-- ?忽略：数?(`"1024"`, `"3.14"`)
-- ?忽略：单字符 (`"X"`, `"Y"`, `"Z"`)
+**SmartFilter Intelligent Filtering:**
+- **Preserves**: User-visible strings (`"Bake"`, `"Select Object"`)
+- **Ignores**: Internal IDs (`"BAKETOOL_OT_Bake"`)
+- **Ignores**: Numbers (`"1024"`, `"3.14"`)
+- **Ignores**: Single characters (`"X"`, `"Y"`, `"Z"`)
 
-### 6.3 Blender i18n 集成
+### 6.3 Blender i18n Integration
 
-BakeTool 使用 Blender 内置的翻译系统：
+BakeTool uses Blender's built-in translation system:
 
 ```python
-# 注册翻译
+# Register translations
 bpy.app.translations.register(__name__, translations.translation_dict)
 
-# 使用翻译
+# Use translations
 layout.label(text=bpy.app.translations.pgettext("Bake"))
 
-# 注销
+# Unregister
 bpy.app.translations.unregister(__name__)
 ```
 
-### 6.4 添加新语言
+### 6.4 Adding a New Language
 
-1. 编辑 `translations.py`
-2. 添加语言代码?`translation_dict`
-3. 翻译所有字符串
+1. Edit `translations.py`
+2. Add language code to `translation_dict`
+3. Translate all strings
 
 ---
 
-## 7. 维护指南
+## 7. Maintenance Guide
 
-### 7.1 发布检查清?
-- [ ] 运行所有测试套?(`--suite all`)
-- [ ] 运行跨版本测?(`--verification`)
-- [ ] 检查内存泄?(`suite_memory.py`)
-- [ ] 验证导出安全?(`suite_export.py`)
-- [ ] 更新 `bl_info` 版本?- [ ] 更新 CHANGELOG
-- [ ] 运行翻译同步 (`--mode sync`)
+### 7.1 Release Checklist
 
-### 7.2 回归防御
+- [ ] Run all test suites (`--suite all`)
+- [ ] Run cross-version tests (`--verification`)
+- [ ] Check memory leaks (`suite_memory.py`)
+- [ ] Verify export safety (`suite_export.py`)
+- [ ] Update `bl_info` version
+- [ ] Update CHANGELOG
+- [ ] Run translation sync (`--mode sync`)
 
-每当修改以下内容时，必须运行相应测试?
-| 修改内容 | 必须运行的测?|
-|----------|----------------|
+### 7.2 Regression Prevention
+
+When modifying the following, run corresponding tests:
+
+| Modification | Required Tests |
+|-------------|---------------|
 | `core/engine.py` | `suite_unit.py`, `suite_production_workflow.py` |
 | `core/image_manager.py` | `suite_memory.py`, `suite_unit.py` |
 | `core/node_manager.py` | `suite_shading.py`, `suite_unit.py` |
 | `ui.py` | `suite_ui_logic.py` |
 | `property.py` | `suite_parameter_matrix.py`, `suite_preset.py` |
-| 任何核心模块 | `suite_compat.py` (跨版本测? |
+| Any core module | `suite_compat.py` (cross-version) |
 
-### 7.3 性能基准
+### 7.3 Performance Benchmarks
 
 ```bash
-# 运行性能测试
+# Run performance tests
 blender -b --python automation/cli_runner.py -- --suite unit --test test_performance
 ```
 
-### 7.4 调试技?
+### 7.4 Debugging Techniques
+
 ```python
-# 在测试中添加断点
+# Add breakpoint in tests
 import code; code.interact(local=dict(globals(), **locals()))
 
-# 打印场景状?print(f"Objects: {len(bpy.data.objects)}")
+# Print scene state
+print(f"Objects: {len(bpy.data.objects)}")
 print(f"Images: {len(bpy.data.images)}")
 print(f"Materials: {len(bpy.data.materials)}")
 ```
 
 ---
 
-## 8. 最佳实?
-### 8.1 测试命名规范
+## 8. Best Practices
+
+### 8.1 Test Naming Conventions
 
 ```python
-# 命名模式: test_<feature>_<scenario>_<expected>
+# Naming pattern: test_<feature>_<scenario>_<expected>
 def test_image_manager_creates_with_correct_resolution(self):
     pass
 
@@ -447,19 +505,20 @@ def test_memory_leak_no_accumulation_after_bake(self):
     pass
 ```
 
-### 8.2 测试隔离
+### 8.2 Test Isolation
 
 ```python
 def setUp(self):
-    cleanup_scene()  # 确保干净的环?
+    cleanup_scene()  # Ensure clean environment
+
 def tearDown(self):
-    cleanup_scene()  # 清理测试产物
+    cleanup_scene()  # Clean test artifacts
 ```
 
-### 8.3 Mock 对象策略
+### 8.3 Mock Object Strategy
 
 ```python
-# 优先使用 helpers.py 中的 MockSetting
+# Prefer using MockSetting from helpers.py
 from test_cases.helpers import MockSetting
 
 setting = MockSetting(
@@ -469,26 +528,29 @@ setting = MockSetting(
 )
 ```
 
-### 8.4 持续改进
+### 8.4 Continuous Improvement
 
-1. **TDD 开?*: 新功能先写测?2. **测试覆盖?*: 目标 >80%
-3. **自动?*: 所有测试在 CI/CD 中运?4. **文档同步**: 测试即文?
+1. **TDD First**: Write tests before features
+2. **Test Coverage**: Target >80%
+3. **Automation**: All tests run in CI/CD
+4. **Documentation**: Tests are documentation
+
 ---
 
-## 附录 A: Blender 测试资源
+## Appendix A: Blender Testing Resources
 
 - [Blender Python API Docs](https://docs.blender.org/api/current/)
 - [Blender Stack Exchange](https://blender.stackexchange.com/)
 - [Blender Development Forum](https://developer.blender.org/)
 
-## 附录 B: 相关工具
+## Appendix B: Related Tools
 
-| 工具 | 用?|
+| Tool | Usage |
 |------|------|
-| [pytest-blender](https://github.com/puckow/pytest-blender) | pytest 插件 |
-| [blender-addon-tests](https://github.com/p2or/blender-addon-tests) | 测试模板 |
-| [pre-commit-blender](https://github.com/scientific-assets/pre-commit-blender) | pre-commit 钩子 |
+| [pytest-blender](https://github.com/puckow/pytest-blender) | pytest plugin |
+| [blender-addon-tests](https://github.com/p2or/blender-addon-tests) | Test templates |
+| [pre-commit-blender](https://github.com/scientific-assets/pre-commit-blender) | pre-commit hooks |
 
 ---
 
-*本指南由 BakeTool 团队维护 - 最后更? 2026-04-17*
+*Maintained by BakeTool Team - Last updated 2026-04-20*

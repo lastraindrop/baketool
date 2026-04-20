@@ -1,344 +1,422 @@
-# BakeTool 开发者指?## Developer Guide
+# BakeTool Developer Guide
 
-**版本:** 1.0.0
-**更新日期:** 2026-04-17
+**Version:** 1.0.0
+**Last Updated:** 2026-04-17
 
 ---
 
-## 概述
+## Overview
 
-本指南为 BakeTool 的后续开发提供架构说明、技术规范及已知问题的记录。通过遵循本指南，您可以有效地为项目做出贡献，同时保持代码质量和跨版本兼容性?
+This guide provides architecture documentation, technical specifications, and known issues for BakeTool development. Following this guide enables effective contribution while maintaining code quality and cross-version compatibility.
+
 ---
 
-## 第一章：尝试性的设计架构
+## Chapter 1: Architecture Design
 
-### 1.1 三层架构设想 (Tentative Design)
+### 1.1 Three-Layer Architecture
 
-BakeTool 尝试遵循 **UI-Engine-Core** 三层逻辑划分。我们承认由于大量逻辑由 AI 生成，目前各层之间可能仍存在耦合风险，后续维护应保持警惕?
+BakeTool follows a **UI-Engine-Core** three-layer logic division:
 
 ```
-┌─────────────────────────────────────────────────────────────??                   UI / Operator ?                         ?? ops.py, ui.py                                             ?? - 数据驱动?UI (CHANNEL_UI_LAYOUT)                        ?? - ?Operator (Thin Operators)                            ?? - 环境健康监测                                            ?└─────────────────────────────────────────────────────────────?                              ?                              ?┌─────────────────────────────────────────────────────────────??                   Engine ?(编排?                          ?? core/engine.py                                            ?? - JobPreparer: 验证输入并准备执行队?                     ?? - BakePassExecutor: 执行烘焙步骤                          ?? - BakeStepRunner: 异步烘焙主控                            ?? - BakePostProcessor: 降噪后处?                          ?└─────────────────────────────────────────────────────────────?                              ?                              ?┌─────────────────────────────────────────────────────────────??                   Core ?(无状态工?                      ?? core/*.py                                                 ?? - image_manager: 图像管理                                 ?? - node_manager: 节点操作                                  ?? - uv_manager: UV 层处?                                  ?? - shading: 着色器工具                                    ?? - common: 共享工具                                        ?? - compat: 版本兼容                                        ?└─────────────────────────────────────────────────────────────?```
+┌─────────────────────────────────────────────────────┐
+│  UI / Operator Layer                                 │
+│  ops.py, ui.py                                      │
+│  - Data-driven UI (CHANNEL_UI_LAYOUT)             │
+│  - Operators (Thin Operators)                     │
+│  - Environment health monitoring                  │
+├─────────────────────────────────────────────────────┤
+│  Engine Layer (Orchestration)                      │
+│  core/engine.py                                    │
+│  - JobPreparer: Validate input and prepare queue │
+│  - BakePassExecutor: Execute bake steps            │
+│  - BakeStepRunner: Async bake controller           │
+│  - BakePostProcessor: Denoise post-processing     │
+├─────────────────────────────────────────────────────┤
+│  Core Layer (Stateless Utilities)                  │
+│  core/*.py                                         │
+│  - image_manager: Image management                │
+│  - node_manager: Node operations                 │
+│  - uv_manager: UV layer handling                  │
+│  - shading: Shader utilities                       │
+│  - common: Shared utilities                       │
+│  - compat: Version compatibility                  │
+└─────────────────────────────────────────────────────┘
+```
 
-### 1.2 核心组件
+### 1.2 Core Components
 
 #### 1.2.1 JobPreparer
 
-负责验证输入并准备执行队列：
+Responsible for validating input and preparing execution queue:
 
 ```python
 class JobPreparer:
     @staticmethod
     def prepare_execution_queue(context, jobs) -> List[BakeStep]:
-        """验证输入并准备执行队?""
+        """Validate inputs and prepare execution queue"""
         queue = []
         for job in jobs:
             if not job.enabled:
                 continue
-            # 验证对象
-            # 准备通道配置
-            # 创建 BakeStep
+            # Validate objects
+            # Prepare channel config
+            # Create BakeStep
             queue.append(step)
         return queue
 ```
 
 #### 1.2.2 BakePassExecutor
 
-执行单个烘焙步骤的流水线?
+Executes individual bake step pipeline:
 ```python
 class BakePassExecutor:
     @staticmethod
     def execute(context, setting, task, channel, ...) -> Image:
-        """执行烘焙通道"""
-        # 1. 创建目标图像
-        # 2. 准备烘焙参数
-        # 3. 执行 Blender 烘焙操作
-        # 4. 应用 NumPy 处理
-        # 5. 返回烘焙结果
+        """Execute single bake pass"""
+        # 1. Create/select target image
+        # 2. Set up bake context
+        # 3. Execute Blender bake operation
+        # 4. Apply post-processing
+        return image
 ```
 
 #### 1.2.3 BakeStepRunner
 
-异步烘焙主控，支持分段性能采样?
+Controls asynchronous execution with error handling:
 ```python
 class BakeStepRunner:
-    def run(self, step: BakeStep, state_mgr=None, queue_idx=0) -> List[Dict]:
-        """执行单个步骤并返回生成的结果"""
-        job, task, channels, frame_info = step.job, step.task, step.channels, step.frame_info
-        results = []
-        # ... 执行逻辑
-        return results
+    def __init__(self, context, scene):
+        self.context = context
+        self.scene = scene
+
+    def run(self, step, state_mgr=None, queue_idx=0) -> List[Dict]:
+        """Execute single step with full context management"""
+        # Orchestrates UV setup, node graph, bake, save, channel packing
 ```
 
 #### 1.2.4 BakePostProcessor
 
-封装烘焙后的图像后处理逻辑?
+Handles denoising and post-processing:
 ```python
 class BakePostProcessor:
     @staticmethod
-    def apply_denoise(image, reuse_scene=None):
-        """应用 OIDN 降噪"""
-        # 创建临时合成器场?        # 配置降噪节点
-        # 执行降噪
-        # 清理临时场景
+    def apply_denoise(context, images, method) -> None:
+        """Apply denoising using OIDN"""
+        # Uses Blender compositor with OIDN
 ```
 
 ---
 
-## 第二章：关键技术规约
+## Chapter 2: Data Flow
 
-### 2.1 三点对齐协议 (Triple-Point Alignment Protocol)
-为了避免 AI 在生成不同文件时产生参数脱节，本项目尝试实施三点对齐规范：
+### 2.1 Execution Flow
 
-1.  **Constants**: 在 `constants.py` 中定义所有原始默认值、范围和映射。
-2.  **Property**: `property.py` 的 RNA 属性定义必须引用上述常量。
-3.  **Engine**: 核心执行逻辑直接读取 RNA 属性或常量。
+```
+User Click "START BAKE PIPELINE"
+        │
+        ▼
+JobPreparer.prepare_execution_queue()
+        │ Validates jobs, objects, channels
+        ▼
+BakeStepRunner.run() [Modal Loop]
+        │
+        ├─► BakeContextManager (Context preservation)
+        ├─► UVLayoutManager (UV preparation)
+        ├─► NodeGraphHandler (Node setup)
+        ├─► BakePassExecutor (Execute bake)
+        ├─► ImageManager (Save to disk)
+        ├─► ChannelPacker (ORM packing)
+        └─► BakePostProcessor (Denoise)
+        │
+        ▼
+Result (Apply to scene / Export)
+```
 
-**校验机制**: 必须通过 `suite_parameter_matrix.py` 动态验证 100+ 种参数组合下的同步状态，尝试在发布前发现逻辑断层。
+### 2.2 Named Tuples
 
-### 2.2 AI 代码维护规范
-本项目中超过 70% 的代码由 AI 辅助生成。由于缺乏大规模生产环境的洗礼，维护者需遵循：
-1.  **逻辑怀疑**: 不要假设 AI 生成的逻辑分支是覆盖完备的。
-2.  **强制测试**: 任何对 AI 生成函数的修改，必须同步运行对应的集成测试。
-3.  **姿态中立**: 在注释中保持客观描述，避免使用过度自信的判断语。
+BakeStep and BakeTask use named tuples for lightweight data passing:
+
+```python
+# In constants.py
+BakeStep = namedtuple('BakeStep', ['job', 'task', 'channels', 'frame_info'])
+BakeTask = namedtuple('BakeTask', ['base_name', 'object', 'udim_tile', ...])
+```
 
 ---
 
-## 第三章：测试套件
+## Chapter 3: Naming Conventions
 
-### 3.1 测试套件清单
+### 3.1 File Naming
+- **Modules**: `snake_case.py` (e.g., `image_manager.py`)
+- **Classes**: `PascalCase` (e.g., `BakeStepRunner`)
+- **Functions**: `snake_case()` (e.g., `save_image()`)
+- **Constants**: `UPPER_SNAKE_CASE` (e.g., `BAKE_TYPES`)
 
-| 套件 | 文件 | 描述 |
-|------|------|------|
-| suite_unit.py | 单元测试 | 核心组件逻辑测试 |
-| suite_memory.py | 内存测试 | 内存泄漏检?|
-| suite_export.py | 导出测试 | 导出安全?|
-| suite_api.py | API 测试 | 公共 API 稳定?|
-| suite_ui_logic.py | UI 测试 | 面板绘制逻辑 |
-| suite_preset.py | 预设测试 | 序列化与迁移 |
-| suite_negative.py | 负面测试 | 边界条件 |
-| suite_denoise.py | 降噪测试 | 降噪器集?|
-| suite_production_workflow.py | E2E 测试 | 端到端流?|
-| suite_context_lifecycle.py | 生命周期测试 | 上下文管?|
-| suite_parameter_matrix.py | 矩阵测试 | 参数组合测试 |
-| suite_compat.py | 兼容性测?| 版本兼容?|
-| suite_cleanup.py | 清理测试 | 资源清理 |
-| suite_shading.py | 着色测?| 着色器逻辑 |
-| suite_udim_advanced.py | UDIM 测试 | UDIM 功能 |
-| suite_code_review.py | 代码审查测试 | 静态检?|
+### 3.2 Blender-Specific Conventions
 
-### 3.2 运行测试
+Due to Blender API requirements:
+- **Operators**: `BAKETOOL_OT_*` (e.g., `BAKETOOL_OT_BakeOperator`)
+- **Panels**: `BAKE_PT_*` (e.g., `BAKE_PT_BakePanel`)
+- **UI Lists**: `BAKETOOL_UL_*`
+- **PropertyGroups**: `Bake*Settings` (e.g., `BakeJobSetting`)
 
-#### Blender UI 运行
+### 3.3 System Names
 
-```
-Blender ?N 面板 ?Baking ?Debug Mode ?Run Test Suite
+Avoid name collisions with Blender internal names:
+```python
+SYSTEM_NAMES = {
+    "TEMP_UV": "BT_Bake_Temp_UV",      # Prefix with BT_
+    "DUMMY_IMG": "BT_Protection_Dummy",
+    "PROTECTION_NODE": "BT_Protection_Node",
+}
 ```
 
-#### CLI 运行
+---
+
+## Chapter 4: Version Compatibility
+
+### 4.1 Blender Version Detection
+
+```python
+# In core/compat.py
+def is_blender_5() -> bool:
+    return bpy.app.version >= (5, 0, 0)
+
+def is_blender_4() -> bool:
+    return bpy.app.version >= (4, 0, 0) and bpy.app.version < (5, 0, 0)
+```
+
+### 4.2 Common Compatibility Issues
+
+| Issue | Blender 3.x | Blender 4.x+ | Solution |
+|-------|-------------|--------------|----------|
+| Vertex Colors | `vertex_colors` | Deprecated | Use mesh attributes API |
+| Bake Types | `scene.render.bake_type` | `scene.cycles.bake_type` | Use compat function |
+
+### 4.3 Testing Multi-Version
 
 ```bash
-# 单个套件
-blender -b --python automation/cli_runner.py -- --suite unit
-
-# 所有套?blender -b --python automation/cli_runner.py -- --suite all
-
-# 按类?blender -b --python automation/cli_runner.py -- --category memory
-
-# 跨版本测?python automation/multi_version_test.py --verification
-```
-
-### 3.3 测试辅助工具
-
-#### DataLeakChecker
-
-检?Blender 数据块泄漏：
-
-```python
-from test_cases.helpers import DataLeakChecker
-
-checker = DataLeakChecker()
-# ... 执行操作 ...
-leaks = checker.check()
-```
-
-#### assert_no_leak
-
-上下文管理器?
-```python
-with assert_no_leak(self):
-    create_bake_result()
-```
-
-#### JobBuilder
-
-流畅 API 构建测试?
-```python
-job = (JobBuilder("TestJob")
-    .mode("SINGLE_OBJECT")
-    .type("BSDF")
-    .resolution(512)
-    .add_objects([obj])
-    .build())
+# Run automated multi-version tests
+python automation/multi_version_test.py --verification
 ```
 
 ---
 
-## 第四章：开发规?
-### 4.1 代码风格
+## Chapter 5: Testing Framework
 
-遵循 Google Python Style Guide?
-- 使用 `snake_case` 命名函数和变?- 使用 `CapWords` 命名?- 使用 `ALL_CAPS` 命名常量
-- 为所有公共函数和类添?docstring
+### 5.1 Test Suites
 
-### 4.2 异常处理
+| Suite | Purpose |
+|-------|---------|
+| `suite_unit.py` | Unit tests for core functions |
+| `suite_memory.py` | Memory leak detection |
+| `suite_export.py` | Export safety tests |
+| `suite_api.py` | API stability tests |
+| `suite_code_review.py` | Code quality checks |
 
-避免?`except:` 子句?
+### 5.2 Running Tests
+
+```bash
+# Run all tests via Blender
+blender -b --python automation/cli_runner.py -- --suite all
+
+# Run specific suite
+blender -b --python automation/cli_runner.py -- --suite unit
+```
+
+### 5.3 CI/CD Integration
+
+Tests automatically run on:
+- Pull requests
+- Version tags
+- Scheduled daily builds
+
+---
+
+## Chapter 6: Coding Standards
+
+### 6.1 Error Handling
+
+**Always use specific exceptions:**
+
 ```python
 # BAD
 try:
-    do_something()
-except:
+    operation()
+except Exception:
     pass
 
 # GOOD
 try:
-    do_something()
-except (ReferenceError, RuntimeError) as e:
-    logger.debug(f"Failed: {e}")
+    operation()
+except (OSError, FileNotFoundError) as e:
+    logger.warning(f"Operation failed: {e}")
 ```
 
-### 4.3 版本兼容?
-使用 `compat.py` 中的工具函数?
+### 6.2 Type Annotations
+
+Add type annotations for public functions:
+
 ```python
-from core.compat import IS_BLENDER_5, get_bake_settings
-
-if IS_BLENDER_5:
-    # Blender 5.0+ 特定代码
-else:
-    # 旧版本代?```
-
-### 4.4 参数一致?
-遵循三点点对齐协议：
-
-1. **Constants** ?`constants.py` 定义所有系统常?2. **Engine** ?`core/engine.py` 使用常量
-3. **Automation** ?`automation/*.py` 验证对齐
-
-### 4.5 IDProperty 安全
-
-严禁直接存储 `bpy.types.ID`?
-```python
-# BAD
-obj["material"] = some_material
-
-# GOOD
-obj["material_name"] = some_material.name
-# 使用?material = bpy.data.materials.get(obj["material_name"])
+def set_image(
+    name: str,
+    x: int,
+    y: int,
+    alpha: bool = True,
+    context: Optional[bpy.types.Context] = None,
+) -> bpy.types.Image:
+    """Get or create an image with specified settings."""
+    pass
 ```
 
----
+### 6.3 Docstrings
 
-## 第五章：已知问题与解决方?
-### 5.1 EnumProperty 安全
-
-?`items` 参数使用函数回调时，`default` **必须是整数索?*?
-```python
-# BAD
-prop = EnumProperty(
-    items=my_items_func,
-    default="option_a"  # 字符串会报错
-)
-
-# GOOD
-prop = EnumProperty(
-    items=my_items_func,
-    default=0  # 整数索引
-)
-```
-
-### 5.2 Blender 5.0 节点架构
-
-B5.0 统一了节点系统：
+Follow Google style for docstrings:
 
 ```python
-# 旧版?tree = bpy.data.node_groups.new("MyTree", type='COMPOSITING')
-output_node = tree.nodes.new('CompositorNodeComposite')
+class BakeStepRunner:
+    """Executes a single bake step with full context management.
 
-# B5.0+
-tree = bpy.data.node_groups.new("MyTree", type='CompositorNodeTree')
-output_node = tree.nodes.new('NodeGroupOutput')
-```
+    Handles context switching, UV layout setup, node graph manipulation,
+    bake execution, result saving, and channel packing.
 
-### 5.3 UDIM Headless 初始?
-在旧版后台模式下，必须执?三重触发"?
-```python
-image.filepath_raw = f"//{tile_path}<UDIM>.png"
-image.file_format = 'PNG'
-image.pack()
-```
+    Args:
+        context: Blender context. Uses bpy.context if None.
+        scene: Target scene. Uses context.scene if None.
+    """
 
-### 5.4 内存泄漏检?
-?E2E 测试中，`assert_no_leak` 必须包裹所有生成逻辑?
-```python
-def test_bake_result(self):
-    with assert_no_leak(self):
-        create_images()
-        create_objects()
-    # 测试后清?    cleanup_scene()
+    def run(self, step: BakeStep) -> List[Dict[str, Any]]:
+        """Execute a single Step and return generated results.
+
+        Returns:
+            List of dicts containing image data and metadata.
+        """
+        pass
 ```
 
 ---
 
-## 第六章：开发者工作流
+## Chapter 7: API Reference
 
-### 6.1 开发检查清?
-| 步骤 | 描述 |
-|------|------|
-| 1 | 编写测试用例 |
-| 2 | 实现功能 |
-| 3 | 运行单元测试 |
-| 4 | 运行集成测试 |
-| 5 | 运行跨版本测?|
-| 6 | 更新文档 |
-| 7 | 代码审查 |
+### 7.1 Core Modules
 
-### 6.2 提交规范
+| Module | Purpose | Public API |
+|--------|---------|------------|
+| `api.py` | Public API | `api.bake()`, `api.get_udim_tiles()` |
+| `engine.py` | Bake orchestration | `JobPreparer`, `BakeStepRunner` |
+| `image_manager.py` | Image handling | `set_image()`, `save_image()` |
+| `node_manager.py` | Node operations | `NodeGraphHandler` |
+| `uv_manager.py` | UV operations | `UVLayoutManager`, `detect_object_udim_tile()` |
+
+### 7.2 Constants
+
+Key constants defined in `constants.py`:
+- `CHANNEL_BAKE_INFO` - Channel metadata
+- `CHANNEL_UI_LAYOUT` - Data-driven UI configuration
+- `FORMAT_SETTINGS` - Image format technical settings
+
+---
+
+## Chapter 8: Build and Release
+
+### 8.1 Release Checklist
+
+Before releasing:
+- [ ] Run full test suite
+- [ ] Update version in `bl_info` (\_\_init\_\_.py)
+- [ ] Sync versions in `blender_manifest.toml`
+- [ ] Update `translations.json` header
+- [ ] Update ROADMAP.md with release notes
+- [ ] Run syntax validation: `python -m py_compile *.py`
+
+### 8.2 Creating Release Package
 
 ```bash
-# 功能分支
-git checkout -b feature/amazing-feature
+# Build using MANIFEST.in
+python -m build
 
-# 提交
-git commit -m "feat: add amazing feature"
-
-# 推?git push origin feature/amazing-feature
-
-# 创建 Pull Request
-```
-
-### 6.3 版本发布
-
-```bash
-# 1. 更新版本?# 2. 更新 CHANGELOG
-# 3. 运行所有测?# 4. 创建 Git tag
-git tag v1.0.0
-git push origin v1.0.0
+# Or manual packaging
+cd baketool
+zip -r baketool.zip . -x "automation/*" "test_cases/*" "docs/dev/*"
 ```
 
 ---
 
-## 第七章：参考资?
-### 7.1 官方文档
+## Chapter 9: Known Issues
 
-- [Blender Python API](https://docs.blender.org/api/current/)
-- [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)
-- [Blender Stack Exchange](https://blender.stackexchange.com/)
+### 9.1 AI-Generated Code Risks
 
-### 7.2 相关项目
+Due to AI-assisted development:
+- Possible boundary case errors
+- Potential edge case not handled
+- Limited production validation
 
-- [pytest-blender](https://github.com/puckow/pytest-blender)
-- [blender-addon-tests](https://github.com/p2or/blender-addon-tests)
+**Mitigation:**
+- Comprehensive test suite (220+ tests)
+- User feedback encouraged
+- Regular updates
+
+### 9.2 Performance Notes
+
+- Large resolution baking (>4K) may cause memory issues
+- Recommend GPU baking for speed
+- Use tiled baking for extremely large textures
 
 ---
 
-*开发者指南版?1.0.0*
-*最后更? 2026-04-17*
+## Appendix A: Directory Structure
+
+```
+baketool/
+├── __init__.py              # Main addon entry
+├── ops.py                  # Operator definitions
+├── ui.py                   # UI panel definition
+├── property.py             # PropertyGroup definitions
+├── constants.py            # Constants and enums
+├── translations.py         # Translation system
+├── translations.json       # Translation data
+├── state_manager.py        # Session state management
+├── preset_handler.py      # Preset serialization
+├── core/                   # Core modules
+│   ├── __init__.py       # Module exports
+│   ├── api.py            # Public API
+│   ├── engine.py         # Bake engine
+│   ├── execution.py      # Modal execution
+│   ├── image_manager.py # Image management
+│   ├── node_manager.py  # Node operations
+│   ├── uv_manager.py    # UV operations
+│   ├── shading.py       # Shading utilities
+│   ├── cage_analyzer.py # Cage analysis
+│   ├── common.py        # Common utilities
+│   ├── compat.py       # Version compatibility
+│   └── math_utils.py    # Math utilities
+├── automation/             # Automation tools
+│   ├── cli_runner.py
+│   ├── headless_bake.py
+│   └── multi_version_test.py
+├── dev_tools/              # Development tools
+└── docs/                   # Documentation
+```
+
+---
+
+## Appendix B: Contribution Guidelines
+
+1. **Fork** this repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to branch (`git push origin feature/amazing-feature`)
+5. **Create** Pull Request
+
+---
+
+## Appendix C: Support
+
+- **Issue Reports**: [GitHub Issues](https://github.com/lastraindrop/baketool/issues)
+- **Feature Requests**: [GitHub Discussions](https://github.com/lastraindrop/baketool/discussions)
+- **Documentation Fixes**: Pull Request
+
+---
+
+*Developer Guide Version 1.0.0*
+*Last Updated: 2026-04-17*

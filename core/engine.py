@@ -1,6 +1,7 @@
 import bpy
 import logging
 import time
+import numpy as np
 from collections import namedtuple
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -196,7 +197,7 @@ class BakePostProcessor:
                         image.update()
                     except Exception as e:
                         logger.error(
-                            f"无法回写降噪像素: {e}"
+                            f"Failed to write back denoised pixels: {e}"
                         )
 
         finally:

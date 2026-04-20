@@ -1,462 +1,510 @@
----
+# BakeTool Roadmap
 
-# BakeTool 发展路线图
-
-**版本:** 1.0.0
-**更新日期:** 2026-04-17
-**状态:** Production Hardened (生产就绪)
+**Version:** 1.0.0
+**Last Updated:** 2026-04-17
+**Status:** Production Hardened
 
 ---
 
-## 概述
+## Overview
 
-BakeTool 是一款专为 Blender 设计的专业级纹理烘焙插件，支持 Blender 3.3 至 5.0+ 的所有主流版本。本路线图详细阐述了插件从实用工具向专业级烘焙中间件演进的战略愿景。
+BakeTool is a professional-grade texture baking plugin designed for Blender, supporting versions 3.3 through 5.0+. This roadmap details the strategic vision for evolving from a practical utility tool to a professional-grade baking middleware.
 
-### 版本历史
+### Version History
 
-| 版本 | 日期 | 状态 | 主要特性 |
-|------|------|------|----------|
-| 1.0.0-rc | 2026-04-20 | 当前版本 | 核心稳定性加固、全量翻译对齐 (AI 辅助整肃) |
-| 1.0.0 | 2026-04-17 | 历史版本 | 初步兼容性适配、异常处理试验 |
-
----
-
-## 阶段性总结：小规模实验与稳定性尝试 (v1.0.0-rc)
-
-**目标**: 在缺乏大规模用户验证的情况下，尽可能通过 AI 辅助的静态分析与受控环境测试来降低风险。
-
-### 1.5 核心稳定性与国际化整肃 (AI-Assisted Consolidation)
-**状态**: 已完成 (2026-04-20)
-
-**工作描述**:
-针对 AI 生成代码中常见的逻辑偏差与翻译漏读进行了专项修正。
-
-**关键变动**:
-- **异常链加固**: 针对清理回调（Cleanup Callbacks）增加了容错捕获，尝试防止因个别对象失效导致的插件崩溃。
-- **参数动态对齐**: 建立了 UI 属性与引擎任务间的初步校验逻辑，修正了如 `save_and_quit` 等逻辑反转的 Bug。
-- **全量汉化**: 深度扫描 UI 定义，消除了硬编码英文，消灭了大小写不匹配导致的翻译漏读。
+| Version | Date | Status | Key Features |
+|---------|------|--------|-------------|
+| 1.0.0-rc | 2026-04-20 | Current | Core stability, full translation alignment |
+| 1.0.0 | 2026-04-17 | Stable | Initial release, compatibility fixes |
 
 ---
 
-## 未来尝试计划 (Experimental Future)
-由于项目目前用户基础较小，反馈循环缓慢，后续开发将采取极其谨慎的策略：
+## Phase 1: Experimental Phase (v1.0.0-rc)
 
-### 第一阶段：视觉与用户体验的持续摸索
-**目标**: 探索更直观的烘焙反馈，减少新用户的配置困惑。
+**Goal**: Minimize risk through AI-assisted static analysis and controlled environment testing.
 
----
+### 1.5 Core Stability & Internationalization (Completed)
 
-### 第二阶段：管线集成 (初步设想)
-**目标**: 尝试将引擎与 UI 进一步解耦。我们必须承认，目前的单文件 `engine.py` 存在维护压力。
-- **重构设想**: 尝试将任务构建、导出与核心执行分块，提高由 AI 生成的代码片段的复用率与可测试性。
-- **AI 透明度**: 增加更多自动化生成的测试用例，以弥补人工测试的不足。
+**Status**: Completed (2026-04-20)
 
----
-
-### 第六阶段：代码质量与可维护性 (持续整肃)
-**目标**: 严格遵循 Google Python Style Guide，逐步消除 AI 生成代码中的自信偏差。
+**Key Changes**:
+- **Exception Chain Hardening**: Added fault-tolerant catching for cleanup callbacks to prevent crashes from individual object failures
+- **Dynamic Parameter Alignment**: Established validation logic between UI properties and engine tasks, fixed bugs like `save_and_quit` logic reversal
+- **Full Localization**: Deep scanned UI definitions, eliminated hardcoded English strings, fixed case mismatches causing translation misses
 
 ---
 
-## 重要说明
-BakeTool 是一个**处于早期探索阶段**的项目。它很大程度上展示了 AI 在辅助 Blender 脚本编写方面的能力。我们深知它在复杂生产环境下的脆弱性，因此强烈建议使用者：**在任何操作前先进行场景保存与数据备份。**
+## Phase 2: Future Experimental Plans
 
+Due to the project's small user base and slow feedback cycle, future development will proceed with extreme caution:
 
-### 1.2 视觉笼子分析
-**状态**: 已完成 (v0.9.5)
+### First Phase: Visual and User Experience Exploration
 
-**功能描述**:
-在网格上生成“热力图”叠加层，显示笼子与高模相交或遗漏细节的区域。
-
-**技术实现**:
-- 使用 BVH-Tree 进行低模（带笼子挤出）与高模之间的射线投射分析
-- 红色区域表示“碰撞/遗漏”，绿色区域表示“安全”
-- 错误总数直接显示在物体列表中
-
-**用户体验价值**:
-- 在提交烘焙前可视化识别“丢失射线”或伪影
-- 减少因笼子设置不当导致的返工
+**Goal**: Explore more intuitive baking feedback, reduce configuration confusion for new users.
 
 ---
 
-### 1.3 异步进度 UI
-**状态**: 已完成 (Modal Progress 事件循环解耦)
+### Second Phase: Pipeline Integration
 
-**技术实现**:
-- 使用 `BakeModalOperator` 在重型烘焙期间保持 UI 响应
-- 实时显示当前通道、物体、预估剩余时间
-- 支持取消操作并保留已完成结果
+**Goal**: Further decouple engine from UI. Acknowledging current single-file `engine.py` maintenance pressure.
 
----
-
-### 1.4 自动化 UI 逻辑守护
-**状态**: 已完成 (v0.9.0)
-
-**功能描述**:
-静态分析 `CHANNEL_UI_LAYOUT` 与 Blender RNA 属性，防止运行时 UI 崩溃。
-
-**技术实现**:
-- 自动验证所有 UI 通道属性存在
-- 确保新增烘焙通道拥有 100% 信心
-- 自动化回归测试覆盖
+- **Refactoring Vision**: Split task building, export, and core execution into reusable, testable chunks
+- **AI Transparency**: Add more AI-generated test cases to compensate for manual testing gaps
 
 ---
 
-## 第二阶段：管线集成
-**目标**: 将引擎与 UI 解耦，实现无头操作和外部脚本集成。
+### Third Phase: Code Quality and Maintainability
 
-### 2.1 引擎-UI 解耦
-**状态**: 已完成 (v0.9.0 精化)
-
-**技术实现**:
-- 上帝函数拆分为粒化方法：
-  - `_create_target_image`: 图像创建
-  - `_execute_blender_bake_op`: Blender 烘焙调用
-  - `_apply_numpy_processing`: NumPy 处理
-
-**用户体验价值**:
-- 完全无头操作，不依赖活跃 Viewport 上下文
-- 支持渲染农场与 CI/CD 管道集成
+**Goal**: Strictly follow Google Python Style Guide, eliminate overconfidence biases in AI-generated code.
 
 ---
 
-### 2.2 公共 Python API
-**状态**: 已完成 (v1.0.0)
+## Important Notice
 
-**API 示例**:
+BakeTool is an **early-stage experimental project**. It largely demonstrates AI's capability in assisting Blender scripting. We strongly advise users to **save and backup scene data before any operations**.
+
+---
+
+## Completed Features
+
+### 1.2 Visual Cage Analysis
+
+**Status**: Completed (v0.9.5)
+
+**Function Description**:
+Generates "heatmap" overlay on meshes showing cage intersection or detail-missing areas with high poly.
+
+**Technical Implementation**:
+- Uses BVH-Tree for raycast analysis between low-poly (with cage extrusion) and high-poly
+- Red areas indicate "collision/missing", green indicates "safe"
+- Error total displayed directly in object list
+
+**User Experience Value**:
+- Visualize "missing rays" or artifacts before committing to bake
+- Reduce rework from improper cage settings
+
+---
+
+### 1.3 Asynchronous Progress UI
+
+**Status**: Completed (Modal Progress event loop decoupling)
+
+**Technical Implementation**:
+- Uses `BakeModalOperator` to keep UI responsive during heavy baking
+- Displays current channel, object, estimated remaining time
+- Supports cancellation while preserving completed results
+
+---
+
+### 1.4 Automated UI Logic Guardian
+
+**Status**: Completed (v0.9.0)
+
+**Function Description**:
+Statically analyzes `CHANNEL_UI_LAYOUT` and Blender RNA properties to prevent runtime UI crashes.
+
+**Technical Implementation**:
+- Auto-validates all UI channel properties exist
+- Ensures new bake channels have 100% confidence
+- Automated regression test coverage
+
+---
+
+## Second Phase: Pipeline Integration
+
+**Goal**: Decouple engine from UI, enable headless operations and external script integration.
+
+### 2.1 Engine-UI Decoupling
+
+**Status**: Completed (v0.9.0 refinement)
+
+**Technical Implementation**:
+- Split god functions into granular methods:
+  - `_create_target_image`: Image creation
+  - `_execute_blender_bake_op`: Blender bake call
+  - `_apply_numpy_processing`: NumPy processing
+
+**User Experience Value**:
+- Fully headless operations without active Viewport context
+- Support for render farm and CI/CD pipeline integration
+
+---
+
+### 2.2 Public Python API
+
+**Status**: Completed (v1.0.0)
+
+**API Example**:
 ```python
 from baketool.core import api
 
-# 基础烘焙 - 使用当前场景中的 Job 设置
+# Basic baking - use current scene's Job settings
 result = api.bake(objects=bpy.context.selected_objects)
-# 或者使用视口选择
+# Or use viewport selection
 result = api.bake(use_selection=True)
 
-# 获取 UDIM tiles
+# Get UDIM tiles
 tiles = api.get_udim_tiles(bpy.context.selected_objects)
 
-# 验证设置
+# Validate settings
 is_valid, msg = api.validate_settings(bpy.context.scene.BakeJobs.jobs[0])
 ```
 
 ---
 
-### 2.3 预设库 2.0 (可视化 UI)
-**状态**: 已完成 (v0.9.3)
+### 2.3 Preset Library 2.0 (Visual UI)
 
-**功能特性**:
-- 专用预设画廊，支持缩略图预览
-- 动态刷新逻辑
-- 支持用户自定义预设库路径
+**Status**: Completed (v0.9.3)
 
----
-
-### 2.4 烘焙性能分析器
-**状态**: 已完成 (v0.9.3)
-
-**功能特性**:
-- 每个通道的 Bake Time（计算耗时）vs Save Time（存储耗时）
-- 帮助识别大规模资产生产中的瓶颈
+**Features**:
+- Dedicated preset gallery with thumbnail preview
+- Dynamic refresh logic
+- Support for custom library paths
 
 ---
 
-## 第三阶段：智能化与算法
-**目标**: 用算法辅助替代手动试错。
+### 2.4 Baking Performance Profiler
 
-### 3.1 Auto-Cage 2.1 (基于邻近度)
-**状态**: 已完成 (v0.9.0 生产硬化)
+**Status**: Completed (v0.9.3)
 
-**技术实现**:
-- NumPy 射线追踪邻近度分析
-- 算法预测安全的平均挤出距离
-- 支持两种模式：
-  - `Uniform`: 传统统一挤出
-  - `Proximity`: 智能邻近度模式
+**Features**:
+- Bake Time vs Save Time for each channel
+- Helps identify bottlenecks in large-scale asset production
 
 ---
 
-### 3.2 智能像素密度
-**状态**: 已完成 (v1.0.0)
+## Third Phase: Intelligence and Algorithms
 
-**功能特性**:
-- 根据物体物理尺寸自动计算输出分辨率
-- 确保资产库质量一致性
-- 支持 px/unit 目标密度设置
+**Goal**: Use algorithmic assistance to replace manual trial-and-error.
 
----
+### 3.1 Auto-Cage 2.1 (Proximity-Based)
 
-### 3.3 抗锯齿与降噪管道
-**状态**: 已完成 (v0.9.3)
+**Status**: Completed (v0.9.0 Production Hardened)
 
-**技术实现**:
-- 集成 Intel OIDN (Open Image Denoise)
-- 通过临时合成器节点实现
-- 零泄漏场景清理
+**Technical Implementation**:
+- NumPy ray tracing proximity analysis
+- Algorithm predicts safe average extrusion distance
+- Supports two modes:
+  - `Uniform`: Traditional uniform extrusion
+  - `Proximity`: Smart proximity mode
 
 ---
 
-## 第四阶段：生产硬化与生态
-**目标**: 100% 架构稳定性、零泄漏场景管理、跨版本参数对齐。
+### 3.2 Smart Texel Density
 
-### 4.1 参数一致性 & 动态对齐 (硬化)
-**状态**: 100% CI PASS (3.3, 3.6, 4.2, 4.5, 5.0+)
+**Status**: Completed (v1.0.0)
 
-**技术实现**:
-- **三点对齐协议**: Constants ↔ Engine ↔ Automation
-- 标准化的 `add_bake_result_to_ui` 确保元数据（bake_time, resolution）使用严格的 RNA 契约映射
-- `suite_parameter_matrix.py` 跨所有 Blender 版本动态验证映射
-
-**测试覆盖**:
-- 70+ 核心测试套件
-- 80+ 个别用例
-- 5 个 Blender 版本全覆盖
+**Features**:
+- Auto-calculates output resolution based on physical object size
+- Ensures asset library quality consistency
+- Supports target density in px/unit
 
 ---
 
-### 4.2 零泄漏降噪管道 (递归清理)
-**状态**: 已完成 (v1.0.0)
+### 3.3 Anti-Aliasing and Denoise Pipeline
 
-**技术实现**:
-- 专门的 `finally` 块逻辑
-- 递归识别并清除所有 `BT_Denoise_Temp*` 场景
-- 清除节点树并使用 `user_clear()` 满足 B5.0 删除约束
+**Status**: Completed (v0.9.3)
 
-**好处**:
-- 防止批量烘焙期间内存峰值
-- 避免“活动场景”冲突
+**Technical Implementation**:
+- Integrated Intel OIDN (Open Image Denoise)
+- Implemented via temporary compositor nodes
+- Zero-leak scene cleanup
 
 ---
 
-### 4.3 Blender 5.0.x 完全支持
-**状态**: 已完成 (v1.0.0)
+## Fourth Phase: Production Hardening and Ecosystem
 
-**技术实现**:
-- 健壮的树发现（Direct ↔ Compositor Object ↔ Fallback creation）
-- 支持 B5.0 统一节点系统（使用 `CompositorNodeTree` ↔ `NodeGroupOutput`）
-- 通过强制整数默认值解决 B5.0 注册约束
+**Goal**: 100% architecture stability, zero-leak scene management, cross-version parameter alignment.
 
-**跨版本验证**:
+### 4.1 Parameter Consistency & Dynamic Alignment
+
+**Status**: 100% CI PASS (3.3, 3.6, 4.2, 4.5, 5.0+)
+
+**Technical Implementation**:
+- **Three-Point Alignment Protocol**: Constants ↔ Engine ↔ Automation
+- Standardized `add_bake_result_to_ui` ensures metadata (bake_time, resolution) uses strict RNA contract mapping
+- `suite_parameter_matrix.py` dynamically validates mapping across all Blender versions
+
+**Test Coverage**:
+- 70+ core test suites
+- 80+ individual use cases
+- Full coverage across 5 Blender versions
+
+---
+
+### 4.2 Zero-Leak Denoise Pipeline (Recursive Cleanup)
+
+**Status**: Completed (v1.0.0)
+
+**Technical Implementation**:
+- Dedicated `finally` block logic
+- Recursively identifies and clears all `BT_Denoise_Temp*` scenes
+- Clears node trees and uses `user_clear()` to satisfy B5.0 deletion constraints
+
+**Benefits**:
+- Prevents memory spikes during batch baking
+- Avoids "active scene" conflicts
+
+---
+
+### 4.3 Blender 5.0.x Full Support
+
+**Status**: Completed (v1.0.0)
+
+**Technical Implementation**:
+- Robust tree discovery (Direct ↔ Compositor Object ↔ Fallback creation)
+- Supports B5.0 unified node system (uses `CompositorNodeTree` ↔ `NodeGroupOutput`)
+- Solves B5.0 registration constraints through forced integer defaults
+
+**Cross-Version Validation**:
 - Blender 3.3.21 ↔ Blender 3.6.23 ↔ Blender 4.2.14 LTS ↔ Blender 4.5.3 LTS ↔ Blender 5.0.1+
 
 ---
 
-### 4.4 生产 E2E 验证循环
-**状态**: 已完成 (v1.0.0)
+### 4.4 Production E2E Validation Loop
 
-**工具链**:
-- `multi_version_test.py`: 自动监控多个本地 Blender 安装，70+ 核心测试套件
-- 负面测试套件确保错误路径弹窗
-- 综合验证脚本 (规划中)
+**Status**: Completed (v1.0.0)
 
----
-
-### 4.5 UI/UX 生产重构
-**状态**: 已完成 (v1.0.0)
-
-**功能特性**:
-- 综合仪表板式重构
-- 用对齐列替换嵌套布局
-- 分组功能区域获得更好的垂直流
-- 专业、流线型的美学匹配高端 Blender 插件
+**Toolchain**:
+- `multi_version_test.py`: Auto-monitors multiple local Blender installations, 70+ core test suite
+- Negative test suite ensures error path popups
+- Comprehensive validation scripts
 
 ---
 
-### 4.6 多版本图像 & 操作符审计
-**状态**: 已完成 (v1.0.0)
+### 4.5 UI/UX Production Refactor
 
-**功能特性**:
-- 自动化完整性检查 (`test_ui_operator_integrity`)
-- 验证 `ui.py` 中每个操作符正确注册
-- 审计并替换高版本图标（如 `SYNCHRONIZED`, `RAYCAST`）为广泛兼容的替代品
+**Status**: Completed (v1.0.0)
 
----
-
-## 第五阶段：异步与性能
-**目标**: 解耦烘焙进程并增强外部连接。
-
-### 5.1 后台进程烘焙 (工作线程)
-**概念**: 生成分离的 Blender 工作进程执行重型烘焙，保持主界面 100% 响应用于建模。
-**优先级**: HIGH (v1.6.0 重点)
-
-**技术挑战**:
-- 进程间通信
-- 进度同步
-- 错误处理和恢复
+**Features**:
+- Comprehensive dashboard-style refactor
+- Replaced nested layouts with aligned columns
+- Grouped functional areas for better vertical flow
+- Professional, streamlined aesthetic matching high-end Blender plugins
 
 ---
 
-### 5.2 资产桥接：零摩擦交付
-**概念**: GLB/USDZ 导出已上线，下一步是烘焙后自动 PBR 材质嵌入。
-**状态**: 部分完成
+### 4.6 Multi-Version Image & Operator Audit
+
+**Status**: Completed (v1.0.0)
+
+**Features**:
+- Auto integrity check (`test_ui_operator_integrity`)
+- Verifies each operator in `ui.py` registers correctly
+- Audited and replaced high-version icons (e.g., `SYNCHRONIZED`, `RAYCAST`) with broadly compatible alternatives
 
 ---
 
-### 5.3 并行瓦片烘焙 (UDIM 优化)
-**概念**: UDIM 项目的多进程瓦片烘焙，利用高核心数 CPU。
-**技术要求**:
-- 多进程协作
-- 瓦片依赖管理
-- 结果合并
+## Fifth Phase: Asynchrony and Performance
+
+**Goal**: Decouple baking process and enhance external connectivity.
+
+### 5.1 Background Process Baking (Work Threads)
+
+**Concept**: Generate separate Blender worker processes for heavy baking, keeping main UI 100% responsive for modeling.
+
+**Priority**: HIGH (v1.6.0 Focus)
+
+**Technical Challenges**:
+- Inter-process communication
+- Progress synchronization
+- Error handling and recovery
 
 ---
 
-## 第六阶段：代码质量与可维护性
-**目标**: 提高代码可维护性，遵循 Google Python Style Guide，防止未来回归。
+### 5.2 Asset Bridge: Zero-Friction Delivery
 
-### 6.1 导入标准化
-**状态**: 已完成 (v1.0.0)
+**Concept**: GLB/USDZ export is live; next step is auto PBR material embedding after baking.
 
-**修复内容**:
-- 将 `property` 模块重命名为 `prop_module` 避免与 Python 内置冲突
-- 标准化导入顺序 (stdlib ↔ bpy ↔ local modules)
+**Status**: Partially Completed
 
 ---
 
-### 6.2 类型提示 & Docstring 一致性
-**状态**: 已完成 (v1.0.0)
+### 5.3 Parallel Tile Baking (UDIM Optimization)
 
-**修复内容**:
-- 为 `common.py`, `image_manager.py`, `ops.py` 核心函数添加类型提示
-- 统一 docstring 风格为 Google Style（英文）
+**Concept**: Multi-process tile baking for UDIM projects, utilizing high core count CPUs.
+
+**Technical Requirements**:
+- Multi-process collaboration
+- Tile dependency management
+- Result merging
 
 ---
 
-### 6.3 魔法数字提取
-**状态**: 已完成 (v1.0.0)
+## Sixth Phase: Code Quality and Maintainability
 
-**修复内容**:
-- 将常量提取到 `constants.py`:
+**Goal**: Improve code maintainability, follow Google Python Style Guide, prevent future regressions.
+
+### 6.1 Import Standardization
+
+**Status**: Completed (v1.0.0)
+
+**Fixes**:
+- Renamed `property` module to `prop_module` to avoid Python built-in conflicts
+- Standardized import order (stdlib ↔ bpy ↔ local modules)
+
+---
+
+### 6.2 Type Hints & Docstring Consistency
+
+**Status**: Completed (v1.0.0)
+
+**Fixes**:
+- Added type hints to core functions in `common.py`, `image_manager.py`, `ops.py`
+- Unified docstring style to Google Style (English)
+
+---
+
+### 6.3 Magic Number Extraction
+
+**Status**: Completed (v1.0.0)
+
+**Fixes**:
+- Extracted constants to `constants.py`:
   - `UDIM_DEFAULT_TILE`
   - `GOLDEN_RATIO`
   - `MIN_THRESHOLD`
-  - 等
+  - And more
 
 ---
 
-### 6.4 异常处理硬化
-**状态**: 已完成 (v1.0.0)
+### 6.4 Exception Handling Hardening
 
-**修复内容**:
-- 将裸 `except` 替换为具体异常类型 (`AttributeError`, `RuntimeError`)
-- 添加使用 `.get()` 的安全回退用于字典访问
+**Status**: Completed (v1.0.0)
 
-**修复文件**:
-- `core/cleanup.py` - 3 处
-- `state_manager.py` - 3 处
-- `core/engine.py` - 7 处
-- `ops.py` - 3 处
+**Fixes**:
+- Replaced bare `except` with specific exception types (`AttributeError`, `RuntimeError`)
+- Added safe fallbacks using `.get()` for dictionary access
 
----
-
-### 6.5 测试覆盖扩展
-**状态**: 已完成 (v1.0.0)
-
-**新增内容**:
-- `suite_code_review.py` 验证所有 bug 修复
-- 综合验证脚本 (规划中)
-- 多版本测试框架 `multi_version_test.py`
+**Fixed Files**:
+- `core/cleanup.py` - 3 instances
+- `state_manager.py` - 3 instances
+- `core/engine.py` - 7 instances
+- `ops.py` - 3 instances
 
 ---
 
-## 第七阶段：未来演进...
+### 6.5 Test Coverage Expansion
 
-## 第八阶段：工业级生产力增强 (对标 TexTools)
+**Status**: Completed (v1.0.0)
 
-**目标**: 引入成熟的工业级工作流，将 BakeTool 提升为顶尖的资产处理平台。
-
-### 8.1 爆炸烘焙系统 (Explode System)
-**概念**: 自动将重叠的低模/高模对按名称后缀推开，消除法线漏色（Bleeding）瑕疵，烘焙后自动还原坐标。
-**核心优势**: 解决复杂机械结构的投影遮挡问题。
-
-### 8.2 高级几何算子 (Advanced Geometry Passes)
-**概念**: 引入更多 TexTools 风格的预设通道：
-*   **Bevel Mask**: 模拟边缘磨损
-*   **Soft/Fine Curvature**: 针对不同尺度的细节捕捉
-*   **Tangent/World Space Normal**: 灵活的法线空间转换
-*   **Dust/Cavity**: 基于拓扑的污垢分布图
-
-### 8.3 智能后缀匹配 2.0 (Smart-Suffix Matching)
-**概念**: 增强 `SMART_SET` 逻辑，支持正则表达式和多后缀（如 `_high`, `_hp`, `_source`）的自动识别与批量配对。
+**Additions**:
+- `suite_code_review.py` validates all bug fixes
+- Comprehensive validation scripts
+- Multi-version test framework `multi_version_test.py`
 
 ---
 
-## 版本发布计划
-
-### v1.0.0 (当前版本) - 生产就绪与代码整合
-**发布日期**: 2026-04-17
-
-**主要工作**:
-- 架构统一：单一自动化入口与自举测试
-- 代码整肃：全量补充 Google Style Docstrings 与类型提示
-- 质量硬化：修复 17+ 处异常处理隐患与语法瑕疵
-- 跨版本验证：Blender 3.3 - 5.0 100% 通过
+## Seventh Phase: Future Evolution...
 
 ---
 
-### v1.1.0 (计划中) - 工业级增强 (致敬 TexTools)
-**目标**: 后台工作线程实现、多 GPU 瓦片烘焙
+## Eighth Phase: Industrial Productivity Enhancement (TexTools Benchmark)
 
-**主要特性**:
-- [ ] 后台进程烘焙
-- [ ] 进度事件 API
-- [ ] 多 GPU 支持
+**Goal**: Introduce mature industrial workflows, elevate BakeTool to top-tier asset processing platform.
 
----
+### 8.1 Explode Baking System
 
-### v1.7.0 (计划中) - 智能增强
-**目标**: AI 辅助功能
+**Concept**: Auto-push overlapping low-poly/high-poly pairs by name suffix, eliminate normal bleeding artifacts, auto-restore coordinates after baking.
 
-**主要特性**:
-- [ ] 智能参数推荐
-- [ ] 材质自动分析
-- [ ] 工作流模板
+**Core Advantage**: Solves projection occlusion issues for complex mechanical structures.
 
----
+### 8.2 Advanced Geometry Passes
 
-### v2.0.0 (远期) - 生态系统
-**目标**: 成为 Blender 生态的烘焙中间件
-**主要特性**:
-- [ ] 外部引擎桥接（Marmoset, Substance）
-- [ ] 云渲染集成
-- [ ] AI 辅助重拓扑桥接
+**Concept**: Introduce more TexTools-style preset channels:
+- **Bevel Mask**: Simulate edge wear
+- **Soft/Fine Curvature**: Detail capture at different scales
+- **Tangent/World Space Normal**: Flexible normal space transformations
+- **Dust/Cavity**: Topology-based dirt distribution map
+
+### 8.3 Smart Suffix Matching 2.0
+
+**Concept**: Enhance `SMART_SET` logic with regex support and multi-suffix (e.g., `_high`, `_hp`, `_source`) automatic identification and batch pairing.
 
 ---
 
-## 贡献指南
+## Version Release Plan
 
-欢迎贡献！请遵循以下步骤：
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add amazing feature'`)
-4. Push 到分支 (`git push origin feature/amazing-feature`)
-5. 创建 Pull Request
+### v1.0.0 (Current Version) - Production Ready & Code Consolidation
 
-### 开发环境要求
+**Release Date**: 2026-04-17
+
+**Main Work**:
+- Architecture unification: single automation entry and bootstrap testing
+- Code consolidation: full Google Style Docstrings and type hints
+- Quality hardening: fixed 17+ exception handling issues and syntax bugs
+- Cross-version validation: 100% pass on Blender 3.3 - 5.0
+
+---
+
+### v1.1.0 (Planned) - Industrial Enhancement (TexTools Tribute)
+
+**Goal**: Background work thread implementation, multi-GPU tile baking
+
+**Main Features**:
+- [ ] Background process baking
+- [ ] Progress event API
+- [ ] Multi-GPU support
+
+---
+
+### v1.7.0 (Planned) - Smart Enhancement
+
+**Goal**: AI-assisted features
+
+**Main Features**:
+- [ ] Smart parameter recommendations
+- [ ] Material auto-analysis
+- [ ] Workflow templates
+
+---
+
+### v2.0.0 (Distant) - Ecosystem
+
+**Goal**: Become Blender ecosystem's baking middleware
+
+**Main Features**:
+- [ ] External engine bridges (Marmoset, Substance)
+- [ ] Cloud rendering integration
+- [ ] AI-assisted retopology bridge
+
+---
+
+## Contribution Guidelines
+
+Contributions welcome! Please:
+1. Fork this repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Create Pull Request
+
+### Development Environment Requirements
 - Python 3.10+
 - Blender 3.3 - 5.0+
 - Git
 
-### 运行测试
+### Running Tests
 
 ```bash
-# 单版本测试
+# Single version test
 blender -b --python automation/cli_runner.py -- --suite all
 
-# 跨版本测试
+# Multi-version test
 python automation/multi_version_test.py --verification
 ```
 
 ---
 
-## 资源链接
+## Resource Links
 
-- [用户手册](USER_MANUAL.md)
-- [开发者指南](docs/dev/DEVELOPER_GUIDE.md)
-- [生态集成指南](docs/dev/ECOSYSTEM_GUIDE.md)
-- [自动化参考](docs/dev/AUTOMATION_REFERENCE.md)
-- [风格分析](STYLE_GUIDE_ANALYSIS.md)
+- [User Manual](USER_MANUAL.md)
+- [Developer Guide](docs/dev/DEVELOPER_GUIDE.md)
+- [Ecosystem Integration Guide](docs/dev/ECOSYSTEM_GUIDE.md)
+- [Automation Reference](docs/dev/AUTOMATION_REFERENCE.md)
+- [Style Analysis](STYLE_GUIDE_ANALYSIS.md)
 
 ---
 
-*本路线图由 BakeTool 团队维护*
-*最后更新: 2026-04-17*
+*This roadmap is maintained by the BakeTool Team*
+*Last Updated: 2026-04-17*

@@ -568,7 +568,45 @@ class BAKETOOL_OT_ExportResult(bpy.types.Operator):
         return {"RUNNING_MODAL"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
+        results = context.scene.baked_image_results
+        idx = context.scene.baked_image_results_index
+        if not (0 <= idx < len(results)):
+            self.report({"ERROR"}, "No result selected")
+            return {"CANCELLED"}
+
+        res = results[idx]
+        if not res.image:
+            self.report({"ERROR"}, "No image to export")
+            return {"CANCELLED"}
+
+        img = res.image
+        try:
+            # Save the image to the selected filepath
+            img.filepath_raw = self.filepath
+            img.file_format = self._get_format_from_path(self.filepath)
+            img.save()
+            self.report({"INFO"}, f"Exported {img.name} to {self.filepath}")
+        except Exception as e:
+            self.report({"ERROR"}, f"Export failed: {e}")
+            return {"CANCELLED"}
+
         return {"FINISHED"}
+
+    def _get_format_from_path(self, path: str) -> str:
+        import os
+        ext = os.path.splitext(path)[1].lower()
+        format_map = {
+            ".png": "PNG",
+            ".jpg": "JPEG",
+            ".jpeg": "JPEG",
+            ".exr": "OPEN_EXR",
+            ".tif": "TIFF",
+            ".tiff": "TIFF",
+            ".bmp": "BMP",
+            ".tga": "TARGA",
+            ".hdr": "HDR",
+        }
+        return format_map.get(ext, "PNG")
 
 
 class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):
@@ -576,9 +614,54 @@ class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):
 
     bl_idname = "baketool.export_all_results"
     bl_label = "Export All"
+    directory: props.StringProperty(subtype="DIR_PATH")
+
+    def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> Set[str]:
+        context.window_manager.fileselect_add(self)
+        return {"RUNNING_MODAL"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        return {"FINISHED"}
+        results = context.scene.baked_image_results
+        if not results:
+            self.report({"WARNING"}, "No results to export")
+            return {"CANCELLED"}
+
+        export_dir = self.directory
+        if not export_dir:
+            # Fallback to scene path or temp
+            export_dir = bpy.data.filepath
+            if export_dir:
+                import os
+                export_dir = os.path.dirname(export_dir)
+            else:
+                import tempfile
+                export_dir = tempfile.gettempdir()
+
+        import os
+        success_count = 0
+        error_count = 0
+
+        for i, res in enumerate(results):
+            if not res.image:
+                continue
+            img = res.image
+            filename = f"{img.name}.png"
+            filepath = os.path.join(export_dir, filename)
+            try:
+                img.filepath_raw = filepath
+                img.file_format = "PNG"
+                img.save()
+                success_count += 1
+            except Exception as e:
+                logger.error(f"Failed to export {img.name}: {e}")
+                error_count += 1
+
+        if success_count > 0:
+            self.report({"INFO"}, f"Exported {success_count} images to {export_dir}")
+        if error_count > 0:
+            self.report({"WARNING"}, f"Failed to export {error_count} images")
+
+        return {"FINISHED"} if success_count > 0 else {"CANCELLED"}
 
 
 class BAKETOOL_OT_ManageObjects(bpy.types.Operator):

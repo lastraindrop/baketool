@@ -58,9 +58,11 @@ def bake(objects, use_selection=True):
     # this is often the expected behavior for programmatic control.
     runner = BakeStepRunner(bpy.context)
     for step in queue:
-        success = runner.run(step)
-        if not success:
-            logger.error(f"API Error: Bake step failed for {step.channel_id}")
+        results = runner.run(step)
+        if not results:
+            # BakeStep returns List[Dict], empty list means failure
+            channel_name = step.channels[0] if step.channels else "unknown"
+            logger.error(f"API Error: Bake step failed for {channel_name}")
             return False
 
     return True

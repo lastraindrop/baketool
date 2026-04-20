@@ -130,9 +130,10 @@ class CageAnalyzer:
 
         # 3. Viewport Feedback
         if auto_switch_vp:
-            # Record original selection to restore it
+            # Record original selection and mode to restore them
             prev_sel = context.selected_objects[:]
             prev_act = context.active_object
+            prev_mode = prev_act.mode if prev_act else "OBJECT"
 
             bpy.ops.object.select_all(action="DESELECT")
             low_obj.select_set(True)
@@ -157,6 +158,8 @@ class CageAnalyzer:
                 if prev_act:
                     try:
                         context.view_layer.objects.active = prev_act
+                        # Restore original mode
+                        bpy.ops.object.mode_set(mode=prev_mode)
                     except (ReferenceError, RuntimeError, AttributeError):
                         pass
 
