@@ -18,6 +18,9 @@
 - **全量回归验证**：在 Blender 4.2 LTS 环境下通过了全部 21 个测试套件，通过率为 100%。
 - **新增专项测试**：新增 `suite_custom_channel_hardened.py`，专门验证自定义通道的默认值逻辑与自引用防护。
 - **一致性处理**：完成了全工作区的缩进归一化处理（Tabs -> Spaces），提升了跨环境代码稳定性。
+- **CI 稳定性修复**：
+  - 修复了 `test_export_to_readonly_directory` 在 Linux (GitHub Actions) 环境下的跨平台兼容性问题。
+  - 修正了 `test_manifest_version_matches_bl_info` 的路径探测逻辑，确保在自动化环境中能正确识别 Manifest 文件。
 
 ## 1.0.0 - 2026-04-22
 

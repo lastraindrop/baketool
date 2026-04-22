@@ -142,30 +142,10 @@ class SuiteCodeReviewFixes(unittest.TestCase):
         """Verify blender_manifest.toml version matches bl_info version."""
         import os
         from pathlib import Path
-
         test_file = Path(__file__).resolve()
-        possible_roots = [test_file.parent.parent]
-
-        if hasattr(bpy.utils, "script_path_user"):
-            user_path = bpy.utils.script_path_user()
-            if user_path:
-                possible_roots.append(Path(user_path).parent / "addons")
-
-        if hasattr(bpy.utils, "script_paths"):
-            for p in bpy.utils.script_paths():
-                possible_roots.append(Path(p).parent / "addons")
-
-        manifest_path = None
-        for root in possible_roots:
-            if root is None:
-                continue
-            candidate = root / "baketool" / "blender_manifest.toml"
-            if candidate.exists():
-                manifest_path = candidate
-                break
-
-        if manifest_path is None:
-            self.skipTest("blender_manifest.toml not found in any known location")
+        manifest_path = test_file.parent.parent / "blender_manifest.toml"
+        if not manifest_path.exists():
+            self.skipTest(f"blender_manifest.toml not found at {manifest_path}")
 
         with open(manifest_path, "r", encoding="utf-8") as f:
             content = f.read()

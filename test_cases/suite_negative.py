@@ -95,14 +95,20 @@ class SuiteNegative(unittest.TestCase):
 
     def test_export_to_readonly_directory(self):
         """Verify graceful error reporting when saving to forbidden paths."""
-        # Note: actually making a directory RO on Windows is tricky, we test behavior on logical failure
         from ..core import image_manager
+        import tempfile
+        import shutil
         img = image_manager.set_image("FixedImg", 8, 8)
-        
-        # Use an impossible path (invalid characters on Windows)
-        bad_path = "Z:\\Invalid|Path?*/Forbidden"
-        res = image_manager.save_image(img, path=bad_path)
-        self.assertIsNone(res, "Save should have failed and returned None for invalid path")
+        tmp_dir = tempfile.mkdtemp()
+        blocker_file = os.path.join(tmp_dir, "blocker.txt")
+        with open(blocker_file, "w") as f:
+            f.write("blocker")
+        try:
+            bad_path = os.path.join(blocker_file, "Forbidden")
+            res = image_manager.save_image(img, path=bad_path)
+            self.assertIsNone(res, "Save should have failed and returned None for blocked path")
+        finally:
+            shutil.rmtree(tmp_dir)
 
     def test_context_manager_exception_restores_state(self):
         """Verify that BakeContextManager performs cleanup even if an exception occurs."""
