@@ -2,10 +2,10 @@
 name = "baketool"
 version = "1.0.0"
 title = "BakeTool"
-author = "BakeTool Team"
+author = "lastraindrop"
 description = "Comprehensive baking tool for Blender"
 tagline = "Professional Texture Baking Suite for Blender"
-maintainer = "BakeTool Team"
+maintainer = "lastraindrop"
 type = "add-on"
 license = ["SPDX:GPL-3.0-or-later"]
 

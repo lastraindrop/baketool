@@ -1,9 +1,9 @@
 bl_info = {
     "name": "BakeTool",
     "description": "Professional Texture Baking Suite for Blender",
-    "author": "BakeTool Team",
+    "author": "lastraindrop",
     "version": (1, 0, 0),
-    "blender": (3, 3, 0),
+    "blender": (3, 6, 0),
     "location": "View3D > Sidebar > Baking",
     "warning": "",
     "doc_url": "https://github.com/lastraindrop/baketool",

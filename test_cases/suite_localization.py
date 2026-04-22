@@ -63,7 +63,7 @@ class SuiteLocalization(unittest.TestCase):
 
     def test_sync_translation_payload_preserves_existing_translations(self):
         existing_payload = {
-            "header": {"author": "BakeTool Team", "version": "1.0.0"},
+            "header": {"author": "lastraindrop", "version": "1.0.0"},
             "data": {
                 "Bake Selected Node": {"zh_CN": "烘焙选中节点"},
                 "stale_key": {"zh_CN": "旧键"},
