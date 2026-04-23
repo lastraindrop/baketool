@@ -138,6 +138,7 @@ logs/
 reports/
 test_output/
 docs/legacy/
+.github/
 blender.crash.txt
 crash_log.txt
 translations.audit.json
