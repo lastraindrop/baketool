@@ -32,7 +32,7 @@ class SuiteCodeReviewFixes(unittest.TestCase):
 
         self.assertEqual(bl_info["name"], "BakeTool")
         self.assertEqual(bl_info["version"], (1, 0, 0))
-        self.assertEqual(bl_info["blender"], (3, 6, 0))
+        self.assertEqual(bl_info["blender"], (4, 2, 0))
         self.assertEqual(bl_info["author"], "lastraindrop")
 
     def test_ui_messages_get_robustness(self):
