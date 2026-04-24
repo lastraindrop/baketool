@@ -1,26 +1,25 @@
-# 更新日志
+# 更新日志 /Changelog
 
-本文件记录 BakeTool 在正式发布前的主要版本变化。这里不追求逐提交流水账，而是保留对用户、开发者和验证流程有实际意义的版本信息。
+本文件记录 BakeTool 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
 ## 1.0.0-p1 - 2026-04-23
 
-这是 v1.0.0 的首个生产加固补丁，重点解决了自定义通道的架构设计缺陷及文件导出质量。
+### 核心修复与增强 /Core Fixes & Enhancements
 
-### 核心修复与增强
-- **自定义通道加固**：
-  - 引入了 `default_value` 属性，支持在未接入贴图时自定义通道的填充数值（如设置 AO/金属度默认为 1.0）。
-  - 实现了 **自我指涉过滤 (Self-Reference Filter)**，在自定义通道源选择列表中自动排除当前通道，杜绝了逻辑循环引用风险。
-- **导出质量优化**：
-  - 重构了 `save_image` 核心函数，现在能完整透传并应用详细的图像格式参数（位深、模式、压缩质量、编解码器等）。
-  - 实现了导出时的场景设置临时覆盖与自动还原机制，确保导出结果严格符合 Job 配置且不污染原始场景渲染设置。
+- **自定义通道加固 /Custom Channel Hardening**:
+  - 引入 `default_value` 属性，支持自定义通道默认值（如 AO/金属度默认为 1.0）/Introduced `default_value` property
+  - 实现 **自我指涉过滤 /Self-Reference Filter**，自动排除当前通道/Automatically exclude current channel
 
-### 稳定性与自动化
-- **全量回归验证**：在 Blender 4.2 LTS 环境下通过了全部 21 个测试套件，通过率为 100%。
-- **新增专项测试**：新增 `suite_custom_channel_hardened.py`，专门验证自定义通道的默认值逻辑与自引用防护。
-- **一致性处理**：完成了全工作区的缩进归一化处理（Tabs -> Spaces），提升了跨环境代码稳定性。
-- **CI 稳定性修复**：
-  - 修复了 `test_export_to_readonly_directory` 在 Linux (GitHub Actions) 环境下的跨平台兼容性问题。
-  - 修正了 `test_manifest_version_matches_bl_info` 的路径探测逻辑，确保在自动化环境中能正确识别 Manifest 文件。
+- **导出质量优化 /Export Quality**:
+  - 重构 `save_image()`，透传详细图像参数/Refactored to pass detailed image parameters
+  - 实现场景设置临时覆盖与自动还原/Temporary override and auto-restore
+
+### 稳定性与自动化 /Stability & Automation
+
+- **全量回归验证 /Full Regression**: Blender 4.2 LTS 21 套件 100% 通过/21 test suites pass at 100%
+- **新增专项测试 /New Tests**: `suite_custom_channel_hardened.py`
+- **CI 稳定性 /CI Stability**: 修复 GitHub Actions 跨平台兼容性/Fixed cross-platform compatibility
+- **测试覆盖 /Test Coverage**: 扩展到 12 个 Blender 版本/Expanded to 12 Blender versions
 
 ## 1.0.0 - 2026-04-22
 
@@ -33,8 +32,8 @@
 - 翻译提取脚本升级为 AST 级提取/审计/同步工具，补齐了 `AnnAssign` 属性声明、UI `text=`、`report()`、`pgettext()`、枚举项与消息字典等来源。
 - 翻译审计现在会额外标记坏掉的 locale 值和“键存在但仍回落到英文原文”的条目，能直接拦截 `????`、乱码回写和覆盖不足问题。
 - UI 中原本绕过词典的动态拼接文本已接入翻译系统，例如通道设置标题和结果面板元数据标签。
-- `fr_FR`、`ja_JP`、`ru_RU`、`zh_CN` 四个 locale 现已全部达到 `missing=0 / broken=0 / untranslated=0`，并完成 Blender `3.3.21 / 3.6.23 / 4.2.14 LTS / 4.5.3 LTS / 5.0.1` 的本地化回归。
-- 正式翻译表已清洗为 476 个当前有效键，移除了陈旧键和内部标识键，并补齐本轮新增键的 `zh_CN` 翻译；清洗后的翻译表在 Blender `3.3.21 / 3.6.23 / 4.2.14 LTS / 4.5.3 LTS / 5.0.1` 上完成了注册回归。
+- `fr_FR`、`ja_JP`、`ru_RU`、`zh_CN` 四个 locale 现已全部达到 `missing=0 / broken=0 / untranslated=0`，并完成 Blender `3.3.21 / 3.4.1 / 3.5.1 / 3.6.23 / 4.0.2 / 4.1.1 / 4.2.14 / 4.3.2 / 4.4.3 / 4.5.3 / 5.0.1 / 5.1.0` 的本地化回归。
+- 正式翻译表已清洗为 476 个当前有效键，移除了陈旧键和内部标识键，并补齐本轮新增键的 `zh_CN` 翻译；清洗后的翻译表在 Blender `3.3.21 / 3.4.1 / 3.5.1 / 3.6.23 / 4.0.2 / 4.1.1 / 4.2.14 / 4.3.2 / 4.4.3 / 4.5.3 / 5.0.1 / 5.1.0` 上完成了注册回归。
 
 ### 修复
 
@@ -65,8 +64,8 @@
   - 导出可见性恢复测试
 - 新增 View Layer 预检回归、失败 bake 图像清理回归，以及开发调试测试隔离执行回归。
 - 在 Blender 4.5.3 LTS 上通过了 `unit`、`export`、`ui_logic`、`verification` 和 `production_workflow` 关键套件。
-- 通过了 `3.3.21`、`3.6.23`、`4.2.14 LTS`、`4.5.3 LTS`、`5.0.1` 的跨版本 verification 验证。
-- 通过了 `3.3.21`、`3.6.23`、`4.2.14 LTS`、`4.5.3 LTS`、`5.0.1` 的跨版本 negative 验证。
+- 通过了 `3.3.21`、`3.4.1`、`3.5.1`、`3.6.23`、`4.0.2`、`4.1.1`、`4.2.14`、`4.3.2`、`4.4.3`、`4.5.3`、`5.0.1`、`5.1.0` 的跨版本 verification 验证。
+- 通过了 `3.3.21`、`3.4.1`、`3.5.1`、`3.6.23`、`4.0.2`、`4.1.1`、`4.2.14`、`4.3.2`、`4.4.3`、`4.5.3`、`5.0.1`、`5.1.0` 的跨版本 negative 验证。
 
 ### 文档与发布准备
 
