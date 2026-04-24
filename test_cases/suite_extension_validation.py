@@ -1,0 +1,78 @@
+import unittest
+import bpy
+import os
+import re
+import tomllib
+from pathlib import Path
+
+class SuiteExtensionValidation(unittest.TestCase):
+    """
+    Validates the addon's compliance with Blender 4.2+ Extensions system.
+    """
+
+    def setUp(self):
+        self.addon_root = Path(__file__).resolve().parents[1]
+        self.manifest_path = self.addon_root / "blender_manifest.toml"
+        self.init_path = self.addon_root / "__init__.py"
+
+    def test_manifest_file_exists(self):
+        """Verify that blender_manifest.toml is present in the root."""
+        self.assertTrue(self.manifest_path.exists(), "blender_manifest.toml is missing from root")
+
+    def test_manifest_schema_compliance(self):
+        """Verify that mandatory fields for Extensions are present and correct."""
+        with open(self.manifest_path, "rb") as f:
+            data = tomllib.load(f)
+
+        self.assertIn("schema_version", data, "Missing schema_version")
+        
+        package = data.get("package")
+        self.assertIsNotNone(package, "Missing [package] section")
+        
+        mandatory = ["id", "name", "version", "author", "type", "license", "blender_version_min"]
+        for field in mandatory:
+            self.assertIn(field, package, f"Missing mandatory field in [package]: {field}")
+
+        self.assertEqual(package["id"], "baketool", "Package id should be 'baketool'")
+        self.assertEqual(package["type"], "add-on", "Package type should be 'add-on'")
+
+    def test_sync_between_manifest_and_bl_info(self):
+        """Verify that version and metadata are synced between bl_info and manifest."""
+        from baketool import bl_info
+        
+        with open(self.manifest_path, "rb") as f:
+            manifest = tomllib.load(f)["package"]
+
+        # 1. Version Check
+        manifest_version = tuple(int(x) for x in manifest["version"].split("."))
+        self.assertEqual(bl_info["version"], manifest_version, "Version mismatch between bl_info and manifest")
+
+        # 2. Blender Version Min Check
+        # bl_info["blender"] is (3, 6, 0), manifest blender_version_min is "3.6.0"
+        manifest_bl_min = tuple(int(x) for x in manifest["blender_version_min"].split("."))
+        self.assertEqual(bl_info["blender"], manifest_bl_min, "Blender version min mismatch")
+
+        # 3. ID/Name Check
+        self.assertEqual(bl_info["name"], manifest["name"], "Name mismatch")
+
+    def test_permissions_declaration(self):
+        """Verify that file permissions are declared for baking operations."""
+        with open(self.manifest_path, "rb") as f:
+            data = tomllib.load(f)
+        
+        permissions = data.get("permissions")
+        self.assertIsNotNone(permissions, "BakeTool requires [permissions] to save textures")
+        self.assertIn("files", permissions, "Missing 'files' permission for texture output")
+
+    def test_recommended_metadata_presence(self):
+        """Verify that recommended fields for better marketplace visibility are present."""
+        with open(self.manifest_path, "rb") as f:
+            manifest = tomllib.load(f)["package"]
+        
+        recommended = ["tagline", "website", "repository", "tags", "maintainer"]
+        for field in recommended:
+            self.assertIn(field, manifest, f"Missing recommended field: {field}")
+            self.assertTrue(manifest[field], f"Recommended field '{field}' is empty")
+
+if __name__ == "__main__":
+    unittest.main()

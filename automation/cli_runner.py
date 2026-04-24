@@ -24,6 +24,7 @@ AVAILABLE_SUITES = [
     "ui_logic",
     "code_review",
     "verification",
+    "extension_validation",
 ]
 
 

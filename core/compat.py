@@ -44,6 +44,18 @@ def is_blender_3() -> bool:
     return (3, 0, 0) <= bpy.app.version < (4, 0, 0)
 
 
+def is_extension() -> bool:
+    """Check if the addon is running as a Blender Extension.
+
+    Extensions typically have a package name prefixed with 'bl_ext'.
+
+    Returns:
+        bool: True if running as an extension.
+    """
+    pkg = __package__.split(".")[0] if "." in __package__ else __package__
+    return pkg.startswith("bl_ext")
+
+
 def get_bake_settings(scene: bpy.types.Scene) -> Optional[Any]:
     """Get the bake settings object in a version-safe way.
 

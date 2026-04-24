@@ -1,16 +1,16 @@
-[package]
-name = "baketool"
+schema_version = "1.0.0"
+
+id = "baketool"
 version = "1.0.0"
-title = "BakeTool"
-author = "lastraindrop"
-description = "Comprehensive baking tool for Blender"
+name = "BakeTool"
 tagline = "Professional Texture Baking Suite for Blender"
-maintainer = "lastraindrop"
+maintainer = "lastraindrop <contact@github.com>"
 type = "add-on"
 license = ["SPDX:GPL-3.0-or-later"]
-
-# Minimum Blender version supported
-blender_version_min = "3.3.0"
+description = "Comprehensive baking tool for Blender, supporting single objects, selected-to-active, UDIM, and custom channel packing"
+blender_version_min = "4.2.0"
+website = "https://github.com/lastraindrop/baketool"
+tags = ["Render", "Pipeline"]
 
 [permissions]
-files = "Required for saving baked textures and export results."
+files = "Required for saving baked textures and export results"

@@ -138,11 +138,11 @@ logs/
 reports/
 test_output/
 docs/legacy/
-.github/
 blender.crash.txt
 crash_log.txt
 translations.audit.json
 translations.cleaned.json
 translation_audit_report.json
 translation_clean_audit.json
+# .github/ - now tracked in version control
 # code_review.md - now tracked in version control
