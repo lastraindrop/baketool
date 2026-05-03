@@ -1019,7 +1019,7 @@ UI_MESSAGES = {
 
 # --- API & Versioning ---
 API_VERSION = "1.0.0"
-SYSTEM_ID = "BAKENEXUS_CORE"
+SYSTEM_ID = "BAKETOOL_CORE"
 
 # --- Magic Numbers / Constants ---
 UDIM_DEFAULT_TILE = 1001

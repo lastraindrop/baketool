@@ -260,7 +260,7 @@ def write_summary_reports(
     }
 
     with report_path.open("w", encoding="utf-8") as handle:
-        handle.write("BAKETOOL v1.0.0 CROSS-VERSION TEST REPORT\n")
+        handle.write("BAKENEXUS v1.0.0 CROSS-VERSION TEST REPORT\n")
         handle.write("=" * 60 + "\n")
         handle.write(f"Generated: {payload['timestamp']}\n")
         handle.write(f"Test Mode: {mode_label}\n")
@@ -345,7 +345,7 @@ def main():
     missing_paths = [path for path in blender_paths if not Path(path).exists()]
 
     print("\n" + "=" * 80)
-    print("      BAKETOOL v1.0.0 CROSS-VERSION TEST SUITE")
+    print("      BAKENEXUS v1.0.0 CROSS-VERSION TEST SUITE")
     print("=" * 80)
     print(f"  Test Mode: {'Verification' if args.verification else 'Unit Tests'}")
     if args.suite != "all":

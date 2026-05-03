@@ -108,7 +108,7 @@ def get_classes():
         ui.BAKE_PT_BakePanel,
         ui.BAKE_PT_BakedResults,
         ui.BAKE_PT_NodePanel,
-        ui.BAKETOOL_PT_ImageEditorResults,
+        ui.BAKE_PT_ImageEditorResults,
     ]
     classes.extend(priority_classes)
 
@@ -210,7 +210,7 @@ def register():
     if kc:
         km = kc.keymaps.new(name="Object Mode")
         kmi = km.keymap_items.new("wm.call_panel", "B", "PRESS", ctrl=True, shift=True)
-        kmi.properties.name = "BAKENEXUS_PT_BakePanel"
+        kmi.properties.name = "BAKE_PT_BakePanel"
         addon_keymaps.append((km, kmi))
     # 制作翻译 // Create translations
     # Register all loaded languages using the package name as the context/domain
