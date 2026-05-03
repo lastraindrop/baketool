@@ -1,4 +1,4 @@
-name: BakeTool Tests
+name: BakeNexus Tests
 
 on:
   push:

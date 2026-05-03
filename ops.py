@@ -1,6 +1,6 @@
-"""Operator definitions for BakeTool.
+"""Operator definitions for BakeNexus.
 
-This module contains all Blender Operators used by the BakeTool add-on,
+This module contains all Blender Operators used by the BakeNexus add-on,
 handling UI interactions, baking orchestration, and data management.
 """
 
@@ -70,14 +70,14 @@ class _DummyEvent:
 # --- Operators ---
 
 
-class BAKETOOL_OT_RunDevTests(bpy.types.Operator):
+class BAKENEXUS_OT_RunDevTests(bpy.types.Operator):
     """Run all internal test suites and report results to UI.
 
     Iterates through all registered test suites and executes them using
     unittest, providing feedback to the user via the sidebar.
     """
 
-    bl_idname = "bake.run_dev_tests"
+    bl_idname = "bakenexus.run_dev_tests"
     bl_label = "Run Development Tests"
 
     _SUBPROCESS_TIMEOUT_SECONDS = 1800
@@ -118,7 +118,7 @@ class BAKETOOL_OT_RunDevTests(bpy.types.Operator):
 
         try:
             with tempfile.NamedTemporaryFile(
-                prefix="baketool_devtests_",
+                prefix="bakenexus_devtests_",
                 suffix=".json",
                 delete=False,
             ) as handle:
@@ -176,7 +176,7 @@ class BAKETOOL_OT_RunDevTests(bpy.types.Operator):
         except subprocess.TimeoutExpired:
             return False, f"Safety audit timed out after {cls._SUBPROCESS_TIMEOUT_SECONDS}s."
         except Exception as exc:
-            logger.exception("Failed to launch isolated BakeTool safety audit")
+            logger.exception("Failed to launch isolated BakeNexus safety audit")
             return False, f"Safety audit launch failed: {exc}"
         finally:
             if report_path and report_path.exists():
@@ -209,7 +209,7 @@ class BAKETOOL_OT_RunDevTests(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
+class BAKENEXUS_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
     """Executes the texture baking process for selected objects.
 
     This operator handles the complete baking pipeline including
@@ -218,7 +218,7 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
     """
 
     bl_label = "Bake"
-    bl_idname = "bake.bake_operator"
+    bl_idname = "bakenexus.execute"
 
     is_resume: props.BoolProperty(default=False)
 
@@ -247,7 +247,7 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
             except (RuntimeError, AttributeError):
                 pass
         try:
-            enabled_jobs = [j for j in context.scene.BakeJobs.jobs if j.enabled]
+            enabled_jobs = [j for j in context.scene.BakeNexusJobs.jobs if j.enabled]
             if not enabled_jobs:
                 self.report({"WARNING"}, UI_MESSAGES["NO_JOBS"])
                 return {"CANCELLED"}
@@ -277,14 +277,14 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
         return self.init_modal(context, start_idx=start_idx)
 
 
-class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
+class BAKENEXUS_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
     """Bake current selection using active job settings immediately.
 
     This operator provides quick baking for the current object selection
     using the active job as a template, without requiring full job setup.
     """
 
-    bl_idname = "bake.quick_bake"
+    bl_idname = "bakenexus.quick_bake"
     bl_label = "Quick Bake Selected"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
@@ -308,11 +308,11 @@ class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
         Returns:
             Set[str]: Modal result.
         """
-        if not hasattr(context.scene, "BakeJobs"):
-            self.report({"ERROR"}, "BakeTool properties not initialized.")
+        if not hasattr(context.scene, "BakeNexusJobs"):
+            self.report({"ERROR"}, "BakeNexus properties not initialized.")
             return {"CANCELLED"}
 
-        bj = context.scene.BakeJobs
+        bj = context.scene.BakeNexusJobs
         if not bj.jobs:
             return {"CANCELLED"}
         job_index = bj.job_index
@@ -349,15 +349,15 @@ class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
         return self.init_modal(context)
 
 
-class BAKETOOL_OT_ResetChannels(bpy.types.Operator):
+class BAKENEXUS_OT_ResetChannels(bpy.types.Operator):
     """Reset bake channels to default configuration based on bake type."""
 
-    bl_idname = "bake.reset_channels"
+    bl_idname = "bakenexus.reset_channels"
     bl_label = "Reset"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        bj = context.scene.BakeJobs
-        if bj.job_index < 0 or bj.job_index >= len(bj.jobs):
+        bj = context.scene.BakeNexusJobs
+        if bj.job_index < 0 or job_index >= len(bj.jobs):
             return {"CANCELLED"}
         job = bj.jobs[bj.job_index]
         reset_channels_logic(job.setting)
@@ -365,10 +365,10 @@ class BAKETOOL_OT_ResetChannels(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_SetSaveLocal(bpy.types.Operator):
+class BAKENEXUS_OT_SetSaveLocal(bpy.types.Operator):
     """Point save paths to the current blend directory or a safe temp fallback."""
 
-    bl_idname = "bake.set_save_local"
+    bl_idname = "bakenexus.set_save_local"
     bl_label = "Use Local Path"
 
     save_location: props.IntProperty(default=0)
@@ -404,15 +404,15 @@ class BAKETOOL_OT_SetSaveLocal(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_SelectedNodeBake(bpy.types.Operator):
+class BAKENEXUS_OT_SelectedNodeBake(bpy.types.Operator):
     """Bake the active shader node to an image using node-bake settings."""
 
-    bl_idname = "bake.selected_node_bake"
+    bl_idname = "bakenexus.selected_node_bake"
     bl_label = "Bake Selected Node"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        if not hasattr(context.scene, "BakeJobs"):
-            self.report({"ERROR"}, "BakeTool properties not initialized.")
+        if not hasattr(context.scene, "BakeNexusJobs"):
+            self.report({"ERROR"}, "BakeNexus properties not initialized.")
             return {"CANCELLED"}
 
         obj = context.active_object
@@ -433,7 +433,7 @@ class BAKETOOL_OT_SelectedNodeBake(bpy.types.Operator):
             self.report({"WARNING"}, "Selected node has no output sockets.")
             return {"CANCELLED"}
 
-        settings = context.scene.BakeJobs.node_bake_settings
+        settings = context.scene.BakeNexusJobs.node_bake_settings
         from .core.node_manager import bake_node_to_image
         from .core.execution import add_bake_result_to_ui
 
@@ -464,21 +464,20 @@ class BAKETOOL_OT_SelectedNodeBake(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_RefreshUDIMLocations(bpy.types.Operator):
+class BAKENEXUS_OT_RefreshUDIMLocations(bpy.types.Operator):
     """Rescan assigned bake objects and sync their detected UDIM tiles."""
 
-    bl_idname = "bake.refresh_udim_locations"
+    bl_idname = "bakenexus.refresh_udim_locations"
     bl_label = "Refresh UDIM Tiles"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        if not hasattr(context.scene, "BakeJobs"):
+        if not os.path.exists(self.filepath):
             return {"CANCELLED"}
 
-        bj = context.scene.BakeJobs
+        bj = context.scene.BakeNexusJobs
         if not bj.jobs:
-            return {"CANCELLED"}
-
-        job_index = bj.job_index if 0 <= bj.job_index < len(bj.jobs) else 0
+            bj.jobs.add()
+            bj.job_index = 0
         job = bj.jobs[job_index]
         synced = 0
 
@@ -493,14 +492,14 @@ class BAKETOOL_OT_RefreshUDIMLocations(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_TogglePreview(bpy.types.Operator):
+class BAKENEXUS_OT_TogglePreview(bpy.types.Operator):
     """Toggle real-time viewport preview for the active bake job."""
 
-    bl_idname = "bake.toggle_preview"
+    bl_idname = "bakenexus.toggle_preview"
     bl_label = "Toggle Preview"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        bj = context.scene.BakeJobs
+        bj = context.scene.BakeNexusJobs
         if not bj.jobs:
             return {"CANCELLED"}
         job_index = bj.job_index
@@ -532,10 +531,10 @@ class BAKETOOL_OT_TogglePreview(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_AnalyzeCage(bpy.types.Operator):
+class BAKENEXUS_OT_AnalyzeCage(bpy.types.Operator):
     """Analyze cage overlap by raycasting high-poly onto low-poly."""
 
-    bl_idname = "bake.analyze_cage"
+    bl_idname = "bakenexus.analyze_cage"
     bl_label = "Analyze Cage Overlap"
 
     @classmethod
@@ -558,9 +557,9 @@ class BAKETOOL_OT_AnalyzeCage(bpy.types.Operator):
         Returns:
             Set[str]: {'FINISHED'} or {'CANCELLED'}.
         """
-        if not hasattr(context.scene, "BakeJobs"):
+        if not hasattr(context.scene, "BakeNexusJobs"):
             return {"CANCELLED"}
-        bj = context.scene.BakeJobs
+        bj = context.scene.BakeNexusJobs
         if not bj.jobs:
             return {"CANCELLED"}
         job_index = bj.job_index
@@ -599,10 +598,10 @@ class BAKETOOL_OT_AnalyzeCage(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_OneClickPBR(bpy.types.Operator):
+class BAKENEXUS_OT_OneClickPBR(bpy.types.Operator):
     """Setup standard PBR channels (Color, Roughness, Normal) for the job."""
 
-    bl_idname = "bake.one_click_pbr"
+    bl_idname = "bakenexus.one_click_pbr"
     bl_label = "One-Click PBR Setup"
     bl_options = {"REGISTER", "UNDO"}
 
@@ -613,9 +612,9 @@ class BAKETOOL_OT_OneClickPBR(bpy.types.Operator):
         Returns:
             bool: True if job is available.
         """
-        if not hasattr(context.scene, "BakeJobs"):
+        if not hasattr(context.scene, "BakeNexusJobs"):
             return False
-        bj = context.scene.BakeJobs
+        bj = context.scene.BakeNexusJobs
         return len(bj.jobs) > 0
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
@@ -627,7 +626,7 @@ class BAKETOOL_OT_OneClickPBR(bpy.types.Operator):
         Returns:
             Set[str]: {'FINISHED'} or {'CANCELLED'}.
         """
-        bj = context.scene.BakeJobs
+        bj = context.scene.BakeNexusJobs
         if bj.job_index < 0 or bj.job_index >= len(bj.jobs):
             return {"CANCELLED"}
         job = bj.jobs[bj.job_index]
@@ -642,10 +641,10 @@ class BAKETOOL_OT_OneClickPBR(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_OpenAddonPrefs(bpy.types.Operator):
+class BAKENEXUS_OT_OpenAddonPrefs(bpy.types.Operator):
     """Open Blender addon preferences for configuring dependencies."""
 
-    bl_idname = "bake.open_addon_prefs"
+    bl_idname = "bakenexus.open_addon_prefs"
     bl_label = "Addon Prefs"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
@@ -661,15 +660,15 @@ class BAKETOOL_OT_OpenAddonPrefs(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_DeleteResult(bpy.types.Operator):
+class BAKENEXUS_OT_DeleteResult(bpy.types.Operator):
     """Delete the currently selected baked result."""
 
-    bl_idname = "baketool.delete_result"
+    bl_idname = "bakenexus.delete_result"
     bl_label = "Delete"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        results = context.scene.baked_image_results
-        idx = context.scene.baked_image_results_index
+        results = context.scene.bakenexus_results
+        idx = context.scene.bakenexus_results_index
 
         if 0 <= idx < len(results):
             r = results[idx]
@@ -677,7 +676,7 @@ class BAKETOOL_OT_DeleteResult(bpy.types.Operator):
 
             r.image = None
             results.remove(idx)
-            context.scene.baked_image_results_index = max(0, idx - 1)
+            context.scene.bakenexus_results_index = max(0, idx - 1)
 
             context.view_layer.depsgraph.update()
 
@@ -689,14 +688,14 @@ class BAKETOOL_OT_DeleteResult(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_DeleteAllResults(bpy.types.Operator):
+class BAKENEXUS_OT_DeleteAllResults(bpy.types.Operator):
     """Delete all baked results and their associated images."""
 
-    bl_idname = "baketool.delete_all_results"
+    bl_idname = "bakenexus.delete_all_results"
     bl_label = "Delete All"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        results = context.scene.baked_image_results
+        results = context.scene.bakenexus_results
         images = [r.image for r in results if r.image]
 
         results.clear()
@@ -713,16 +712,16 @@ class BAKETOOL_OT_DeleteAllResults(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_ExportResult(bpy.types.Operator):
+class BAKENEXUS_OT_ExportResult(bpy.types.Operator):
     """Export the selected baked result to disk."""
 
-    bl_idname = "baketool.export_result"
+    bl_idname = "bakenexus.export_result"
     bl_label = "Export"
     filepath: props.StringProperty(subtype="FILE_PATH")
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> Set[str]:
-        results = context.scene.baked_image_results
-        idx = context.scene.baked_image_results_index
+        results = context.scene.bakenexus_results
+        idx = context.scene.bakenexus_results_index
         if not (0 <= idx < len(results)):
             return {"CANCELLED"}
 
@@ -742,8 +741,8 @@ class BAKETOOL_OT_ExportResult(bpy.types.Operator):
         return {"RUNNING_MODAL"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        results = context.scene.baked_image_results
-        idx = context.scene.baked_image_results_index
+        results = context.scene.bakenexus_results
+        idx = context.scene.bakenexus_results_index
         if not (0 <= idx < len(results)):
             self.report({"ERROR"}, "No result selected")
             return {"CANCELLED"}
@@ -791,10 +790,10 @@ class BAKETOOL_OT_ExportResult(bpy.types.Operator):
         return format_map.get(ext, "PNG")
 
 
-class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):
+class BAKENEXUS_OT_ExportAllResults(bpy.types.Operator):
     """Export all baked results to disk."""
 
-    bl_idname = "baketool.export_all_results"
+    bl_idname = "bakenexus.export_all_results"
     bl_label = "Export All"
     directory: props.StringProperty(subtype="DIR_PATH")
 
@@ -803,7 +802,7 @@ class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):
         return {"RUNNING_MODAL"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        results = context.scene.baked_image_results
+        results = context.scene.bakenexus_results
         if not results:
             self.report({"WARNING"}, "No results to export")
             return {"CANCELLED"}
@@ -823,7 +822,7 @@ class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):
 
         # C-01: Use Job result settings instead of hardcoded PNG
         from .constants import FORMAT_SETTINGS
-        bj = context.scene.BakeJobs
+        bj = context.scene.BakeNexusJobs
         res_settings = bj.bake_result_settings.image_settings
         target_fmt = res_settings.external_save_format
         ext = FORMAT_SETTINGS.get(target_fmt, {}).get("extensions", [".png"])[0]
@@ -860,10 +859,10 @@ class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):
         return {"FINISHED"} if success_count > 0 else {"CANCELLED"}
 
 
-class BAKETOOL_OT_ManageObjects(bpy.types.Operator):
+class BAKENEXUS_OT_ManageObjects(bpy.types.Operator):
     """Manage objects in the bake list (add, remove, clear)."""
 
-    bl_idname = "bake.manage_objects"
+    bl_idname = "bakenexus.manage_objects"
     bl_label = "Manage Objects"
 
     action: props.StringProperty()
@@ -885,16 +884,16 @@ class BAKETOOL_OT_ManageObjects(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_SaveSetting(bpy.types.Operator, ExportHelper):
+class BAKENEXUS_OT_SaveSetting(bpy.types.Operator, ExportHelper):
     """Export current bake job settings to a JSON file."""
 
-    bl_idname = "bake.save_setting"
-    bl_label = "Export Bake Settings"
+    bl_idname = "bakenexus.save_setting"
+    bl_label = "Export Bake Nexus Settings"
     filename_ext = ".json"
     filter_glob: props.StringProperty(default="*.json", options={"HIDDEN"})
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        bj = context.scene.BakeJobs
+        bj = context.scene.BakeNexusJobs
         if not bj.jobs:
             return {"CANCELLED"}
         job = bj.jobs[bj.job_index]
@@ -911,19 +910,19 @@ class BAKETOOL_OT_SaveSetting(bpy.types.Operator, ExportHelper):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_LoadSetting(bpy.types.Operator, ImportHelper):
+class BAKENEXUS_OT_LoadSetting(bpy.types.Operator, ImportHelper):
     """Import bake job settings from a JSON file."""
 
-    bl_idname = "bake.load_setting"
-    bl_label = "Import Bake Settings"
+    bl_idname = "bakenexus.load_setting"
+    bl_label = "Import Bake Nexus Settings"
     filename_ext = ".json"
     filter_glob: props.StringProperty(default="*.json", options={"HIDDEN"})
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        if not os.path.exists(self.filepath):
+        if not hasattr(context.scene, "BakeNexusJobs"):
             return {"CANCELLED"}
 
-        bj = context.scene.BakeJobs
+        bj = context.scene.BakeNexusJobs
         if not bj.jobs:
             bj.jobs.add()
             bj.job_index = 0
@@ -941,10 +940,10 @@ class BAKETOOL_OT_LoadSetting(bpy.types.Operator, ImportHelper):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_GenericChannelOperator(bpy.types.Operator):
+class BAKENEXUS_OT_GenericChannelOperator(bpy.types.Operator):
     """Generic operator for list operations (add, delete, move, clear)."""
 
-    bl_idname = "bake.generic_channel_op"
+    bl_idname = "bakenexus.generic_channel_op"
     bl_label = "Channel Op"
 
     action_type: props.EnumProperty(
@@ -961,7 +960,7 @@ class BAKETOOL_OT_GenericChannelOperator(bpy.types.Operator):
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         success, msg = manage_channels_logic(
-            self.target, self.action_type, context.scene.BakeJobs
+            self.target, self.action_type, context.scene.BakeNexusJobs
         )
         if not success:
             self.report({"ERROR"}, msg)
@@ -969,10 +968,10 @@ class BAKETOOL_OT_GenericChannelOperator(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_RefreshPresets(bpy.types.Operator):
+class BAKENEXUS_OT_RefreshPresets(bpy.types.Operator):
     """Refresh the visual preset library list."""
 
-    bl_idname = "bake.refresh_presets"
+    bl_idname = "bakenexus.refresh_presets"
     bl_label = "Refresh Presets"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
@@ -985,10 +984,10 @@ class BAKETOOL_OT_RefreshPresets(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_ClearCrashLog(bpy.types.Operator):
+class BAKENEXUS_OT_ClearCrashLog(bpy.types.Operator):
     """Clear the cached crash record from the current scene."""
 
-    bl_idname = "bake.clear_crash_log"
+    bl_idname = "bakenexus.clear_crash_log"
     bl_label = "Clear Crash Log"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:

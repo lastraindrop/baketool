@@ -1,1 +1,1 @@
-"""Development automation helpers for BakeTool."""
+"""Development automation helpers for BakeNexus."""

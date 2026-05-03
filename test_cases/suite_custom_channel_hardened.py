@@ -67,6 +67,56 @@ class SuiteCustomChannelHardened(unittest.TestCase):
         self.assertAlmostEqual(arr[2], 0.75, places=2)
         self.assertAlmostEqual(arr[3], 1.0, places=2) # Alpha default fallback is 1.0
 
+    def test_custom_channel_missing_source_uses_default_value(self):
+        """Verify missing mapped sources fall back instead of aborting custom channel generation."""
+        obj = create_test_object("MissingSourceObj")
+        job = JobBuilder("MissingSourceJob").build()
+        setting = job.setting
+        setting.res_x = 8
+        setting.res_y = 8
+
+        custom = job.custom_bake_channels.add()
+        custom.name = "MissingSource"
+        custom.bw = True
+        custom.bw_settings.use_map = True
+        custom.bw_settings.source = "rough"
+        custom.bw_settings.default_value = 0.35
+
+        task = BakeTask(
+            objects=[obj],
+            materials=[obj.material_slots[0].material],
+            active_obj=obj,
+            base_name="MissingSourceTest",
+            folder_name="",
+        )
+
+        c_config = {
+            "id": "CUSTOM",
+            "name": custom.name,
+            "prop": custom,
+            "bake_pass": "EMIT",
+            "info": {"cat": "DATA"},
+            "prefix": "",
+            "suffix": "_missing",
+        }
+
+        img = BakePassExecutor.execute(
+            bpy.context,
+            setting,
+            task,
+            c_config,
+            None,
+            {},
+            array_cache={},
+        )
+
+        self.assertIsNotNone(img)
+        arr = np.empty(img.size[0] * img.size[1] * 4, dtype=np.float32)
+        img.pixels.foreach_get(arr)
+        self.assertAlmostEqual(arr[0], 0.35, places=2)
+        self.assertAlmostEqual(arr[1], 0.35, places=2)
+        self.assertAlmostEqual(arr[2], 0.35, places=2)
+
     def test_custom_channel_self_reference_filter(self):
         """Verify that a custom channel cannot select itself as a source."""
         from ..property import get_channel_source_items

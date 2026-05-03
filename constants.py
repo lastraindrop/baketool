@@ -1014,12 +1014,12 @@ UI_MESSAGES = {
     "CAGE_MISSING": "Warning: Cage object missing for selective bake.",
     "VALIDATION_SUCCESS": "All bake settings are valid and ready.",
     "VALIDATION_ERROR": "Validation failed: {}",
-    "B5_SYNC_NOTICE": "BakeTool v1.0.0 optimized for Blender 5.0 rendering pipeline.",
+    "B5_SYNC_NOTICE": "BakeNexus v1.0.0 optimized for Blender 5.0 rendering pipeline.",
 }
 
 # --- API & Versioning ---
 API_VERSION = "1.0.0"
-SYSTEM_ID = "BAKETOOL_CORE"
+SYSTEM_ID = "BAKENEXUS_CORE"
 
 # --- Magic Numbers / Constants ---
 UDIM_DEFAULT_TILE = 1001

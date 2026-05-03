@@ -1,4 +1,4 @@
-# BakeTool 发布检查清单
+# BakeNexus 发布检查清单
 
 本文档用于正式打包和对外发布前的最后核对。它的价值不在于“看起来专业”，而在于把那些最容易被遗漏、却会直接影响用户第一印象和后续维护成本的事项固定下来。建议每次发布都实际过一遍，而不是口头默认已经完成。
 
@@ -114,7 +114,7 @@ python automation/multi_version_test.py --verification
 python automation/build_release_zip.py
 ```
 
-这样可以稳定排除 `.venv/`、`test_output/`、`docs/legacy/`、`automation/`、`dev_tools/` 和 `test_cases/` 等本地或开发期内容。
+这样可以稳定排除 `.venv/`、`test_output/`、`docs/legacy/`、`dev_tools/` 等本地或开发期内容；发布包会保留 `automation/cli_runner.py`、`automation/headless_bake.py` 和测试套件，以支持 Debug 模式下的 `Run Safety Audit` 与文档中的 headless CLI。
 
 ## 9. 发布说明
 

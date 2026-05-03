@@ -1,6 +1,6 @@
-"""UI Panel and List definitions for BakeTool.
+"""UI Panel and List definitions for BakeNexus.
 
-This module handles all visual elements of the BakeTool sidebar, including
+This module handles all visual elements of the BakeNexus sidebar, including
 job management, target selection, channel configuration, and result inspection.
 """
 
@@ -46,7 +46,7 @@ def draw_file_path(
     """
     row = layout.row(align=True)
     row.prop(setting, path_prop, text="", icon="FILE_FOLDER")
-    op = row.operator("bake.set_save_local", text="", icon="HOME")
+    op = row.operator("bakenexus.set_save_local", text="", icon="HOME")
     op.save_location = location
 
 
@@ -66,7 +66,7 @@ def draw_template_list_ops(layout: bpy.types.UILayout, basic_name: str) -> None:
         "CLEAR": "TRASH",
     }
     for item in ["ADD", "DELETE", "UP", "DOWN", "CLEAR"]:
-        ops = col.operator("bake.generic_channel_op", text="", icon=icons[item])
+        ops = col.operator("bakenexus.generic_channel_op", text="", icon=icons[item])
         ops.action_type = item
         ops.target = basic_name
 
@@ -202,26 +202,29 @@ def draw_results(scene: bpy.types.Scene, layout: bpy.types.UILayout, bj: Any) ->
     """
     row = layout.row()
     row.template_list(
-        "BAKETOOL_UL_BakedImageResults",
+        "BAKENEXUS_UL_BakedImageResults",
         "",
         scene,
-        "baked_image_results",
+        "bakenexus_results",
         scene,
-        "baked_image_results_index",
+        "bakenexus_results_index",
         rows=5,
     )
 
     col = row.column(align=True)
-    col.operator("baketool.delete_result", text="", icon="TRASH")
-    col.operator("baketool.delete_all_results", text="", icon="X")
+    col.operator("bakenexus.delete_result", text="", icon="TRASH")
+    col.operator("bakenexus.delete_all_results", text="", icon="X")
 
     col.separator()
-    col.operator("baketool.export_result", text="", icon="EXPORT")
-    col.operator("baketool.export_all_results", text="", icon="FILE_FOLDER")
+    col.operator("bakenexus.export_result", text="", icon="EXPORT")
+    col.operator("bakenexus.export_all_results", text="", icon="FILE_FOLDER")
 
     # Detailed Metadata Inspector
-    if scene.baked_image_results and scene.baked_image_results_index >= 0:
-        res = scene.baked_image_results[scene.baked_image_results_index]
+    if (
+        scene.bakenexus_results
+        and 0 <= scene.bakenexus_results_index < len(scene.bakenexus_results)
+    ):
+        res = scene.bakenexus_results[scene.bakenexus_results_index]
         box = layout.box()
 
         row = box.row()
@@ -293,7 +296,7 @@ def draw_crash_report(layout: bpy.types.UILayout, context: bpy.types.Context) ->
     box.alert = True
     row = box.row()
     row.label(text=bpy.app.translations.pgettext("Detected Unexpected Exit (Crash)"), icon="ERROR")
-    row.operator("bake.clear_crash_log", text="", icon="X")
+    row.operator("bakenexus.clear_crash_log", text="", icon="X")
 
     col = box.column()
     col.scale_y = 0.8
@@ -315,12 +318,12 @@ def draw_crash_report(layout: bpy.types.UILayout, context: bpy.types.Context) ->
 
     box.separator()
     op = box.operator(
-        "bake.bake_operator", text="Resume Interrupted Bake", icon="RECOVER_LAST"
+        "bakenexus.execute", text="Resume Interrupted Bake", icon="RECOVER_LAST"
     )
     op.is_resume = True
 
 
-class UI_UL_ObjectList(bpy.types.UIList):
+class BAKENEXUS_UL_ObjectList(bpy.types.UIList):
     """Custom UI list for displaying and managing bake target objects."""
 
     def draw_item(
@@ -342,11 +345,11 @@ class UI_UL_ObjectList(bpy.types.UIList):
         # Contextual UI for Custom UDIM
         scene = context.scene
         if (
-            hasattr(scene, "BakeJobs")
-            and scene.BakeJobs.jobs
-            and 0 <= scene.BakeJobs.job_index < len(scene.BakeJobs.jobs)
+            hasattr(scene, "BakeNexusJobs")
+            and scene.BakeNexusJobs.jobs
+            and 0 <= scene.BakeNexusJobs.job_index < len(scene.BakeNexusJobs.jobs)
         ):
-            job = scene.BakeJobs.jobs[scene.BakeJobs.job_index]
+            job = scene.BakeNexusJobs.jobs[scene.BakeNexusJobs.job_index]
             s = job.setting
             if s.bake_mode == "UDIM":
                 if s.udim_mode in {"CUSTOM", "REPACK"}:
@@ -360,7 +363,7 @@ class UI_UL_ObjectList(bpy.types.UIList):
                     row.prop(item, "udim_height", text="H")
 
 
-class BAKETOOL_UL_ChannelList(bpy.types.UIList):
+class BAKENEXUS_UL_ChannelList(bpy.types.UIList):
     """Custom UI list for displaying and selecting bake channels."""
 
     def filter_items(self, context, data, propname):
@@ -394,7 +397,7 @@ class BAKETOOL_UL_ChannelList(bpy.types.UIList):
         row.label(text=pgettext(item.name), icon=ic)
 
 
-class LIST_UL_JobsList(bpy.types.UIList):
+class BAKENEXUS_UL_JobsList(bpy.types.UIList):
     """Custom UI list for managing multiple bake jobs."""
 
     def draw_item(
@@ -405,7 +408,7 @@ class LIST_UL_JobsList(bpy.types.UIList):
         row.label(text=item.name or f"Job {index}", icon="PREFERENCES")
 
 
-class LIST_UL_CustomBakeChannelList(bpy.types.UIList):
+class BAKENEXUS_UL_CustomBakeChannelList(bpy.types.UIList):
     """Custom UI list for user-defined channel map logic."""
 
     def draw_item(
@@ -414,11 +417,11 @@ class LIST_UL_CustomBakeChannelList(bpy.types.UIList):
         layout.label(text=item.name or f"Ch {index}", icon="NODE_COMPOSITING")
 
 
-class BAKETOOL_UL_BakedImageResults(bpy.types.UIList):
+class BAKENEXUS_UL_BakedImageResults(bpy.types.UIList):
     """Custom UI list for inspecting and exporting baked results."""
 
     def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname
+        self, context, layout, data, item, icon, active_data, active_propname, index
     ):
         row = layout.row(align=True)
         row.prop(item, "image", text="", emboss=False, icon="IMAGE_DATA")
@@ -437,7 +440,7 @@ def draw_env_status(layout: bpy.types.UILayout, setting: Any) -> None:
     """
     any_issue = False
 
-    # 1. Check Export Addons
+        # 1. Check Export Addons
     if setting.export_model:
         op_map = {"FBX": "fbx", "GLB": "gltf", "USD": "usd_export"}
         target_op = op_map.get(setting.export_format)
@@ -455,7 +458,7 @@ def draw_env_status(layout: bpy.types.UILayout, setting: Any) -> None:
             box.alert = True
             row = box.row()
             row.label(text=f"{setting.export_format} {pgettext('Addon is disabled!')}", icon="ERROR")
-            row.operator("bake.open_addon_prefs", text=pgettext("Fix"), icon="SETTINGS")
+            row.operator("bakenexus.open_addon_prefs", text=pgettext("Fix"), icon="SETTINGS")
             any_issue = True
 
     # 2. Check Path Validity (Cached in RNA property)
@@ -476,11 +479,11 @@ def draw_env_status(layout: bpy.types.UILayout, setting: Any) -> None:
         layout.separator()
 
 
-class BAKE_PT_NodePanel(bpy.types.Panel):
+class BAKENEXUS_PT_NodePanel(bpy.types.Panel):
     """Bake panel for the Shader Node Editor."""
 
     bl_label = "Node Bake"
-    bl_idname = "BAKE_PT_NodePanel"
+    bl_idname = "BAKENEXUS_PT_NodePanel"
     bl_space_type = "NODE_EDITOR"
     bl_region_type = "UI"
     bl_category = "Baking"
@@ -496,7 +499,7 @@ class BAKE_PT_NodePanel(bpy.types.Panel):
     def draw(self, context: bpy.types.Context) -> None:
         """Draw the node-specific bake options."""
         l = self.layout
-        bj = context.scene.BakeJobs
+        bj = context.scene.BakeNexusJobs
         nbs = bj.node_bake_settings
 
         b = l.box()
@@ -511,14 +514,14 @@ class BAKE_PT_NodePanel(bpy.types.Panel):
             draw_file_path(b, nbs, "external_save_path", 2)
             draw_image_format_options(b, nbs.image_settings, "")
 
-        l.operator("bake.selected_node_bake", text="Bake Node", icon="RENDER_STILL")
+        l.operator("bakenexus.selected_node_bake", text="Bake Node", icon="RENDER_STILL")
 
 
-class BAKE_PT_BakePanel(bpy.types.Panel):
-    """Main BakeTool control panel in the 3D Viewport sidebar."""
+class BAKENEXUS_PT_BakePanel(bpy.types.Panel):
+    """Main BakeNexus control panel in the 3D Viewport sidebar."""
 
     bl_label = "Baking Tool"
-    bl_idname = "BAKE_PT_BakePanel"
+    bl_idname = "BAKENEXUS_PT_BakePanel"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Baking"
@@ -527,7 +530,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         """Draw the main UI dashboard."""
         layout = self.layout
         scene = context.scene
-        bj = scene.BakeJobs
+        bj = scene.BakeNexusJobs
 
         # Get active job setting safely for top-level quick actions
         s = None
@@ -544,7 +547,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             row = box.row(align=True)
             row.label(text="DEV MODE", icon="CONSOLE")
             row.operator(
-                "bake.run_dev_tests", text="Run Safety Audit", icon="CHECKBOX_HLT"
+                "bakenexus.run_dev_tests", text="Run Safety Audit", icon="CHECKBOX_HLT"
             )
 
             if scene.last_test_info:
@@ -564,8 +567,8 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         row.template_icon_view(bj, "library_preset", show_labels=True)
 
         sub = row.column(align=True)
-        sub.operator("bake.refresh_presets", text="", icon="FILE_REFRESH")
-        sub.operator("bake.one_click_pbr", text="", icon="MATERIAL")
+        sub.operator("bakenexus.refresh_presets", text="", icon="FILE_REFRESH")
+        sub.operator("bakenexus.one_click_pbr", text="", icon="MATERIAL")
         if s:
             sub.prop(s, "use_preview", text="", icon="HIDE_OFF", toggle=True)
         sub.prop(bj, "debug_mode", text="", icon="CONSOLE", toggle=True)
@@ -578,14 +581,14 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         row.label(text="JOB MANAGER", icon="PREFERENCES")
 
         row = main_box.row(align=True)
-        row.template_list("LIST_UL_JobsList", "", bj, "jobs", bj, "job_index", rows=2)
+        row.template_list("BAKENEXUS_UL_JobsList", "", bj, "jobs", bj, "job_index", rows=2)
 
         side_col = row.column(align=True)
         draw_template_list_ops(side_col, "jobs_channel")
 
         footer = main_box.row(align=True)
-        footer.operator("bake.save_setting", text="Export", icon="EXPORT")
-        footer.operator("bake.load_setting", text="Import", icon="IMPORT")
+        footer.operator("bakenexus.save_setting", text="Export", icon="EXPORT")
+        footer.operator("bakenexus.load_setting", text="Import", icon="IMPORT")
 
         if not bj.jobs:
             layout.label(text="Create a job to define bake parameters", icon="INFO")
@@ -615,15 +618,15 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         # --- 5. Main Execution ---
         layout.separator(factor=1.5)
 
-        if scene.is_baking:
+        if scene.bakenexus_is_baking:
             status_box = layout.box()
             col = status_box.column(align=True)
-            col.label(text=scene.bake_status, icon="RENDER_STILL")
-            col.prop(scene, "bake_progress", text="", slider=True)
+            col.label(text=scene.bakenexus_status, icon="RENDER_STILL")
+            col.prop(scene, "bakenexus_progress", text="", slider=True)
         else:
             row = layout.row()
             row.scale_y = 2.0
-            row.operator("bake.bake_operator", text="START BAKE PIPELINE", icon="PLAY")
+            row.operator("bakenexus.execute", text="START BAKE PIPELINE", icon="PLAY")
 
     def draw_inputs(self, context: bpy.types.Context, l: bpy.types.UILayout, bj: Any, s: Any) -> None:
         """Draw Setup & Targets section."""
@@ -658,13 +661,13 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
 
         r = sub.row(align=True)
         r.template_list(
-            "UI_UL_ObjectList", "", s, "bake_objects", s, "active_object_index", rows=3
+            "BAKENEXUS_UL_ObjectList", "", s, "bake_objects", s, "active_object_index", rows=3
         )
 
         c = r.column(align=True)
-        c.operator("bake.manage_objects", icon="ADD", text="").action = "ADD"
-        c.operator("bake.manage_objects", icon="REMOVE", text="").action = "REMOVE"
-        c.operator("bake.manage_objects", icon="TRASH", text="").action = "CLEAR"
+        c.operator("bakenexus.manage_objects", icon="ADD", text="").action = "ADD"
+        c.operator("bakenexus.manage_objects", icon="REMOVE", text="").action = "REMOVE"
+        c.operator("bakenexus.manage_objects", icon="TRASH", text="").action = "CLEAR"
 
         # Smart UV & UDIM Logic
         if s.use_auto_uv or s.bake_mode == "UDIM":
@@ -680,7 +683,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
 
             if s.bake_mode == "UDIM":
                 col.operator(
-                    "bake.refresh_udim_locations",
+                    "bakenexus.refresh_udim_locations",
                     icon="FILE_REFRESH",
                     text="Sync UDIM Tiles",
                 )
@@ -690,10 +693,10 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             r = sub.row(align=True)
             r.prop(s, "active_object", text="Target")
             r.operator(
-                "bake.manage_objects", icon="EYEDROPPER", text=""
+                "bakenexus.manage_objects", icon="EYEDROPPER", text=""
             ).action = "SET_ACTIVE"
             sub.operator(
-                "bake.manage_objects",
+                "bakenexus.manage_objects",
                 text="Smart Match (High -> Low)",
                 icon="PIVOT_ACTIVE",
             ).action = "SMART_SET"
@@ -714,7 +717,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         col = l.column(align=True)
         r = col.row(align=True)
         r.template_list(
-            "BAKETOOL_UL_ChannelList",
+            "BAKENEXUS_UL_ChannelList",
             "",
             s,
             "channels",
@@ -723,7 +726,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             rows=4,
         )
         r.column(align=True).operator(
-            "bake.reset_channels", icon="FILE_REFRESH", text=""
+            "bakenexus.reset_channels", icon="FILE_REFRESH", text=""
         )
 
         if s.channels and 0 <= s.active_channel_index < len(s.channels):
@@ -798,7 +801,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         row.prop(s, "texel_density", text="Texel")
         row.prop(s, "auto_switch_vertex_paint", text="Auto-VP", toggle=True)
 
-        sub.operator("bake.analyze_cage", text="Analyze Overlap", icon="MOD_PHYSICS")
+        sub.operator("bakenexus.analyze_cage", text="Analyze Overlap", icon="MOD_PHYSICS")
 
     def draw_others(self, context: bpy.types.Context, l: bpy.types.UILayout, bj: Any, s: Any) -> None:
         """Draw Custom Maps section."""
@@ -831,7 +834,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             sub = col.box()
             r = sub.row()
             r.template_list(
-                "LIST_UL_CustomBakeChannelList",
+                "BAKENEXUS_UL_CustomBakeChannelList",
                 "",
                 j,
                 "custom_bake_channels",
@@ -881,31 +884,31 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
                         r.prop(chan_settings, "default_value", text="")
 
 
-class BAKE_PT_BakedResults(bpy.types.Panel):
+class BAKENEXUS_PT_BakedResults(bpy.types.Panel):
     """Dashboard for inspecting baked textures in 3D Viewport."""
 
     bl_label = "Baked Results"
-    bl_idname = "BAKE_PT_BakedResults"
+    bl_idname = "BAKENEXUS_PT_BakedResults"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Baking"
-    bl_parent_id = "BAKE_PT_BakePanel"
+    bl_parent_id = "BAKENEXUS_PT_BakePanel"
     bl_order = 2
 
     def draw(self, context: bpy.types.Context) -> None:
         """Forward to shared results drawer."""
-        draw_results(context.scene, self.layout, context.scene.BakeJobs)
+        draw_results(context.scene, self.layout, context.scene.BakeNexusJobs)
 
 
-class BAKETOOL_PT_ImageEditorResults(bpy.types.Panel):
+class BAKENEXUS_PT_ImageEditorResults(bpy.types.Panel):
     """Dashboard for inspecting baked textures in Image Editor."""
 
     bl_label = "Baked Results"
-    bl_idname = "BAKE_PT_ImageEditorResults"
+    bl_idname = "BAKENEXUS_PT_ImageEditorResults"
     bl_space_type = "IMAGE_EDITOR"
     bl_region_type = "UI"
     bl_category = "Baking"
 
     def draw(self, context: bpy.types.Context) -> None:
         """Forward to shared results drawer."""
-        draw_results(context.scene, self.layout, context.scene.BakeJobs)
+        draw_results(context.scene, self.layout, context.scene.BakeNexusJobs)

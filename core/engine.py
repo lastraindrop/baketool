@@ -135,7 +135,7 @@ class BakePostProcessor:
         # Skip denoise on this version to prevent access violation
         if compat.is_blender_3():
             logger.warning(
-                "BakeTool: Skipping denoise on Blender 3.6 (known crash issue)"
+                "BakeNexus: Skipping denoise on Blender 3.6 (known crash issue)"
             )
             return
 
@@ -149,7 +149,7 @@ class BakePostProcessor:
 
             if not tree:
                 logger.error(
-                    "BakeTool: Could not find or create compositor node tree for denoising."
+                    "BakeNexus: Could not find or create compositor node tree for denoising."
                 )
                 return
 
@@ -566,7 +566,7 @@ class TaskBuilder:
                 mats = [ms.material for ms in obj.material_slots if ms.material]
                 if not mats:
                     logger.warning(
-                        f"BakeTool: Object '{obj.name}' has no materials. Skipping."
+                        f"BakeNexus: Object '{obj.name}' has no materials. Skipping."
                     )
                     from .common import log_error
 
@@ -1131,7 +1131,7 @@ class BakePassExecutor:
             compat.set_bake_type(scene, bake_type)
 
             params = {
-                "type": bake_type,
+                "type": compat.get_bake_operator_type(bake_type),
                 "margin": setting.margin,
                 "use_clear": setting.use_clear_image,
                 "target": DEFAULT_BAKE_TARGET,
@@ -1251,9 +1251,10 @@ class BakePassExecutor:
         num_pixels,
     ):
         fallback_default = 1.0 if target_channel == "a" else 0.0
+        default_value = getattr(source_settings, "default_value", fallback_default)
+        default_arr = np.full(num_pixels, default_value, dtype=np.float32)
         if not source_settings or not getattr(source_settings, "use_map", False):
-            val = getattr(source_settings, "default_value", fallback_default)
-            return np.full(num_pixels, val, dtype=np.float32)
+            return default_arr
 
         source_id = cls.normalize_source_id(
             getattr(source_settings, "source", "NONE"), current_results
@@ -1512,7 +1513,7 @@ class ModelExporter:
                     mesh_smooth_type="FACE",
                 )
             else:
-                logger.error("BakeTool: FBX Export failed - Addon 'io_scene_fbx' is disabled.")
+                logger.error("BakeNexus: FBX Export failed - Addon 'io_scene_fbx' is disabled.")
         elif fmt == "GLB":
             if hasattr(bpy.ops.export_scene, "gltf"):
                 bpy.ops.export_scene.gltf(
@@ -1521,7 +1522,7 @@ class ModelExporter:
                     export_format="GLB",
                 )
             else:
-                logger.error("BakeTool: GLB Export failed - Addon 'io_scene_gltf2' is disabled.")
+                logger.error("BakeNexus: GLB Export failed - Addon 'io_scene_gltf2' is disabled.")
         elif fmt == "USD":
             if hasattr(bpy.ops.wm, "usd_export"):
                 usd_params = {
@@ -1534,7 +1535,7 @@ class ModelExporter:
                     usd_params["selected_objects_only"] = True
                 bpy.ops.wm.usd_export(**usd_params)
             else:
-                logger.error("BakeTool: USD Export failed - Not supported in this Blender build or addon disabled.")
+                logger.error("BakeNexus: USD Export failed - Not supported in this Blender build or addon disabled.")
 
     @staticmethod
     def _restore_state(context, prev_sel, prev_act, hide_states):

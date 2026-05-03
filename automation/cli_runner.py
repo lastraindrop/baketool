@@ -13,7 +13,9 @@ AVAILABLE_SUITES = [
     "automation_tools",
     "export",
     "api",
+    "compat",
     "context_lifecycle",
+    "custom_channel_hardened",
     "cleanup",
     "denoise",
     "localization",
@@ -29,7 +31,7 @@ AVAILABLE_SUITES = [
 
 
 def setup_environment():
-    """Inline environment setup for BakeTool tests."""
+    """Inline environment setup for BakeNexus tests."""
     # Find addon root relative to this script
     current_dir = Path(__file__).resolve().parent
     addon_root = current_dir.parent
@@ -53,7 +55,7 @@ def setup_environment():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="BakeTool Unified CLI Test Runner")
+    parser = argparse.ArgumentParser(description="BakeNexus Unified CLI Test Runner")
     parser.add_argument(
         "--suite",
         type=str,

@@ -328,7 +328,7 @@ def build_translation_payload(strings, locales):
         "header": {
             "author": "lastraindrop",
             "version": "1.0.0",
-            "description": "BakeTool extracted translations",
+            "description": "BakeNexus extracted translations",
         },
         "data": {text: build_translation_entry(text, {}, locales) for text in strings},
     }
@@ -412,7 +412,7 @@ def sync_translation_payload(
         "header": {
             "author": existing_payload.get("header", {}).get("author", "lastraindrop"),
             "version": existing_payload.get("header", {}).get("version", "1.0.0"),
-            "description": "BakeTool translations",
+            "description": "BakeNexus translations",
         },
         "data": merged_data,
     }
@@ -427,7 +427,7 @@ def write_json(path: Path, payload):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Extract, audit, and sync BakeTool translation keys."
+        description="Extract, audit, and sync BakeNexus translation keys."
     )
     parser.add_argument("--source", type=Path, default=Path("."))
     parser.add_argument("--output", type=Path, default=None)

@@ -120,7 +120,7 @@ class JobBuilder:
     def __init__(self, name="TestJob"):
         self.scene = bpy.context.scene
         if not hasattr(self.scene, "BakeJobs"):
-            raise RuntimeError("BakeTool addon not registered or property missing.")
+            raise RuntimeError("BakeNexus addon not registered or property missing.")
 
         self.scene.BakeJobs.jobs.clear()
         self.job = self.scene.BakeJobs.jobs.add()
@@ -268,7 +268,7 @@ def assert_no_leak(test_case, aggressive=False):
 
 
 def selective_cleanup(keep_images=None):
-    """Selectively clean up only BakeTool temporary data.
+    """Selectively clean up only BakeNexus temporary data.
 
     This preserves user-created data while removing BT_ prefixed items
     and other known temporary structures.

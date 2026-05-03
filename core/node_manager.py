@@ -1,4 +1,4 @@
-"""Shader node graph manipulation and node-based baking for BakeTool.
+"""Shader node graph manipulation and node-based baking for BakeNexus.
 
 This module provides tools to dynamically modify material node trees during
 the baking process, such as inserting temporary emission nodes, managing

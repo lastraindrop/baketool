@@ -1,4 +1,4 @@
-"""Image creation, manipulation, and storage management for BakeTool.
+"""Image creation, manipulation, and storage management for BakeNexus.
 
 Handles the lifecycle of images used during baking, including creation of
 standard and UDIM textures, memory-efficient clearing, and safe disk storage.

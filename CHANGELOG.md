@@ -1,6 +1,6 @@
 # 更新日志 /Changelog
 
-本文件记录 BakeTool 在正式发布前的主要版本变化。/This file records major version changes before official release.
+本文件记录 BakeNexus 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
 ## 1.0.0-p1 - 2026-04-23
 
@@ -42,7 +42,7 @@
   - `bake.set_save_local`
   - `bake.selected_node_bake`
   - `bake.refresh_udim_locations`
-- 修复了 `automation/headless_bake.py` 在干净 Blender 背景会话中不能初始化插件属性的问题，脚本现在会先尝试注册 BakeTool，再访问 `scene.BakeJobs`。
+- 修复了 `automation/headless_bake.py` 在干净 Blender 背景会话中不能初始化插件属性的问题，脚本现在会先尝试注册 BakeNexus，再访问 `scene.BakeJobs`。
 - 将自定义通道真正接入执行管线，不再在执行阶段退回默认黑色结果。
 - 统一了自定义通道结果键命名，执行结果和通道打包统一使用 `BT_CUSTOM_<name>`，消除了自定义图可烘焙但不可打包的问题。
 - 将 diffuse、glossy、transmission 和 combined 的 pass filter 选项实际映射到 Blender bake 设置，不再是“界面可改但执行不生效”的状态。

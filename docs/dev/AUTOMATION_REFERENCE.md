@@ -1,10 +1,10 @@
-# BakeTool 自动化参考
+# BakeNexus 自动化参考
 
-本文档描述 BakeTool 当前仓库中的自动化入口、可用参数、推荐命令和发布前验证策略。重点在于“现在仓库里真实可运行的内容”，而不是历史上曾经存在的脚本名或理想化 CI 方案。正式发布前已经完成一次全面同步，因此本文中的脚本名、套件名和行为都应与当前代码一致。
+本文档描述 BakeNexus 当前仓库中的自动化入口、可用参数、推荐命令和发布前验证策略。重点在于“现在仓库里真实可运行的内容”，而不是历史上曾经存在的脚本名或理想化 CI 方案。正式发布前已经完成一次全面同步，因此本文中的脚本名、套件名和行为都应与当前代码一致。
 
 ## 1. 自动化体系概览
 
-BakeTool 当前的自动化主要分为三类：
+BakeNexus 当前的自动化主要分为三类：
 
 - 统一测试入口：`automation/cli_runner.py`
 - 跨版本矩阵验证：`automation/multi_version_test.py`
@@ -20,7 +20,7 @@ BakeTool 当前的自动化主要分为三类：
 
 ### 2.1 作用
 
-这是当前 BakeTool 自动化的主入口。它会：
+这是当前 BakeNexus 自动化的主入口。它会：
 
 - 配置导入环境
 - 重新注册插件
@@ -58,7 +58,9 @@ blender -b --factory-startup --python automation/cli_runner.py -- --suite unit
 - `automation_tools`
 - `export`
 - `api`
+- `compat`
 - `context_lifecycle`
+- `custom_channel_hardened`
 - `cleanup`
 - `denoise`
 - `localization`
@@ -69,6 +71,7 @@ blender -b --factory-startup --python automation/cli_runner.py -- --suite unit
 - `ui_logic`
 - `code_review`
 - `verification`
+- `extension_validation`
 
 ### 2.5 当前可用类别
 
@@ -208,12 +211,12 @@ blender -b scene.blend -P automation/headless_bake.py -- --job "JobName" --outpu
 本轮修复后，它会先执行插件初始化保护：
 
 - 自动将插件目录加入可导入路径
-- 若当前场景尚未注册 BakeTool 属性，则先调用 `baketool.register()`
+- 若当前场景尚未注册 BakeNexus 属性，则先调用 `baketool.register()`
 - 注册成功后再访问 `scene.BakeJobs`
 
 ### 5.5 限制
 
-- 只会运行当前 `.blend` 中已有的 BakeTool 作业
+- 只会运行当前 `.blend` 中已有的 BakeNexus 作业
 - 不会自动新建 Job
 - 不会替代更复杂的任务调度系统
 - 若未找到可运行 Job，会直接退出并提示 `No jobs to run. Exiting.`
@@ -242,7 +245,7 @@ blender -b scene.blend -P automation/headless_bake.py -- --job "JobName" --outpu
 
 ### 7.3 避免误判
 
-自动化的目标不是“看见任何输出就算通过”，而是看退出码和关键信号。BakeTool 当前跨版本脚本以 `CONSOLIDATED SUITES PASSED` 或 `ALL TESTS PASSED` 作为成功标记，不应自行篡改这类约定而不同时更新脚本逻辑。
+自动化的目标不是“看见任何输出就算通过”，而是看退出码和关键信号。BakeNexus 当前跨版本脚本以 `CONSOLIDATED SUITES PASSED` 或 `ALL TESTS PASSED` 作为成功标记，不应自行篡改这类约定而不同时更新脚本逻辑。
 
 ## 8. 建议的本地验证顺序
 
@@ -309,7 +312,7 @@ python automation/multi_version_test.py --suite localization --json reports/mult
 
 ## 11. 结论
 
-BakeTool 当前的自动化体系并不依赖外部 CI 平台就能完成高质量本地验证，这对 Blender 插件开发是现实且重要的优势。真正需要维持的不是“脚本数量很多”，而是：
+BakeNexus 当前的自动化体系并不依赖外部 CI 平台就能完成高质量本地验证，这对 Blender 插件开发是现实且重要的优势。真正需要维持的不是“脚本数量很多”，而是：
 
 - 名称稳定
 - 参数真实

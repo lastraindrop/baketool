@@ -474,7 +474,7 @@ def apply_baked_result(
             scene.collection.children.link(col)
         except Exception as e:
             logger.debug(
-                f"BakeTool: Result collection linkage failed (likely already linked): {e}"
+                f"BakeNexus: Result collection linkage failed (likely already linked): {e}"
             )
 
     # 1. Reuse existing baked object if possible to save memory
@@ -489,7 +489,7 @@ def apply_baked_result(
                 bpy.data.meshes.remove(old_data, do_unlink=True)
             except Exception as e:
                 logger.debug(
-                    f"BakeTool: Failed to remove old baked mesh data {old_data.name}: {e}"
+                    f"BakeNexus: Failed to remove old baked mesh data {old_data.name}: {e}"
                 )
     else:
         new_obj = original_obj.copy()
@@ -576,7 +576,7 @@ def create_simple_baked_material(
                 tex.image.colorspace_settings.name = "Non-Color"
             except (AttributeError, RuntimeError) as e:
                 logger.debug(
-                    f"BakeTool: Failed to set non-color space on {tex.image.name}: {e}"
+                    f"BakeNexus: Failed to set non-color space on {tex.image.name}: {e}"
                 )
 
         if chan_id == "normal":

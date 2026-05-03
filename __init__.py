@@ -1,13 +1,13 @@
 bl_info = {
-    "name": "BakeTool",
-    "description": "Professional Texture Baking Suite for Blender",
+    "name": "BakeNexus",
+    "description": "Professional Texture Baking Pipeline for Blender",
     "author": "lastraindrop",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Sidebar > Baking",
-    "warning": "BakeTool 1.0.0: Backup your scenes before production use",
-    "doc_url": "https://github.com/lastraindrop/baketool",
-    "tracker_url": "https://github.com/lastraindrop/baketool/issues",
+    "warning": "BakeNexus 1.0.0: Backup your scenes before production use",
+    "doc_url": "https://github.com/lastraindrop/bakenexus",
+    "tracker_url": "https://github.com/lastraindrop/bakenexus/issues",
     "category": "Render",
 }
 
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 # --- Preferences ---
-class BakeToolPreferences(AddonPreferences):
+class BakeNexusPreferences(AddonPreferences):
     bl_idname = __package__
 
     default_preset_path: StringProperty(
@@ -80,7 +80,7 @@ def get_classes():
     classes = []
 
     # 1. Add local preferences
-    classes.append(BakeToolPreferences)
+    classes.append(BakeNexusPreferences)
 
     # 2. Add classes from relevant modules
     # Priority classes require specific registration order due to dependencies
@@ -148,7 +148,7 @@ addon_keymaps = []
 
 def menu_func_quick_bake(self, context):
     self.layout.separator()
-    self.layout.operator("bake.quick_bake", icon="RENDER_STILL")
+    self.layout.operator("bakenexus.quick_bake", icon="RENDER_STILL")
 
 
 def register():
@@ -162,26 +162,26 @@ def register():
         default=0, min=0, name="Texture set index"
     )
 
-    bpy.types.Scene.BakeJobs = props.PointerProperty(type=prop_module.BakeJobs)
+    bpy.types.Scene.BakeNexusJobs = props.PointerProperty(type=prop_module.BakeJobs)
 
-    bpy.types.Scene.baked_image_results = CollectionProperty(
+    bpy.types.Scene.bakenexus_results = CollectionProperty(
         type=prop_module.BakedImageResult,
         name="Baked Image Results",
         description="List of baked image results with metadata",
     )
-    bpy.types.Scene.baked_image_results_index = IntProperty(
+    bpy.types.Scene.bakenexus_results_index = IntProperty(
         name="Index for baked image results",
         default=-1,
         description="Currently selected index in the baked image results list",
     )
 
     # Progress and Status / 进度与状态反馈
-    bpy.types.Scene.is_baking = props.BoolProperty(name="Is Baking", default=False)
-    bpy.types.Scene.bake_progress = props.FloatProperty(
+    bpy.types.Scene.bakenexus_is_baking = props.BoolProperty(name="Is Baking", default=False)
+    bpy.types.Scene.bakenexus_progress = props.FloatProperty(
         name="Progress", default=0.0, min=0.0, max=100.0, subtype="PERCENTAGE"
     )
-    bpy.types.Scene.bake_status = props.StringProperty(name="Status", default="Idle")
-    bpy.types.Scene.bake_error_log = props.StringProperty(name="Error Log", default="")
+    bpy.types.Scene.bakenexus_status = props.StringProperty(name="Status", default="Idle")
+    bpy.types.Scene.bakenexus_error_log = props.StringProperty(name="Error Log", default="")
 
     # 测试反馈 / Test Feedback
     bpy.types.Scene.last_test_info = props.StringProperty(
@@ -210,7 +210,7 @@ def register():
     if kc:
         km = kc.keymaps.new(name="Object Mode")
         kmi = km.keymap_items.new("wm.call_panel", "B", "PRESS", ctrl=True, shift=True)
-        kmi.properties.name = "BAKE_PT_BakePanel"
+        kmi.properties.name = "BAKENEXUS_PT_BakePanel"
         addon_keymaps.append((km, kmi))
     # 制作翻译 // Create translations
     # Register all loaded languages using the package name as the context/domain
@@ -237,21 +237,21 @@ def unregister():
     if hasattr(bpy.types.Object, "bake_map_index"):
         del bpy.types.Object.bake_map_index
 
-    if hasattr(bpy.types.Scene, "BakeJobs"):
-        del bpy.types.Scene.BakeJobs
-    if hasattr(bpy.types.Scene, "baked_image_results"):
-        del bpy.types.Scene.baked_image_results
-    if hasattr(bpy.types.Scene, "baked_image_results_index"):
-        del bpy.types.Scene.baked_image_results_index
+    if hasattr(bpy.types.Scene, "BakeNexusJobs"):
+        del bpy.types.Scene.BakeNexusJobs
+    if hasattr(bpy.types.Scene, "bakenexus_results"):
+        del bpy.types.Scene.bakenexus_results
+    if hasattr(bpy.types.Scene, "bakenexus_results_index"):
+        del bpy.types.Scene.bakenexus_results_index
 
-    if hasattr(bpy.types.Scene, "is_baking"):
-        del bpy.types.Scene.is_baking
-    if hasattr(bpy.types.Scene, "bake_progress"):
-        del bpy.types.Scene.bake_progress
-    if hasattr(bpy.types.Scene, "bake_status"):
-        del bpy.types.Scene.bake_status
-    if hasattr(bpy.types.Scene, "bake_error_log"):
-        del bpy.types.Scene.bake_error_log
+    if hasattr(bpy.types.Scene, "bakenexus_is_baking"):
+        del bpy.types.Scene.bakenexus_is_baking
+    if hasattr(bpy.types.Scene, "bakenexus_progress"):
+        del bpy.types.Scene.bakenexus_progress
+    if hasattr(bpy.types.Scene, "bakenexus_status"):
+        del bpy.types.Scene.bakenexus_status
+    if hasattr(bpy.types.Scene, "bakenexus_error_log"):
+        del bpy.types.Scene.bakenexus_error_log
 
     if hasattr(bpy.types.Scene, "last_test_info"):
         del bpy.types.Scene.last_test_info

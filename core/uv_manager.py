@@ -258,7 +258,7 @@ class UVLayoutManager:
                     bpy.context.view_layer.objects.active = prev_act
             except (AttributeError, RuntimeError, ReferenceError) as e:
                 logger.debug(
-                    f"BakeTool: Failed to restore selection in UV manager: {e}"
+                    f"BakeNexus: Failed to restore selection in UV manager: {e}"
                 )
 
     def _restore_state(self):

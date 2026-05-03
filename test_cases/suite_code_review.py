@@ -30,7 +30,7 @@ class SuiteCodeReviewFixes(unittest.TestCase):
         """Verify bl_info is defined only once and contains correct values."""
         from baketool import bl_info
 
-        self.assertEqual(bl_info["name"], "BakeTool")
+        self.assertEqual(bl_info["name"], "BakeNexus")
         self.assertEqual(bl_info["version"], (1, 0, 0))
         self.assertEqual(bl_info["blender"], (4, 2, 0))
         self.assertEqual(bl_info["author"], "lastraindrop")

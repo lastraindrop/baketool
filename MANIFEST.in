@@ -1,4 +1,4 @@
-# MANIFEST.in - BakeTool source package layout
+# MANIFEST.in - BakeNexus source package layout
 
 include __init__.py
 include blender_manifest.toml

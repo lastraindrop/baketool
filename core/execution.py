@@ -203,7 +203,7 @@ class BakeModalOperator:
         if self.bake_queue and hasattr(self.bake_queue[0].job, 'setting'):
              s = self.bake_queue[0].job.setting
              if getattr(s, 'save_and_quit', False): 
-                logger.warning("BakeTool: save_and_quit enabled - saving and exiting Blender.")
+                logger.warning("BakeNexus: save_and_quit enabled - saving and exiting Blender.")
                 # M-06: Always try to save before exit if this flag is set
                 try:
                     bpy.ops.wm.save_mainfile()

@@ -16,7 +16,7 @@ from ..core.node_manager import NodeGraphHandler
 
 class SuiteUnit(unittest.TestCase):
     """
-    Consolidated Unit Test Suite for BakeTool Core Components.
+    Consolidated Unit Test Suite for BakeNexus Core Components.
     Covers: Image Manager, UV Manager, Math Utils, Compat Layer, and Node Graph Logic.
     """
 
@@ -500,7 +500,7 @@ class SuiteUnit(unittest.TestCase):
         # Add a dummy node and tag it exactly as cleanup.py expects: is_bt_temp
         val_node = tree.nodes.new("ShaderNodeValue")
         val_node["is_bt_temp"] = True
-        val_node.name = "BakeTool_Temp_Node"
+        val_node.name = "BakeNexus_Temp_Node"
 
         self.assertIn(val_node, tree.nodes.values())
 

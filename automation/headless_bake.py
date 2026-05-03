@@ -1,5 +1,5 @@
 """
-BakeTool Headless CLI Entry Point
+BakeNexus Headless CLI Entry Point
 Usage: blender -b scene.blend -P headless_bake.py -- --job "JobName" --output "C:/path"
 """
 import sys
@@ -19,12 +19,12 @@ try:
     import baketool
     from baketool.core.engine import JobPreparer, BakeStepRunner
 except ImportError:
-    print("Error: Could not import BakeTool core. Ensure the script is inside the addon or path is correct.")
+    print("Error: Could not import BakeNexus core. Ensure the script is inside the addon or path is correct.")
     sys.exit(1)
 
 
 def ensure_addon_registered():
-    """Register BakeTool when running from a clean background session."""
+    """Register BakeNexus when running from a clean background session."""
     scene = bpy.context.scene
     if hasattr(scene, "BakeJobs"):
         return True
@@ -35,7 +35,7 @@ def ensure_addon_registered():
         # Already registered but Blender state was partially initialized.
         pass
     except Exception as exc:
-        print(f"Error: Failed to register BakeTool addon: {exc}")
+        print(f"Error: Failed to register BakeNexus addon: {exc}")
         return False
 
     return hasattr(bpy.context.scene, "BakeJobs")
@@ -48,19 +48,19 @@ def main():
     else:
         cli_args = []
 
-    parser = argparse.ArgumentParser(description="BakeTool Headless CLI")
+    parser = argparse.ArgumentParser(description="BakeNexus Headless CLI")
     parser.add_argument("--job", type=str, help="Name of the job to bake (if empty, bakes all enabled)")
     parser.add_argument("--output", type=str, help="Override output directory")
     args = parser.parse_args(cli_args)
 
     if not ensure_addon_registered():
-        print("Error: BakeTool properties could not be initialized.")
+        print("Error: BakeNexus properties could not be initialized.")
         return
 
     scene = bpy.context.scene
     bj_prop = getattr(scene, "BakeJobs", None)
     if not bj_prop:
-        print("Error: BakeTool properties not found in scene.")
+        print("Error: BakeNexus properties not found in scene.")
         return
 
     # Filter jobs
@@ -82,7 +82,7 @@ def main():
             job.setting.external_save_path = args.output
             job.setting.use_external_save = True
 
-    print(f"BakeTool CLI: Starting {len(jobs_to_run)} jobs...")
+    print(f"BakeNexus CLI: Starting {len(jobs_to_run)} jobs...")
     
     # Execution Queue using standard preparer
     queue = JobPreparer.prepare_execution_queue(bpy.context, jobs_to_run)
@@ -97,7 +97,7 @@ def main():
         print(f"[{i+1}/{len(queue)}] Baking: {step.task.base_name}")
         runner.run(step, queue_idx=i)
 
-    print("BakeTool CLI: Finished.")
+    print("BakeNexus CLI: Finished.")
 
 if __name__ == "__main__":
     main()

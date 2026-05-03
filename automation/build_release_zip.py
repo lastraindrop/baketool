@@ -9,9 +9,13 @@ from __future__ import annotations
 
 import argparse
 import sys
-import tomllib
 import zipfile
 from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python < 3.11
+    import tomli as tomllib
 
 
 ROOT_FILES = [
@@ -32,7 +36,14 @@ ROOT_FILES = [
 
 RECURSIVE_DIRS = {
     "core": "*.py",
+    "test_cases": "*.py",
 }
+
+AUTOMATION_FILES = [
+    "automation/__init__.py",
+    "automation/cli_runner.py",
+    "automation/headless_bake.py",
+]
 
 DOC_FILES = [
     "docs/USER_MANUAL.md",
@@ -49,13 +60,18 @@ def load_manifest(addon_root: Path) -> dict:
 
 
 def collect_files(addon_root: Path) -> list[Path]:
-    missing = [path for path in ROOT_FILES + DOC_FILES if not (addon_root / path).exists()]
+    missing = [
+        path
+        for path in ROOT_FILES + DOC_FILES + AUTOMATION_FILES
+        if not (addon_root / path).exists()
+    ]
     if missing:
         missing_list = ", ".join(missing)
         raise FileNotFoundError(f"Required release files are missing: {missing_list}")
 
     files = [addon_root / path for path in ROOT_FILES]
     files.extend(addon_root / path for path in DOC_FILES)
+    files.extend(addon_root / path for path in AUTOMATION_FILES)
 
     for folder, pattern in RECURSIVE_DIRS.items():
         files.extend(
@@ -99,7 +115,7 @@ def main() -> int:
     addon_id = manifest.get("id", addon_root.name)
     version = manifest.get("version", "0.0.0")
 
-    parser = argparse.ArgumentParser(description="Build a clean BakeTool release ZIP.")
+    parser = argparse.ArgumentParser(description="Build a clean BakeNexus release ZIP.")
     parser.add_argument(
         "--output",
         type=Path,

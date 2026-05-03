@@ -1,7 +1,7 @@
 """Memory and Resource Management Test Suite
 
 This test suite verifies memory management, resource cleanup, and
-prevents data leaks in BakeTool operations.
+prevents data leaks in BakeNexus operations.
 """
 
 import unittest

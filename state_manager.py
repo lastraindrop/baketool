@@ -146,7 +146,7 @@ class BakeStateManager:
                 except (OSError, AttributeError, NotImplementedError):
                     pass
         except (OSError, IOError) as e:
-            logger.error(f"BakeTool Log Error: {e}")
+            logger.error(f"BakeNexus Log Error: {e}")
 
     def read_log(self) -> Optional[Dict[str, Any]]:
         """Read and parse the session log file.

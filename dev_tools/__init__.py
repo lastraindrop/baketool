@@ -1,1 +1,1 @@
-"""Development tools for BakeTool."""
+"""Development tools for BakeNexus."""

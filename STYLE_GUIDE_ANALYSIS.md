@@ -1,4 +1,4 @@
-# BakeTool Code Style Analysis Report
+# BakeNexus Code Style Analysis Report
 ## Based on Google Python Style Guide
 
 **Date:** 2026-04-17
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The BakeTool codebase was analyzed against Google Python Style Guide. The analysis revealed several categories of issues ranging from critical (bare except clauses) to minor (import organization).
+The BakeNexus codebase was analyzed against Google Python Style Guide. The analysis revealed several categories of issues ranging from critical (bare except clauses) to minor (import organization).
 
 **Overall Health Score:** 6.5/10
 
@@ -351,7 +351,7 @@ Encapsulate in a class or use module-level initialization:
 
 ```python
 # Option 1: Use a class
-class BakeToolState:
+class BakeNexusState:
     """Manages addon registration state."""
     _classes = []
     _keymaps = []

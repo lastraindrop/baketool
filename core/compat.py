@@ -17,6 +17,11 @@ BAKE_MAPPING = {
 }
 
 
+def get_bake_operator_type(bake_type: str) -> str:
+    """Return the bake type enum expected by bpy.ops.object.bake."""
+    return bake_type
+
+
 def is_blender_5() -> bool:
     """Check if the current Blender version is 5.0 or newer.
 

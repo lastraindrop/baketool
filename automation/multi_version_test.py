@@ -89,7 +89,8 @@ def load_blender_paths(extra_paths=None, paths_file=None, env=None):
     if paths_file:
         collected.extend(_load_paths_file(paths_file))
 
-    collected.extend(DEFAULT_BLENDER_PATHS)
+    if not extra_paths and not paths_file and not env_paths_file:
+        collected.extend(DEFAULT_BLENDER_PATHS)
     return _dedupe_preserve_order(collected)
 
 
@@ -281,7 +282,7 @@ def write_summary_reports(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="BakeTool Multi-Version Test Runner")
+    parser = argparse.ArgumentParser(description="BakeNexus Multi-Version Test Runner")
     parser.add_argument(
         "--suite",
         type=str,

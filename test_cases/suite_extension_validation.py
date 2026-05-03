@@ -44,7 +44,7 @@ class SuiteExtensionValidation(unittest.TestCase):
         for field in mandatory:
             self.assertIn(field, data, f"Missing mandatory field: {field}")
 
-        self.assertEqual(data["id"], "baketool", "Package id should be 'baketool'")
+        self.assertEqual(data["id"], "bakenexus", "Package id should be 'bakenexus'")
         self.assertEqual(data["type"], "add-on", "Package type should be 'add-on'")
 
     def test_sync_between_manifest_and_bl_info(self):
@@ -74,7 +74,7 @@ class SuiteExtensionValidation(unittest.TestCase):
             data = self._tomllib.load(f)
         
         permissions = data.get("permissions")
-        self.assertIsNotNone(permissions, "BakeTool requires [permissions] to save textures")
+        self.assertIsNotNone(permissions, "BakeNexus requires [permissions] to save textures")
         self.assertIn("files", permissions, "Missing 'files' permission for texture output")
 
     def test_recommended_metadata_presence(self):

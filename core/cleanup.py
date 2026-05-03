@@ -1,4 +1,4 @@
-"""Emergency cleanup operations for BakeTool.
+"""Emergency cleanup operations for BakeNexus.
 
 Provides functionality to remove temporary data (images, nodes, UV layers)
 left behind after interrupted bake sessions or crashes.
@@ -20,7 +20,7 @@ def log_cleanup_detail(message: str) -> None:
         message: The status message or detailed report to log.
     """
     try:
-        log_dir = Path(bpy.app.tempdir) / "baketool_logs"
+        log_dir = Path(bpy.app.tempdir) / "bakenexus_logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         log_path = log_dir / "cleanup_history.log"
 
@@ -54,7 +54,7 @@ class BAKETOOL_OT_EmergencyCleanup(bpy.types.Operator):
         """Execute the emergency cleanup process.
 
         Scans the current blend file for known temporary objects, UV layers,
-        images, and nodes used by BakeTool and removes them.
+        images, and nodes used by BakeNexus and removes them.
 
         Args:
             context: Blender context.

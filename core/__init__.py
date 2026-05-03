@@ -1,4 +1,4 @@
-"""BakeTool core module.
+"""BakeNexus core module.
 
 This module contains the core functionality for texture baking operations,
 including image management, node manipulation, UV handling, shading, and

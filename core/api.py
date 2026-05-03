@@ -1,6 +1,8 @@
 """
-BakeTool Public API
-Exposes simplified entry points for external scripts and pipeline integration.
+BakeNexus Public API
+
+This module provides a stable, minimal public interface for external
+scripts and other add-ons to interact with BakeNexus programmatically.
 """
 import bpy
 import logging
@@ -31,7 +33,7 @@ def bake(objects, use_selection=True):
     # CB-2: Rewrite to use engine logic directly instead of UI Operator
     # We use the currently active job setup in the scene as the template
     if not hasattr(bpy.context.scene, "BakeJobs"):
-        logger.error("API Error: BakeTool properties not registered.")
+        logger.error("API Error: BakeNexus properties not registered.")
         return False
         
     jobs_manager = bpy.context.scene.BakeJobs

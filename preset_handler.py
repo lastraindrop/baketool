@@ -395,13 +395,13 @@ class AutoLoadHandler:
                 with open(filepath, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 if load_preset_into_jobs_manager(scene.BakeJobs, data):
-                    logger.info(f"BakeTool: Auto-loaded default preset from {filepath}")
+                    logger.info(f"BakeNexus: Auto-loaded default preset from {filepath}")
                 else:
                     logger.warning(
-                        f"BakeTool: Preset at {filepath} does not match a supported schema."
+                        f"BakeNexus: Preset at {filepath} does not match a supported schema."
                     )
             except (OSError, IOError, json.JSONDecodeError) as e:
-                logger.warning(f"BakeTool: Failed to auto-load preset: {e}")
+                logger.warning(f"BakeNexus: Failed to auto-load preset: {e}")
 
         UpdateCrashCacheHandler.update_crash_cache()
 

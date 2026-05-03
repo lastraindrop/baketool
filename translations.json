@@ -2,7 +2,7 @@
     "header": {
         "author": "lastraindrop",
         "version": "1.0.0",
-        "description": "BakeTool translations"
+        "description": "BakeNexus translations"
     },
     "data": {
         "!! STOP BAKING? Press Y/Enter to Stop, N/Esc to Resume !!": {
@@ -586,19 +586,19 @@
             "ru_RU": "Запекание одного объекта",
             "zh_CN": "单个物体烘焙"
         },
-        "BakeTool properties not initialized.": {
-            "en_US": "BakeTool properties not initialized.",
-            "fr_FR": "Les propriétés BakeTool ne sont pas initialisées.",
-            "ja_JP": "BakeTool のプロパティが初期化されていません。",
-            "ru_RU": "Свойства BakeTool не инициализированы.",
-            "zh_CN": "BakeTool 属性尚未初始化。"
+        "BakeNexus properties not initialized.": {
+            "en_US": "BakeNexus properties not initialized.",
+            "fr_FR": "Les propriétés BakeNexus ne sont pas initialisées.",
+            "ja_JP": "BakeNexus のプロパティが初期化されていません。",
+            "ru_RU": "Свойства BakeNexus не инициализированы.",
+            "zh_CN": "BakeNexus 属性尚未初始化。"
         },
-        "BakeTool v1.0.0 optimized for Blender 5.0 rendering pipeline.": {
-            "en_US": "BakeTool v1.0.0 optimized for Blender 5.0 rendering pipeline.",
-            "fr_FR": "BakeTool v1.0.0 optimisé pour le pipeline de rendu de Blender 5.0.",
-            "ja_JP": "BakeTool v1.0.0 は Blender 5.0 のレンダーパイプライン向けに最適化されています。",
-            "ru_RU": "BakeTool v1.0.0 оптимизирован для конвейера рендеринга Blender 5.0.",
-            "zh_CN": "BakeTool v1.0.0 已针对 Blender 5.0 渲染管线进行优化。"
+        "BakeNexus v1.0.0 optimized for Blender 5.0 rendering pipeline.": {
+            "en_US": "BakeNexus v1.0.0 optimized for Blender 5.0 rendering pipeline.",
+            "fr_FR": "BakeNexus v1.0.0 optimisé pour le pipeline de rendu de Blender 5.0.",
+            "ja_JP": "BakeNexus v1.0.0 は Blender 5.0 のレンダーパイプライン向けに最適化されています。",
+            "ru_RU": "BakeNexus v1.0.0 оптимизирован для конвейера рендеринга Blender 5.0.",
+            "zh_CN": "BakeNexus v1.0.0 已针对 Blender 5.0 渲染管线进行优化。"
         },
         "Baked Image Results": {
             "en_US": "Baked Image Results",
