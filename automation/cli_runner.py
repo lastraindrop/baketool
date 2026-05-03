@@ -113,10 +113,13 @@ def main():
     try:
         import baketool
 
-        try:
-            baketool.unregister()
-        except Exception:
-            pass
+        # Ensure a clean state: unregister first if already registered
+        if hasattr(bpy.types.Scene, "BakeNexusJobs"):
+            try:
+                baketool.unregister()
+            except Exception:
+                pass
+        
         baketool.register()
         print(">>> Addon registered successfully.")
 
