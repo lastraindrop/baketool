@@ -69,7 +69,6 @@ jobs:
 
       - name: Run Verification
         run: |
-          # Use a simple verification since full Blender setup is complex
           python -m py_compile automation/*.py
           python -m py_compile test_cases/*.py
 
@@ -82,7 +81,6 @@ jobs:
 
       - name: Check Results
         run: |
-          # Check if all versions passed
           echo "All test reports downloaded to 'reports/' directory"
 
   lint:
