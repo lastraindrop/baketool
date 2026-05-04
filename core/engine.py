@@ -500,13 +500,13 @@ class BakeStepRunner:
 
         if res_obj and job.setting.export_model and job.setting.use_external_save:
             self.scene.bake_status = f"Exporting Model... - {task.base_name}"
-                ModelExporter.export(
-                    self.context,
-                    res_obj,
-                    job.setting,
-                    folder_name=s.folder_name if s.create_new_folder else task.folder_name,
-                    file_name=task.base_name,
-                )
+            ModelExporter.export(
+                self.context,
+                res_obj,
+                job.setting,
+                folder_name=s.folder_name if s.create_new_folder else task.folder_name,
+                file_name=task.base_name,
+            )
 
         if res_obj and not job.setting.apply_to_scene:
             try:
