@@ -48,7 +48,7 @@ class SuiteUILogic(unittest.TestCase):
     def test_baked_image_result_attributes(self):
         """Verify the BakedImageResult property group has expected fields."""
         scene = bpy.context.scene
-        res = scene.bakenexus_results.add()
+        res = scene.baked_image_results.add()
         expected_attrs = [
             'name', 'filepath', 'image', 'channel_type',
             'res_x', 'res_y', 'duration', 'file_size'
@@ -57,7 +57,7 @@ class SuiteUILogic(unittest.TestCase):
             self.assertTrue(hasattr(res, attr), f"BakedImageResult missing attribute: {attr}")
 
         # Cleanup the test result
-        scene.bakenexus_results.remove(len(scene.bakenexus_results) - 1)
+        scene.baked_image_results.remove(len(scene.baked_image_results) - 1)
 
     def test_bake_operator_poll_blocks_while_baking(self):
         """Verify that the Bake Operator poll fails if a bake is already in progress."""

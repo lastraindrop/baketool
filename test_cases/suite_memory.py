@@ -38,9 +38,9 @@ class SuiteMemory(unittest.TestCase):
         img_name = img.name
 
         scene = bpy.context.scene
-        res = scene.bakenexus_results.add()
+        res = scene.baked_image_results.add()
         res.image = img
-        scene.bakenexus_results_index = len(scene.bakenexus_results) - 1
+        scene.baked_image_results_index = len(scene.baked_image_results) - 1
 
         self.assertIn(img_name, bpy.data.images)
 
@@ -58,7 +58,7 @@ class SuiteMemory(unittest.TestCase):
         for i in range(3):
             img = image_manager.set_image(f"MultiDelete_{i}", 32, 32)
             images.append(img.name)
-            res = bpy.context.scene.bakenexus_results.add()
+            res = bpy.context.scene.baked_image_results.add()
             res.image = img
 
         for name in images:
@@ -98,8 +98,8 @@ class SuiteMemory(unittest.TestCase):
 
         for i in range(5):
             img = image_manager.set_image(f"BatchTest_{i}", 64, 64)
-            scene.bakenexus_results_index = len(scene.bakenexus_results)
-            res = scene.bakenexus_results.add()
+            scene.baked_image_results_index = len(scene.baked_image_results)
+            res = scene.baked_image_results.add()
             res.image = img
             bpy.ops.baketool.delete_result()
 
@@ -139,8 +139,8 @@ class SuiteMemory(unittest.TestCase):
         img = image_manager.set_image("ExternalSaveTest", 128, 128)
         img_name = img.name
 
-        scene.bakenexus_results_index = len(scene.bakenexus_results)
-        res = scene.bakenexus_results.add()
+        scene.baked_image_results_index = len(scene.baked_image_results)
+        res = scene.baked_image_results.add()
         res.image = img
         res.filepath = "/tmp/test_bake.png"
 
@@ -245,7 +245,7 @@ class SuiteMemoryIntegration(unittest.TestCase):
                     for res in results:
                         if res.get("path"):
                             img = res["image"]
-                            res_item = scene.bakenexus_results.add()
+                            res_item = scene.baked_image_results.add()
                             res_item.image = img
                 except Exception:
                     pass
@@ -266,7 +266,7 @@ class SuiteMemoryIntegration(unittest.TestCase):
 
         for i in range(3):
             img = image_manager.set_image(f"Repeat_{i}", 64, 64)
-            res = bpy.context.scene.bakenexus_results.add()
+            res = bpy.context.scene.baked_image_results.add()
             res.image = img
 
         after_bakes = len(bpy.data.images)

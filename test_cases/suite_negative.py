@@ -51,12 +51,12 @@ class SuiteNegative(unittest.TestCase):
 
         builder = JobBuilder("HiddenViewLayerJob").add_objects(other_obj)
         job = builder.build()
-        bpy.context.scene.bakenexus_error_log = ""
+        bpy.context.scene.bake_error_log = ""
 
         queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
 
         self.assertEqual(len(queue), 0)
-        self.assertIn("View Layer", bpy.context.scene.bakenexus_error_log)
+        self.assertIn("View Layer", bpy.context.scene.bake_error_log)
 
     def test_preset_load_malformed_json(self):
         """Verify PropertyIO doesn't crash on invalid JSON data."""
