@@ -667,8 +667,8 @@ class BAKETOOL_OT_DeleteResult(bpy.types.Operator):
     bl_label = "Delete"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        results = context.scene.bakenexus_results
-        idx = context.scene.bakenexus_results_index
+        results = context.scene.baked_image_results
+        idx = context.scene.baked_image_results_index
 
         if 0 <= idx < len(results):
             r = results[idx]
@@ -676,7 +676,7 @@ class BAKETOOL_OT_DeleteResult(bpy.types.Operator):
 
             r.image = None
             results.remove(idx)
-            context.scene.bakenexus_results_index = max(0, idx - 1)
+            context.scene.baked_image_results_index = max(0, idx - 1)
 
             context.view_layer.depsgraph.update()
 
@@ -695,7 +695,7 @@ class BAKETOOL_OT_DeleteAllResults(bpy.types.Operator):
     bl_label = "Delete All"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        results = context.scene.bakenexus_results
+        results = context.scene.baked_image_results
         images = [r.image for r in results if r.image]
 
         results.clear()
@@ -720,8 +720,8 @@ class BAKETOOL_OT_ExportResult(bpy.types.Operator):
     filepath: props.StringProperty(subtype="FILE_PATH")
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> Set[str]:
-        results = context.scene.bakenexus_results
-        idx = context.scene.bakenexus_results_index
+        results = context.scene.baked_image_results
+        idx = context.scene.baked_image_results_index
         if not (0 <= idx < len(results)):
             return {"CANCELLED"}
 
@@ -741,8 +741,8 @@ class BAKETOOL_OT_ExportResult(bpy.types.Operator):
         return {"RUNNING_MODAL"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        results = context.scene.bakenexus_results
-        idx = context.scene.bakenexus_results_index
+        results = context.scene.baked_image_results
+        idx = context.scene.baked_image_results_index
         if not (0 <= idx < len(results)):
             self.report({"ERROR"}, "No result selected")
             return {"CANCELLED"}
@@ -802,7 +802,7 @@ class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):
         return {"RUNNING_MODAL"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        results = context.scene.bakenexus_results
+        results = context.scene.baked_image_results
         if not results:
             self.report({"WARNING"}, "No results to export")
             return {"CANCELLED"}

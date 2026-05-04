@@ -164,24 +164,24 @@ def register():
 
     bpy.types.Scene.BakeJobs = props.PointerProperty(type=prop_module.BakeJobs)
 
-    bpy.types.Scene.bakenexus_results = CollectionProperty(
+    bpy.types.Scene.baked_image_results = CollectionProperty(
         type=prop_module.BakedImageResult,
         name="Baked Image Results",
         description="List of baked image results with metadata",
     )
-    bpy.types.Scene.bakenexus_results_index = IntProperty(
+    bpy.types.Scene.baked_image_results_index = IntProperty(
         name="Index for baked image results",
         default=-1,
         description="Currently selected index in the baked image results list",
     )
 
     # Progress and Status / 进度与状态反馈
-    bpy.types.Scene.bakenexus_is_baking = props.BoolProperty(name="Is Baking", default=False)
-    bpy.types.Scene.bakenexus_progress = props.FloatProperty(
+    bpy.types.Scene.is_baking = props.BoolProperty(name="Is Baking", default=False)
+    bpy.types.Scene.bake_progress = props.FloatProperty(
         name="Progress", default=0.0, min=0.0, max=100.0, subtype="PERCENTAGE"
     )
-    bpy.types.Scene.bakenexus_status = props.StringProperty(name="Status", default="Idle")
-    bpy.types.Scene.bakenexus_error_log = props.StringProperty(name="Error Log", default="")
+    bpy.types.Scene.bake_status = props.StringProperty(name="Status", default="Idle")
+    bpy.types.Scene.bake_error_log = props.StringProperty(name="Error Log", default="")
 
     # 测试反馈 / Test Feedback
     bpy.types.Scene.last_test_info = props.StringProperty(
@@ -239,19 +239,19 @@ def unregister():
 
     if hasattr(bpy.types.Scene, "BakeJobs"):
         del bpy.types.Scene.BakeJobs
-    if hasattr(bpy.types.Scene, "bakenexus_results"):
-        del bpy.types.Scene.bakenexus_results
-    if hasattr(bpy.types.Scene, "bakenexus_results_index"):
-        del bpy.types.Scene.bakenexus_results_index
+    if hasattr(bpy.types.Scene, "baked_image_results"):
+        del bpy.types.Scene.baked_image_results
+    if hasattr(bpy.types.Scene, "baked_image_results_index"):
+        del bpy.types.Scene.baked_image_results_index
 
-    if hasattr(bpy.types.Scene, "bakenexus_is_baking"):
-        del bpy.types.Scene.bakenexus_is_baking
-    if hasattr(bpy.types.Scene, "bakenexus_progress"):
-        del bpy.types.Scene.bakenexus_progress
-    if hasattr(bpy.types.Scene, "bakenexus_status"):
-        del bpy.types.Scene.bakenexus_status
-    if hasattr(bpy.types.Scene, "bakenexus_error_log"):
-        del bpy.types.Scene.bakenexus_error_log
+    if hasattr(bpy.types.Scene, "is_baking"):
+        del bpy.types.Scene.is_baking
+    if hasattr(bpy.types.Scene, "bake_progress"):
+        del bpy.types.Scene.bake_progress
+    if hasattr(bpy.types.Scene, "bake_status"):
+        del bpy.types.Scene.bake_status
+    if hasattr(bpy.types.Scene, "bake_error_log"):
+        del bpy.types.Scene.bake_error_log
 
     if hasattr(bpy.types.Scene, "last_test_info"):
         del bpy.types.Scene.last_test_info

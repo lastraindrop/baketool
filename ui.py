@@ -205,9 +205,9 @@ def draw_results(scene: bpy.types.Scene, layout: bpy.types.UILayout, bj: Any) ->
         "BAKE_UL_BakedImageResults",
         "",
         scene,
-        "bakenexus_results",
+        "baked_image_results",
         scene,
-        "bakenexus_results_index",
+        "baked_image_results_index",
         rows=5,
     )
 
@@ -221,10 +221,10 @@ def draw_results(scene: bpy.types.Scene, layout: bpy.types.UILayout, bj: Any) ->
 
     # Detailed Metadata Inspector
     if (
-        scene.bakenexus_results
-        and 0 <= scene.bakenexus_results_index < len(scene.bakenexus_results)
+        scene.baked_image_results
+        and 0 <= scene.baked_image_results_index < len(scene.baked_image_results)
     ):
-        res = scene.bakenexus_results[scene.bakenexus_results_index]
+        res = scene.baked_image_results[scene.baked_image_results_index]
         box = layout.box()
 
         row = box.row()
@@ -618,11 +618,11 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         # --- 5. Main Execution ---
         layout.separator(factor=1.5)
 
-        if scene.bakenexus_is_baking:
+        if scene.is_baking:
             status_box = layout.box()
             col = status_box.column(align=True)
-            col.label(text=scene.bakenexus_status, icon="RENDER_STILL")
-            col.prop(scene, "bakenexus_progress", text="", slider=True)
+            col.label(text=scene.bake_status, icon="RENDER_STILL")
+            col.prop(scene, "bake_progress", text="", slider=True)
         else:
             row = layout.row()
             row.scale_y = 2.0

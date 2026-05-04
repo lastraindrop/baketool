@@ -89,9 +89,9 @@ class SuiteProductionWorkflow(unittest.TestCase):
 
                     # 4. Final Assertions
                     scene = bpy.context.scene
-                    self.assertGreater(len(scene.baked_image_results), 0, "No result added to UI list")
+                    self.assertGreater(len(scene.bakenexus_results), 0, "No result added to UI list")
                     
-                    res = scene.baked_image_results[-1]
+                    res = scene.bakenexus_results[-1]
                     self.assertEqual(res.res_x, 32)
                     self.assertIsNotNone(res.image, "Baked image is None")
                     self.assertTrue(res.duration > 0, "Duration was not tracked")

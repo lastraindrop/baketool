@@ -112,14 +112,14 @@ class SuitePresetAndState(unittest.TestCase):
     def test_property_io_preserves_image_pointers(self):
         """Image pointers on result items should survive round-trip load."""
         img = bpy.data.images.new("PresetImagePointer", 8, 8)
-        result = bpy.context.scene.baked_image_results.add()
+        result = bpy.context.scene.bakenexus_results.add()
         result.image = img
         result.channel_type = "Color"
 
         data = PropertyIO().to_dict(result)
         self.assertEqual(data["image"]["__id_pointer__"]["name"], img.name)
 
-        restored = bpy.context.scene.baked_image_results.add()
+        restored = bpy.context.scene.bakenexus_results.add()
         PropertyIO().from_dict(restored, data)
         self.assertEqual(restored.image, img)
 

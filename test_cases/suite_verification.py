@@ -31,9 +31,9 @@ class SuiteVerification(unittest.TestCase):
         img = image_manager.set_image("Verify_DeleteImg", 64, 64)
         img_name = img.name
         
-        res = bpy.context.scene.baked_image_results.add()
+        res = bpy.context.scene.bakenexus_results.add()
         res.image = img
-        bpy.context.scene.baked_image_results_index = len(bpy.context.scene.baked_image_results) - 1
+        bpy.context.scene.bakenexus_results_index = len(bpy.context.scene.bakenexus_results) - 1
         
         self.assertIn(img_name, bpy.data.images)
         # Use string operator call to avoid static import dependency
