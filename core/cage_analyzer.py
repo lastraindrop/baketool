@@ -130,8 +130,6 @@ class CageAnalyzer:
 
         # 3. Viewport Feedback
         if auto_switch_vp:
-            # Record original selection and mode to restore them
-            prev_sel = context.selected_objects[:]
             prev_act = context.active_object
             prev_mode = prev_act.mode if prev_act else "OBJECT"
 
@@ -148,20 +146,11 @@ class CageAnalyzer:
                                 space.shading.color_type = "VERTEX"
             except (RuntimeError, AttributeError) as e:
                 logger.warning(f"Failed to switch Viewport to Vertex Paint: {e}")
-            finally:
-                # Restore original selection
-                for o in prev_sel:
-                    try:
-                        o.select_set(True)
-                    except (ReferenceError, RuntimeError, AttributeError):
-                        pass
-                if prev_act:
-                    try:
-                        context.view_layer.objects.active = prev_act
-                        # Restore original mode
-                        bpy.ops.object.mode_set(mode=prev_mode)
-                    except (ReferenceError, RuntimeError, AttributeError):
-                        pass
+                try:
+                    context.view_layer.objects.active = prev_act
+                    bpy.ops.object.mode_set(mode=prev_mode)
+                except (ReferenceError, RuntimeError, AttributeError):
+                    pass
 
         return (
             True,

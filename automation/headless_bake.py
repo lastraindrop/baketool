@@ -7,10 +7,10 @@ import os
 import bpy
 import argparse
 import logging
+from pathlib import Path
 
-# Add the addon package parent so `import baketool` works from source.
-addon_dir = os.path.dirname(os.path.dirname(__file__))
-addon_parent = os.path.dirname(addon_dir)
+addon_dir = str(Path(__file__).resolve().parent.parent)
+addon_parent = str(Path(__file__).resolve().parent.parent.parent)
 for path in (addon_parent, addon_dir):
     if path not in sys.path:
         sys.path.append(path)
@@ -93,11 +93,20 @@ def main():
 
     # Run steps without modal operator (synchronous)
     runner = BakeStepRunner(bpy.context)
+    failed_steps = 0
     for i, step in enumerate(queue):
-        print(f"[{i+1}/{len(queue)}] Baking: {step.task.base_name}")
-        runner.run(step, queue_idx=i)
+        base_name = getattr(getattr(step, "task", None), "base_name", f"Step {i+1}")
+        print(f"[{i+1}/{len(queue)}] Baking: {base_name}")
+        try:
+            runner.run(step, queue_idx=i)
+        except Exception as exc:
+            failed_steps += 1
+            print(f"[{i+1}/{len(queue)}] FAILED: {exc}")
 
-    print("BakeNexus CLI: Finished.")
+    if failed_steps:
+        print(f"BakeNexus CLI: Finished with {failed_steps}/{len(queue)} failures.")
+    else:
+        print("BakeNexus CLI: Finished.")
 
 if __name__ == "__main__":
     main()

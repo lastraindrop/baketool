@@ -471,6 +471,9 @@ class NodeGraphHandler:
         threshold = es.threshold if es else 0.04
         tree = mat.node_tree
         spec_src = self._find_socket_source(mat, "specular", None)
+        if spec_src is None:
+            logger.warning("PBR Conv: specular socket source not found, skipping extension logic.")
+            return None
         sep = self._add_node(mat, "ShaderNodeSeparateColor")
         tree.links.new(spec_src, sep.inputs[0])
         math1 = self._add_node(mat, "ShaderNodeMath", operation="MAXIMUM")
@@ -493,6 +496,9 @@ class NodeGraphHandler:
             return metallic_out
         elif socket_name == "pbr_conv_base":
             diff_src = self._find_socket_source(mat, "color", None)
+            if diff_src is None:
+                logger.warning("PBR Conv: color socket source not found, skipping base conversion.")
+                return None
             if compat.is_blender_4() or compat.is_blender_5():
                 mix = self._add_node(mat, "ShaderNodeMix")
                 mix.data_type = "RGBA"

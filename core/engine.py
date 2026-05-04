@@ -377,8 +377,7 @@ class BakeStepRunner:
                 if packed_res:
                     results.append(packed_res)
 
-        # --- Post-Bake Logic: Apply & Export ---
-        self._handle_post_bake(job, task, baked_images, f_info)
+            self._handle_post_bake(job, task, baked_images, f_info)
 
         return results
 
@@ -400,7 +399,7 @@ class BakeStepRunner:
                 img,
                 s.external_save_path,
                 folder=s.create_new_folder,
-                folder_name=task.folder_name,
+                folder_name=s.folder_name if s.create_new_folder else task.folder_name,
                 file_format=s.external_save_format,
                 motion=bool(f_info),
                 frame=f_info["save_idx"] if f_info else 0,
@@ -501,13 +500,13 @@ class BakeStepRunner:
 
         if res_obj and job.setting.export_model and job.setting.use_external_save:
             self.scene.bake_status = f"Exporting Model... - {task.base_name}"
-            ModelExporter.export(
-                self.context,
-                res_obj,
-                job.setting,
-                folder_name=task.folder_name,
-                file_name=task.base_name,
-            )
+                ModelExporter.export(
+                    self.context,
+                    res_obj,
+                    job.setting,
+                    folder_name=s.folder_name if s.create_new_folder else task.folder_name,
+                    file_name=task.base_name,
+                )
 
         if res_obj and not job.setting.apply_to_scene:
             try:

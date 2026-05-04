@@ -491,6 +491,10 @@ def apply_baked_result(
                 logger.debug(
                     f"BakeNexus: Failed to remove old baked mesh data {old_data.name}: {e}"
                 )
+        if col and new_obj.name not in {o.name for o in col.objects}:
+            for c in new_obj.users_collection:
+                c.objects.unlink(new_obj)
+            col.objects.link(new_obj)
     else:
         new_obj = original_obj.copy()
         new_obj.data = original_obj.data.copy()
@@ -502,7 +506,7 @@ def apply_baked_result(
     first_val = next(iter(task_images.values()))
     if isinstance(first_val, dict):
         orig_mats = [s.material for s in original_obj.material_slots if s.material]
-        # HI-06: Append materials directly instead of pre-filling with None
+        new_obj.data.materials.clear()
         for i, om in enumerate(orig_mats):
             mat_textures = {}
             for chan_id, mat_dict in task_images.items():

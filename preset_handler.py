@@ -2,7 +2,6 @@ import bpy
 import json
 import logging
 import os
-from mathutils import Vector, Color, Matrix, Quaternion
 from bpy.app.handlers import persistent
 from .constants import PRESET_DEFAULT_EXCLUDE, PRESET_MIGRATION_MAP, SYSTEM_NAMES
 

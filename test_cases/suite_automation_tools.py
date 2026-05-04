@@ -55,17 +55,26 @@ class SuiteAutomationTools(unittest.TestCase):
         self.assertEqual(command[-2:], ["--json", "report.json"])
 
     def test_summarize_cli_result_prefers_json_report(self):
+        # Case 1: Success scenario
         success, reason = multi_version_test.summarize_cli_result(
             0, "", {"summary": {"total": 4, "failures": 0, "errors": 0}}
         )
-        self.assertTrue(success)
-        self.assertEqual(reason, "ok")
+        self.assertTrue(success, f"Expected success but got reason='{reason}'")
+        self.assertEqual(reason, "ok", f"Expected 'ok' but got '{reason}'")
 
+        # Case 2: Failure scenario (returncode=1, failures=1)
         success, reason = multi_version_test.summarize_cli_result(
             1, "", {"summary": {"total": 4, "failures": 1, "errors": 0}}
         )
+        self.assertFalse(success, f"Expected failure but got success=True, reason='{reason}'")
+        self.assertEqual(reason, "test_fail", f"Expected 'test_fail' but got '{reason}'")
+
+        # Case 3: Runner error (no parsed_report, no markers in stdout)
+        success, reason = multi_version_test.summarize_cli_result(
+            1, "No markers here", None
+        )
         self.assertFalse(success)
-        self.assertEqual(reason, "test_fail")
+        self.assertEqual(reason, "runner_error", f"Expected 'runner_error' but got '{reason}'")
 
 
 if __name__ == "__main__":

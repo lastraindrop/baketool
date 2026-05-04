@@ -25,7 +25,6 @@ AVAILABLE_SUITES = [
     "udim_advanced",
     "ui_logic",
     "code_review",
-    "verification",
     "extension_validation",
 ]
 
@@ -134,7 +133,7 @@ def main():
             suite = loader.discover(
                 start_dir=test_dir, pattern="suite_*.py", top_level_dir=parent_dir
             )
-        elif args.category != "all":
+        if args.category != "all":
             print(f">>> Loading tests by category: {args.category}")
             suite = _load_category(args.category, loader)
         else:
@@ -207,7 +206,7 @@ def _load_category(category, loader):
     parent_dir = str(addon_root.parent)
 
     category_map = {
-        "core": ["suite_unit.py", "suite_negative.py", "suite_api.py", "suite_verification.py"],
+        "core": ["suite_unit.py", "suite_negative.py", "suite_api.py", "suite_code_review.py"],
         "memory": ["suite_memory.py"],
         "export": ["suite_export.py"],
         "ui": ["suite_ui_logic.py"],

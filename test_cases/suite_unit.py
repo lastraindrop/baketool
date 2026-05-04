@@ -86,6 +86,13 @@ class SuiteUnit(unittest.TestCase):
         )
 
         self.assertIsNotNone(new_obj)
+        
+        # Verify collection logic (Baked_Results)
+        found_in_coll = False
+        if "Baked_Results" in bpy.data.collections:
+            if new_obj.name in bpy.data.collections["Baked_Results"].objects:
+                found_in_coll = True
+        self.assertTrue(found_in_coll, "New baked object was not moved to 'Baked_Results' collection")
 
         if new_obj and new_obj.name in bpy.data.objects:
             bpy.data.objects.remove(new_obj, do_unlink=True)

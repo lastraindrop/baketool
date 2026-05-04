@@ -139,6 +139,41 @@ class SuiteProductionWorkflow(unittest.TestCase):
                     # Cleanup WITHIN the leak context to avoid false positives
                     cleanup_scene()
                     
+    def test_denoise_integration_trigger(self):
+        """Verify that use_denoise=True triggers the denoise post-processor."""
+        from ..core.engine import BakePostProcessor
+        
+        call_count = 0
+        original_apply = BakePostProcessor.apply_denoise
+        
+        def mock_apply(image, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            return original_apply(image, **kwargs)
+            
+        BakePostProcessor.apply_denoise = mock_apply
+        
+        try:
+            with assert_no_leak(self):
+                cleanup_scene()
+                obj = create_test_object("DenoiseTest")
+                builder = JobBuilder("DenoiseJob")
+                builder.mode('SINGLE_OBJECT').resolution(16).add_objects([obj])
+                builder.denoise(True)
+                builder.enable_channel('diff')
+                job = builder.build()
+                
+                queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
+                runner = BakeStepRunner(bpy.context)
+                for i, step in enumerate(queue):
+                    runner.run(step, queue_idx=i)
+                
+                self.assertGreater(call_count, 0, "BakePostProcessor.apply_denoise was NOT called despite use_denoise=True")
+                
+                cleanup_scene()
+        finally:
+            BakePostProcessor.apply_denoise = original_apply
+
     def test_full_gltf_export_loop(self):
         """[E2E] Verify the Zero-Friction Delivery Pipeline (GLB Exporter)."""
         with self.subTest("GLB_Export_Textures"):
@@ -182,6 +217,31 @@ class SuiteProductionWorkflow(unittest.TestCase):
                 self.assertNotIn("Baked", mat_name, "Original object was polluted despite apply_to_scene=False!")
 
                 cleanup_scene()
+
+    def test_output_subfolder_creation(self):
+        """Verify that create_new_folder correctly nests output files."""
+        with assert_no_leak(self):
+            cleanup_scene()
+            obj = create_test_object("FolderTest")
+            builder = JobBuilder("FolderJob")
+            builder.mode('SINGLE_OBJECT').resolution(16).add_objects([obj])
+            builder.save_to(self.temp_dir)
+            builder.folder("my_subfolder")
+            builder.enable_channel('diff')
+            job = builder.build()
+            
+            queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
+            runner = BakeStepRunner(bpy.context)
+            for i, step in enumerate(queue):
+                runner.run(step, queue_idx=i)
+            
+            subfolder_path = os.path.join(self.temp_dir, "my_subfolder")
+            self.assertTrue(os.path.isdir(subfolder_path), f"Subfolder was not created: {subfolder_path}")
+            
+            files = os.listdir(subfolder_path)
+            self.assertGreater(len(files), 0, f"No files found in subfolder: {subfolder_path}")
+            
+            cleanup_scene()
 
     def test_crash_recovery_resilience(self):
         with assert_no_leak(self):

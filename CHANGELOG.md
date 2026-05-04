@@ -2,6 +2,35 @@
 
 本文件记录 BakeNexus 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
+## 1.0.0 - 2026-05-05
+
+### 本次发布前综合收尾 / Pre-Release Comprehensive Wrap-up
+
+#### UI 架构审计与修复 / UI Audit & Fixes
+- **参数暴露补全**：`draw_inputs` 补回了 `sample`、`margin`、`device`、`use_clear_image`、`color_base`；`draw_saves` 补回了 `use_denoise`、`create_new_folder`、`folder_name`、`pack_suffix`、`export_textures_with_model`。
+- **数据驱动对齐**：`CHANNEL_UI_LAYOUT` 所有通道属性现已通过 `SuiteCodeReview` 自动验证存在于 `BakeChannel` 中。
+- **空安全**：`BAKE_UL_BakedImageResults.draw_item` 增加 `item.image` 空值守卫，避免 NoneType 崩溃。
+- **国际化**：`draw_active_channel_properties` 中硬编码 `"Naming:"` → `pgettext("Naming") + ":"`；结果列表空通道显示 `pgettext("(Empty)")`。
+- **布局优化**：`draw_saves` 重构为 Common Settings / External Save / Animation / Smart Intelligence 四个功能区，减少认知负荷。
+
+#### 单元测试体系优化 / Test Suite Optimization
+- **Mock 同步**：`MockSetting` 补全 `color_base`、`create_new_folder`、`folder_name`；`JobBuilder` 新增 `.folder()`、`.packing()`、`.denoise()` 流式 API。
+- **覆盖率提升**：新增 `test_denoise_integration_trigger`、`test_output_subfolder_creation`、`test_apply_baked_result_collection` 三个集成测试。
+- **跨版本框架修复**：修正 `multi_version_test.py` 中 `stdout_tail` 缺失、`write_summary_reports` 键名不一致、`cli_runner.py` 引用不存在的 `suite_verification.py` 等问题。
+- **最终验证**：5 个 Blender 版本（3.3 / 3.6 / 4.2 LTS / 4.5 LTS / 5.0）全部 158 测试 100% 通过。
+
+#### 核心引擎一致性修复 / Engine Consistency Fixes
+- **参数传递路径**：`_handle_save` 和 `ModelExporter.export` 中 `folder_name` 统一为 `s.folder_name if s.create_new_folder else task.folder_name`。
+- **集合名称修正**：`test_apply_baked_result_mesh_cleanup` 中集合名从错误的 `"BakeResults"` 修正为 `SYSTEM_NAMES["RESULT_COLLECTION"]`（即 `"Baked_Results"`）。
+- **API 健壮性**：`test_bake_trigger_api` 移除 `from .. import baketool` 的内部导入，改为直接检查 `scene.BakeJobs` 属性。
+
+#### 文档与发布准备 / Documentation & Release Prep
+- 更新 `ROADMAP.md`：补充参数动态对齐机制、资源生命周期管理、跨版本兼容性说明。
+- 补充技术原理概要：参数传递路径、一致性保证、资源监控机制。
+- 清理所有 `__pycache__` 目录，确保发布包干净。
+
+---
+
 ## 1.0.0-p1 - 2026-04-23
 
 ### 核心修复与增强 /Core Fixes & Enhancements

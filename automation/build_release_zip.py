@@ -92,8 +92,9 @@ def collect_files(addon_root: Path) -> list[Path]:
     return unique_files
 
 
-def build_zip(addon_root: Path, output_path: Path) -> tuple[int, Path]:
-    addon_dir_name = addon_root.name
+def build_zip(addon_root: Path, output_path: Path, addon_dir_name: str | None = None) -> tuple[int, Path]:
+    if addon_dir_name is None:
+        addon_dir_name = addon_root.name
     files = collect_files(addon_root)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -127,7 +128,7 @@ def main() -> int:
     output_path = args.output if args.output else default_output
 
     try:
-        file_count, zip_path = build_zip(addon_root, output_path)
+        file_count, zip_path = build_zip(addon_root, output_path, addon_dir_name=addon_id)
     except Exception as exc:
         print(f"Release packaging failed: {exc}", file=sys.stderr)
         return 1

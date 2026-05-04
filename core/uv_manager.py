@@ -1,7 +1,7 @@
 import bpy
 import numpy as np
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from .common import safe_context_override
 from ..constants import SYSTEM_NAMES
 
@@ -140,6 +140,7 @@ class UVLayoutManager:
         self.original_states = {}
         self.temp_layer_name = SYSTEM_NAMES["TEMP_UV"]
         self.created_layers = []
+        self.objects_to_skip = set()
 
     def __enter__(self):
         self._record_and_setup_layers()
@@ -161,8 +162,9 @@ class UVLayoutManager:
             # Check for Blender's 8 UV layer limit
             if len(obj.data.uv_layers) >= 8:
                 logger.error(
-                    f"Cannot create temporary UV layer: Object '{obj.name}' already has 8 UV layers."
+                    f"Cannot create temporary UV layer: Object '{obj.name}' already has 8 UV layers. Skipping object."
                 )
+                self.objects_to_skip.add(obj)
                 continue
 
             src_uv = obj.data.uv_layers.active

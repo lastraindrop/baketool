@@ -18,7 +18,7 @@ def load_translations():
     try:
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-    except Exception as e:
+    except (OSError, json.JSONDecodeError) as e:
         logger.error(f"Failed to load translations.json: {e}")
         return {}
 

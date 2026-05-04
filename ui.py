@@ -132,10 +132,10 @@ def draw_active_channel_properties(
     # Minimal public properties
     col = box.column(align=True)
     row = col.split(factor=0.3)
-    row.label(text="Naming:")
+    row.label(text=pgettext("Naming") + ":")
     sub = row.row(align=True)
-    sub.prop(channel, "prefix", text="Pre")
-    sub.prop(channel, "suffix", text="Suf")
+    sub.prop(channel, "prefix", text=pgettext("Pre"))
+    sub.prop(channel, "suffix", text=pgettext("Suf"))
 
     col.separator()
     col.prop(channel, "override_defaults", toggle=True)
@@ -424,8 +424,11 @@ class BAKE_UL_BakedImageResults(bpy.types.UIList):
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
         row = layout.row(align=True)
-        row.prop(item, "image", text="", emboss=False, icon="IMAGE_DATA")
-        row.label(text=item.channel_type)
+        if item.image:
+            row.prop(item, "image", text="", emboss=False, icon="IMAGE_DATA")
+        else:
+            row.label(text="", icon="IMAGE_DATA")
+        row.label(text=item.channel_type or pgettext("(Empty)"))
 
         if item.res_x > 0:
             row.label(text=f"{item.res_x}x{item.res_y}", icon="NONE")
@@ -440,7 +443,7 @@ def draw_env_status(layout: bpy.types.UILayout, setting: Any) -> None:
     """
     any_issue = False
 
-        # 1. Check Export Addons
+    # 1. Check Export Addons
     if setting.export_model:
         op_map = {"FBX": "fbx", "GLB": "gltf", "USD": "usd_export"}
         target_op = op_map.get(setting.export_format)
@@ -642,22 +645,35 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             return
 
         col = l.column(align=True)
-        # resolution & bit depth
         r = col.row(align=True)
         r.prop(s, "res_x", text="X")
         r.prop(s, "res_y", text="Y")
         r.prop(s, "use_float32", text="HDR", toggle=True)
 
         r = col.row(align=True)
+        r.prop(s, "sample", text="Samples")
+        r.prop(s, "margin", text="Margin")
+        r.prop(s, "device", text="")
+
+        r = col.row(align=True)
         r.prop(s, "bake_type", text="")
         r.prop(s, "bake_mode", text="")
+
+        if s.bake_mode in {"SINGLE_OBJECT", "COMBINE_OBJECT", "SELECT_ACTIVE"}:
+            r = col.row(align=True)
+            r.prop(s, "use_clear_image", text="Clear", toggle=True)
+            r.prop(s, "color_base", text="")
+
+        if s.bake_mode == "UDIM":
+            r = col.row(align=True)
+            r.prop(s, "udim_mode", text="UDIM")
 
         # Targets Area
         sub = col.box()
         r = sub.row()
         r.label(text="Bake Objects", icon="OUTLINER_OB_MESH")
         if len(s.bake_objects) == 0:
-            r.label(text="(Empty)", icon="ERROR")
+            r.label(text=pgettext("(Empty)"), icon="ERROR")
 
         r = sub.row(align=True)
         r.template_list(
@@ -669,24 +685,19 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         c.operator("baketool.manage_objects", icon="REMOVE", text="").action = "REMOVE"
         c.operator("baketool.manage_objects", icon="TRASH", text="").action = "CLEAR"
 
-        # Smart UV & UDIM Logic
-        if s.use_auto_uv or s.bake_mode == "UDIM":
-            grid = col.grid_flow(columns=2, align=True)
-            grid.prop(s, "use_auto_uv", text="Auto UV", toggle=True)
-            if s.bake_mode == "UDIM":
-                grid.prop(s, "udim_mode", text="")
+        # Smart UV
+        r = col.row(align=True)
+        r.prop(s, "use_auto_uv", text="Auto Smart UV", toggle=True)
+        if s.use_auto_uv:
+            r.prop(s, "auto_uv_angle", text="Angle")
+            r.prop(s, "auto_uv_margin", text="Margin")
 
-            if s.use_auto_uv:
-                r = col.row(align=True)
-                r.prop(s, "auto_uv_angle", text="Angle")
-                r.prop(s, "auto_uv_margin", text="Margin")
-
-            if s.bake_mode == "UDIM":
-                col.operator(
-                    "baketool.refresh_udim_locations",
-                    icon="FILE_REFRESH",
-                    text="Sync UDIM Tiles",
-                )
+        if s.bake_mode == "UDIM":
+            col.operator(
+                "baketool.refresh_udim_locations",
+                icon="FILE_REFRESH",
+                text="Sync UDIM Tiles",
+            )
 
         if s.bake_mode == "SELECT_ACTIVE":
             sub = col.box()
@@ -695,6 +706,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             r.operator(
                 "baketool.manage_objects", icon="EYEDROPPER", text=""
             ).action = "SET_ACTIVE"
+            sub.row(align=True).prop(s, "cage_object", text="Cage")
             sub.operator(
                 "baketool.manage_objects",
                 text="Smart Match (High -> Low)",
@@ -752,20 +764,31 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             return
 
         col = l.column(align=True)
+
+        # --- Common Job Settings (always visible) ---
         r = col.row(align=True)
         r.prop(s, "apply_to_scene", text="Auto-Apply", icon="MATERIAL", toggle=True)
+        r.prop(s, "use_denoise", text="Denoise", icon="NODE_COMPOSITING", toggle=True)
+
+        r = col.row(align=True)
+        r.prop(s, "name_setting", text="Naming")
+        if s.name_setting == "CUSTOM":
+            r.prop(s, "custom_name", text="")
+
+        # --- External Save (conditional) ---
+        col.separator()
+        r = col.row(align=True)
         r.prop(s, "use_external_save", text="To Disk", icon="DISK_DRIVE", toggle=True)
 
         if s.use_external_save:
             sub = col.box()
             draw_file_path(sub, s, "external_save_path", 0)
+            draw_image_format_options(sub, s)
 
             r = sub.row(align=True)
-            r.prop(s, "name_setting", text="Naming")
-            if s.name_setting == "CUSTOM":
-                r.prop(s, "custom_name", text="")
-
-            draw_image_format_options(sub, s)
+            r.prop(s, "create_new_folder", text="New Folder", toggle=True)
+            if s.create_new_folder:
+                r.prop(s, "folder_name", text="Name")
 
             # ORM & Pack
             sub.separator()
@@ -778,17 +801,35 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
                 grid.prop(s, "pack_g", text="G")
                 grid.prop(s, "pack_b", text="B")
                 grid.prop(s, "pack_a", text="A")
+                sub.prop(s, "pack_suffix", text="Suffix")
 
-        if s.use_external_save:
-            r = col.row(align=True)
+            # Export
+            sub.separator()
+            r = sub.row(align=True)
             r.prop(s, "export_model", text="Export Mesh", icon="EXPORT", toggle=True)
             if s.export_model:
                 r.prop(s, "export_format", text="")
+                col.separator()
+                col.prop(s, "export_textures_with_model", text="Bind Textures", toggle=True)
 
-        # Smart Intelligence
+        # --- Animation (collapsed sub-section) ---
+        col.separator()
+        r = col.row(align=True)
+        r.prop(s, "bake_motion", text="Animation", icon="RENDER_ANIMATION", toggle=True)
+        if s.bake_motion:
+            sub = col.box()
+            r = sub.row(align=True)
+            r.prop(s, "bake_motion_start", text="Start")
+            r.prop(s, "bake_motion_last", text="Frames")
+            r = sub.row(align=True)
+            r.prop(s, "bake_motion_startindex", text="Index")
+            r.prop(s, "bake_motion_digit", text="Digits")
+            r.prop(s, "bake_motion_separator", text="Sep")
+
+        # --- Smart Intelligence (always visible) ---
+        col.separator()
         sub = col.box()
-        r = sub.row()
-        r.label(text="Smart Intelligence", icon="LIGHTPROBE_CUBEMAP")
+        draw_header(sub, "Smart Intelligence", "LIGHTPROBE_CUBEMAP")
 
         row = sub.row(align=True)
         row.prop(s, "auto_cage_mode", text="Cage")
@@ -797,11 +838,12 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         else:
             row.prop(s, "extrusion", text="Ext")
 
-        row = sub.row(align=True)
-        row.prop(s, "texel_density", text="Texel")
-        row.prop(s, "auto_switch_vertex_paint", text="Auto-VP", toggle=True)
+        if s.bake_mode == "SELECT_ACTIVE":
+            sub.operator("baketool.analyze_cage", text="Analyze Overlap", icon="MOD_PHYSICS")
 
-        sub.operator("baketool.analyze_cage", text="Analyze Overlap", icon="MOD_PHYSICS")
+        r = sub.row(align=True)
+        r.prop(s, "texel_density", text="Texel")
+        r.prop(s, "auto_switch_vertex_paint", text="Auto-VP", toggle=True)
 
     def draw_others(self, context: bpy.types.Context, l: bpy.types.UILayout, bj: Any, s: Any) -> None:
         """Draw Custom Maps section."""

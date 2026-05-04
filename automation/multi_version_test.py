@@ -186,11 +186,14 @@ def run_tests_on_blender(
         stderr = process.stderr.decode("utf-8", errors="replace")
 
         parsed_report = None
+        stdout_tail = []
         if report_path.exists() and report_path.stat().st_size > 0:
             try:
                 parsed_report = json.loads(report_path.read_text(encoding="utf-8"))
+                stdout_tail = []
             except (OSError, json.JSONDecodeError):
                 parsed_report = None
+                stdout_tail = stdout.splitlines()[-10:] if stdout else []
 
         success, failure_reason = summarize_cli_result(
             process.returncode, stdout, parsed_report
@@ -198,6 +201,7 @@ def run_tests_on_blender(
         return {
             "success": success,
             "stdout": stdout,
+            "stdout_tail": stdout_tail,
             "stderr": stderr,
             "returncode": process.returncode,
             "failure_reason": failure_reason,
@@ -207,6 +211,7 @@ def run_tests_on_blender(
         return {
             "success": False,
             "stdout": "",
+            "stdout_tail": [],
             "stderr": f"Timeout after {timeout} seconds",
             "returncode": -1,
             "failure_reason": "timeout",
@@ -216,6 +221,7 @@ def run_tests_on_blender(
         return {
             "success": False,
             "stdout": "",
+            "stdout_tail": [],
             "stderr": str(e),
             "returncode": -1,
             "failure_reason": "launcher_error",
@@ -270,8 +276,41 @@ def write_summary_reports(
             handle.write(f"\n[{item['status']}] {item['version']}\n")
             handle.write(f"  Path: {item['path']}\n")
             handle.write(f"  Reason: {item['failure_reason']}\n")
-            if item["stderr"]:
-                handle.write(f"  Error: {item['stderr'][:500]}\n")
+            
+            # Include error details for failed runs
+            if not item.get('success', False):
+                report_summary = item.get('report_summary', {})
+                if report_summary:
+                    failures = report_summary.get('failures', 0)
+                    errors = report_summary.get('errors', 0)
+                    handle.write(f"  Summary: Failures={failures}, Errors={errors}\n")
+                
+                # Include full failure details from parsed report
+                parsed = item.get('report') or {}
+                details = parsed.get('details', {})
+                if details:
+                    failure_list = details.get('failures', [])
+                    error_list = details.get('errors', [])
+                    if failure_list:
+                        handle.write(f"  Failures:\n")
+                        for f in failure_list[:10]:
+                            handle.write(f"    {f[:200]}\n")
+                    if error_list:
+                        handle.write(f"  Errors:\n")
+                        for e in error_list[:10]:
+                            handle.write(f"    {e[:200]}\n")
+                
+                # Include stderr if available
+                stderr_text = item.get('stderr', '')
+                if stderr_text:
+                    handle.write(f"  Stderr Tail: {stderr_text[-1000:]}\n")
+                
+                # Include last few lines of stdout for context
+                stdout_tail = item.get('stdout_tail', [])
+                if stdout_tail:
+                    handle.write(f"  Last Output:\n")
+                    for line in stdout_tail[-3:]:
+                        handle.write(f"    {line}\n")
         handle.write("\n" + "=" * 60 + "\n")
         handle.write(f"SUMMARY: {total_pass} PASS | {total_fail} FAIL\n")
 
@@ -423,8 +462,9 @@ def main():
                 "failure_reason": reason,
                 "returncode": result["returncode"],
                 "stderr": result["stderr"],
-                "stdout_tail": result["stdout"].splitlines()[-10:],
+                "stdout_tail": result["stdout_tail"],
                 "report_summary": report_summary,
+                "report": result.get("report", {}),
                 "timestamp": datetime.now().isoformat(),
             }
         )

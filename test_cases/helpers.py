@@ -169,6 +169,24 @@ class JobBuilder:
         self.setting.external_save_format = format
         return self
 
+    def folder(self, name):
+        self.setting.create_new_folder = True
+        self.setting.folder_name = name
+        return self
+
+    def packing(self, r="NONE", g="NONE", b="NONE", a="NONE", suffix="_ORM"):
+        self.setting.use_packing = True
+        self.setting.pack_r = r
+        self.setting.pack_g = g
+        self.setting.pack_b = b
+        self.setting.pack_a = a
+        self.setting.pack_suffix = suffix
+        return self
+
+    def denoise(self, enabled=True):
+        self.setting.use_denoise = enabled
+        return self
+
     def auto_cage(self, mode="PROXIMITY", margin=0.1):
         self.setting.auto_cage_mode = mode
         self.setting.auto_cage_margin = margin
@@ -322,9 +340,12 @@ class MockSetting:
         self.exr_code = "ZIP"
         self.tiff_code = "NONE"
         self.use_clear = True
+        self.color_base = (0.0, 0.0, 0.0)
         self.use_external_save = False
         self.external_save_path = "//"
         self.external_save_format = "PNG"
+        self.create_new_folder = False
+        self.folder_name = "baked"
         self.channels = []
         self.id_start_color = (1.0, 0.0, 0.0, 1.0)
         self.id_manual_start_color = True
@@ -336,6 +357,7 @@ class MockSetting:
         self.pack_g = "NONE"
         self.pack_b = "NONE"
         self.pack_a = "NONE"
+        self.pack_suffix = "_ORM"
 
         # Override defaults
         for k, v in kwargs.items():

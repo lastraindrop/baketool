@@ -130,7 +130,8 @@ def create_preview_material(obj, s):
     link_channel('pack_r', 0)
     link_channel('pack_g', 1)
     link_channel('pack_b', 2)
-    link_channel('pack_a', 3)
+    if len(combine.inputs) > 3:
+        link_channel('pack_a', 3)
     
     return mat
 
@@ -149,6 +150,8 @@ def apply_preview(obj, setting):
 
 def remove_preview(obj):
     """Restore original material."""
+    if obj is None:
+        return
     orig_mat_name = obj.get("_bt_orig_mat_name")
     if orig_mat_name:
         orig_mat = bpy.data.materials.get(orig_mat_name)

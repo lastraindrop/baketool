@@ -357,7 +357,7 @@ class BAKETOOL_OT_ResetChannels(bpy.types.Operator):
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         bj = context.scene.BakeJobs
-        if bj.job_index < 0 or job_index >= len(bj.jobs):
+        if bj.job_index < 0 or bj.job_index >= len(bj.jobs):
             return {"CANCELLED"}
         job = bj.jobs[bj.job_index]
         reset_channels_logic(job.setting)
@@ -471,13 +471,12 @@ class BAKETOOL_OT_RefreshUDIMLocations(bpy.types.Operator):
     bl_label = "Refresh UDIM Tiles"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        if not os.path.exists(self.filepath):
-            return {"CANCELLED"}
-
         bj = context.scene.BakeJobs
         if not bj.jobs:
-            bj.jobs.add()
-            bj.job_index = 0
+            return {"CANCELLED"}
+        job_index = bj.job_index
+        if job_index < 0 or job_index >= len(bj.jobs):
+            job_index = 0
         job = bj.jobs[job_index]
         synced = 0
 
