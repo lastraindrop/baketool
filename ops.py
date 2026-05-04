@@ -247,7 +247,7 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
             except (RuntimeError, AttributeError):
                 pass
         try:
-            enabled_jobs = [j for j in context.scene.BakeNexusJobs.jobs if j.enabled]
+            enabled_jobs = [j for j in context.scene.BakeJobs.jobs if j.enabled]
             if not enabled_jobs:
                 self.report({"WARNING"}, UI_MESSAGES["NO_JOBS"])
                 return {"CANCELLED"}
@@ -308,11 +308,11 @@ class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
         Returns:
             Set[str]: Modal result.
         """
-        if not hasattr(context.scene, "BakeNexusJobs"):
+        if not hasattr(context.scene, "BakeJobs"):
             self.report({"ERROR"}, "BakeNexus properties not initialized.")
             return {"CANCELLED"}
 
-        bj = context.scene.BakeNexusJobs
+        bj = context.scene.BakeJobs
         if not bj.jobs:
             return {"CANCELLED"}
         job_index = bj.job_index
@@ -356,7 +356,7 @@ class BAKETOOL_OT_ResetChannels(bpy.types.Operator):
     bl_label = "Reset"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        bj = context.scene.BakeNexusJobs
+        bj = context.scene.BakeJobs
         if bj.job_index < 0 or job_index >= len(bj.jobs):
             return {"CANCELLED"}
         job = bj.jobs[bj.job_index]
@@ -411,7 +411,7 @@ class BAKETOOL_OT_SelectedNodeBake(bpy.types.Operator):
     bl_label = "Bake Selected Node"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        if not hasattr(context.scene, "BakeNexusJobs"):
+        if not hasattr(context.scene, "BakeJobs"):
             self.report({"ERROR"}, "BakeNexus properties not initialized.")
             return {"CANCELLED"}
 
@@ -433,7 +433,7 @@ class BAKETOOL_OT_SelectedNodeBake(bpy.types.Operator):
             self.report({"WARNING"}, "Selected node has no output sockets.")
             return {"CANCELLED"}
 
-        settings = context.scene.BakeNexusJobs.node_bake_settings
+        settings = context.scene.BakeJobs.node_bake_settings
         from .core.node_manager import bake_node_to_image
         from .core.execution import add_bake_result_to_ui
 
@@ -474,7 +474,7 @@ class BAKETOOL_OT_RefreshUDIMLocations(bpy.types.Operator):
         if not os.path.exists(self.filepath):
             return {"CANCELLED"}
 
-        bj = context.scene.BakeNexusJobs
+        bj = context.scene.BakeJobs
         if not bj.jobs:
             bj.jobs.add()
             bj.job_index = 0
@@ -499,7 +499,7 @@ class BAKETOOL_OT_TogglePreview(bpy.types.Operator):
     bl_label = "Toggle Preview"
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        bj = context.scene.BakeNexusJobs
+        bj = context.scene.BakeJobs
         if not bj.jobs:
             return {"CANCELLED"}
         job_index = bj.job_index
@@ -557,9 +557,9 @@ class BAKETOOL_OT_AnalyzeCage(bpy.types.Operator):
         Returns:
             Set[str]: {'FINISHED'} or {'CANCELLED'}.
         """
-        if not hasattr(context.scene, "BakeNexusJobs"):
+        if not hasattr(context.scene, "BakeJobs"):
             return {"CANCELLED"}
-        bj = context.scene.BakeNexusJobs
+        bj = context.scene.BakeJobs
         if not bj.jobs:
             return {"CANCELLED"}
         job_index = bj.job_index
@@ -612,9 +612,9 @@ class BAKETOOL_OT_OneClickPBR(bpy.types.Operator):
         Returns:
             bool: True if job is available.
         """
-        if not hasattr(context.scene, "BakeNexusJobs"):
+        if not hasattr(context.scene, "BakeJobs"):
             return False
-        bj = context.scene.BakeNexusJobs
+        bj = context.scene.BakeJobs
         return len(bj.jobs) > 0
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
@@ -626,7 +626,7 @@ class BAKETOOL_OT_OneClickPBR(bpy.types.Operator):
         Returns:
             Set[str]: {'FINISHED'} or {'CANCELLED'}.
         """
-        bj = context.scene.BakeNexusJobs
+        bj = context.scene.BakeJobs
         if bj.job_index < 0 or bj.job_index >= len(bj.jobs):
             return {"CANCELLED"}
         job = bj.jobs[bj.job_index]
@@ -822,7 +822,7 @@ class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):
 
         # C-01: Use Job result settings instead of hardcoded PNG
         from .constants import FORMAT_SETTINGS
-        bj = context.scene.BakeNexusJobs
+        bj = context.scene.BakeJobs
         res_settings = bj.bake_result_settings.image_settings
         target_fmt = res_settings.external_save_format
         ext = FORMAT_SETTINGS.get(target_fmt, {}).get("extensions", [".png"])[0]
@@ -893,7 +893,7 @@ class BAKETOOL_OT_SaveSetting(bpy.types.Operator, ExportHelper):
     filter_glob: props.StringProperty(default="*.json", options={"HIDDEN"})
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        bj = context.scene.BakeNexusJobs
+        bj = context.scene.BakeJobs
         if not bj.jobs:
             return {"CANCELLED"}
         job = bj.jobs[bj.job_index]
@@ -919,10 +919,10 @@ class BAKETOOL_OT_LoadSetting(bpy.types.Operator, ImportHelper):
     filter_glob: props.StringProperty(default="*.json", options={"HIDDEN"})
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        if not hasattr(context.scene, "BakeNexusJobs"):
+        if not hasattr(context.scene, "BakeJobs"):
             return {"CANCELLED"}
 
-        bj = context.scene.BakeNexusJobs
+        bj = context.scene.BakeJobs
         if not bj.jobs:
             bj.jobs.add()
             bj.job_index = 0
@@ -960,7 +960,7 @@ class BAKETOOL_OT_GenericChannelOperator(bpy.types.Operator):
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         success, msg = manage_channels_logic(
-            self.target, self.action_type, context.scene.BakeNexusJobs
+            self.target, self.action_type, context.scene.BakeJobs
         )
         if not success:
             self.report({"ERROR"}, msg)

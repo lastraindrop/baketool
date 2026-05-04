@@ -84,10 +84,10 @@ def get_channel_source_items(self, context):
         return [("NONE", "None", "No enabled channels available", "NONE", 0)]
 
     scene = context.scene
-    if not hasattr(scene, "BakeNexusJobs") or not scene.BakeNexusJobs.jobs:
+    if not hasattr(scene, "BakeJobs") or not scene.BakeJobs.jobs:
         return [("NONE", "None", "No enabled channels available", "NONE", 0)]
 
-    bj = scene.BakeNexusJobs
+    bj = scene.BakeJobs
     job_index = getattr(bj, "job_index", 0)
 
     if job_index < 0 or job_index >= len(bj.jobs):

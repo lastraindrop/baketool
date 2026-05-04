@@ -114,7 +114,7 @@ def main():
         import baketool
 
         # Ensure a clean state: unregister first if already registered
-        if hasattr(bpy.types.Scene, "BakeNexusJobs"):
+        if hasattr(bpy.types.Scene, "BakeJobs"):
             try:
                 baketool.unregister()
             except Exception:

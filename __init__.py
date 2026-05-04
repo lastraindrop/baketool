@@ -148,7 +148,7 @@ addon_keymaps = []
 
 def menu_func_quick_bake(self, context):
     self.layout.separator()
-    self.layout.operator("bakenexus.quick_bake", icon="RENDER_STILL")
+    self.layout.operator("baketool.quick_bake", icon="RENDER_STILL")
 
 
 def register():
@@ -162,7 +162,7 @@ def register():
         default=0, min=0, name="Texture set index"
     )
 
-    bpy.types.Scene.BakeNexusJobs = props.PointerProperty(type=prop_module.BakeJobs)
+    bpy.types.Scene.BakeJobs = props.PointerProperty(type=prop_module.BakeJobs)
 
     bpy.types.Scene.bakenexus_results = CollectionProperty(
         type=prop_module.BakedImageResult,
@@ -237,8 +237,8 @@ def unregister():
     if hasattr(bpy.types.Object, "bake_map_index"):
         del bpy.types.Object.bake_map_index
 
-    if hasattr(bpy.types.Scene, "BakeNexusJobs"):
-        del bpy.types.Scene.BakeNexusJobs
+    if hasattr(bpy.types.Scene, "BakeJobs"):
+        del bpy.types.Scene.BakeJobs
     if hasattr(bpy.types.Scene, "bakenexus_results"):
         del bpy.types.Scene.bakenexus_results
     if hasattr(bpy.types.Scene, "bakenexus_results_index"):

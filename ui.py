@@ -345,11 +345,11 @@ class BAKE_UL_ObjectList(bpy.types.UIList):
         # Contextual UI for Custom UDIM
         scene = context.scene
         if (
-            hasattr(scene, "BakeNexusJobs")
-            and scene.BakeNexusJobs.jobs
-            and 0 <= scene.BakeNexusJobs.job_index < len(scene.BakeNexusJobs.jobs)
+            hasattr(scene, "BakeJobs")
+            and scene.BakeJobs.jobs
+            and 0 <= scene.BakeJobs.job_index < len(scene.BakeJobs.jobs)
         ):
-            job = scene.BakeNexusJobs.jobs[scene.BakeNexusJobs.job_index]
+            job = scene.BakeJobs.jobs[scene.BakeJobs.job_index]
             s = job.setting
             if s.bake_mode == "UDIM":
                 if s.udim_mode in {"CUSTOM", "REPACK"}:
@@ -499,7 +499,7 @@ class BAKE_PT_NodePanel(bpy.types.Panel):
     def draw(self, context: bpy.types.Context) -> None:
         """Draw the node-specific bake options."""
         l = self.layout
-        bj = context.scene.BakeNexusJobs
+        bj = context.scene.BakeJobs
         nbs = bj.node_bake_settings
 
         b = l.box()
@@ -530,7 +530,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         """Draw the main UI dashboard."""
         layout = self.layout
         scene = context.scene
-        bj = scene.BakeNexusJobs
+        bj = scene.BakeJobs
 
         # Get active job setting safely for top-level quick actions
         s = None
@@ -897,7 +897,7 @@ class BAKE_PT_BakedResults(bpy.types.Panel):
 
     def draw(self, context: bpy.types.Context) -> None:
         """Forward to shared results drawer."""
-        draw_results(context.scene, self.layout, context.scene.BakeNexusJobs)
+        draw_results(context.scene, self.layout, context.scene.BakeJobs)
 
 
 class BAKE_PT_ImageEditorResults(bpy.types.Panel):
@@ -911,4 +911,4 @@ class BAKE_PT_ImageEditorResults(bpy.types.Panel):
 
     def draw(self, context: bpy.types.Context) -> None:
         """Forward to shared results drawer."""
-        draw_results(context.scene, self.layout, context.scene.BakeNexusJobs)
+        draw_results(context.scene, self.layout, context.scene.BakeJobs)
