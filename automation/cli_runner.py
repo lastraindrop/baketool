@@ -110,17 +110,38 @@ def main():
         return
 
     try:
-        import baketool
-
-        # Ensure a clean state: unregister first if already registered
-        if hasattr(bpy.types.Scene, "BakeJobs"):
+        # Try to import and register; if it fails, check if already registered
+        try:
+            import baketool
+            is_registered = True
+        except ImportError:
+            # Blender < 4.1 may fail to import; check registration via scene property
+            is_registered = hasattr(bpy.context.scene, "BakeJobs")
+            if not is_registered:
+                print(">>> ERROR: BakeNexus addon not registered and cannot be imported.")
+                sys.exit(1)
+            # Re-import may still fail; skip explicit register if so
             try:
-                baketool.unregister()
-            except Exception:
-                pass
-        
-        baketool.register()
-        print(">>> Addon registered successfully.")
+                import baketool
+                if hasattr(bpy.types.Scene, "BakeJobs"):
+                    try:
+                        baketool.unregister()
+                    except Exception:
+                        pass
+                baketool.register()
+                print(">>> Addon registered successfully.")
+            except ImportError:
+                # Already registered well enough; proceed
+                print(">>> Addon assumed registered (import not available).")
+        else:
+            # Import succeeded; do normal register flow
+            if hasattr(bpy.types.Scene, "BakeJobs"):
+                try:
+                    baketool.unregister()
+                except Exception:
+                    pass
+            baketool.register()
+            print(">>> Addon registered successfully.")
 
         loader = unittest.TestLoader()
         suite = unittest.TestSuite()
