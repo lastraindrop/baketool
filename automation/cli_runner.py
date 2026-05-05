@@ -26,6 +26,7 @@ AVAILABLE_SUITES = [
     "ui_logic",
     "code_review",
     "extension_validation",
+    "verification",
 ]
 
 
@@ -154,7 +155,7 @@ def main():
             suite = loader.discover(
                 start_dir=test_dir, pattern="suite_*.py", top_level_dir=parent_dir
             )
-        if args.category != "all":
+        elif args.category != "all":
             print(f">>> Loading tests by category: {args.category}")
             suite = _load_category(args.category, loader)
         else:

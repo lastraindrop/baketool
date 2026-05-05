@@ -65,8 +65,8 @@ python automation/multi_version_test.py --verification
 
 建议最低覆盖：
 
-- Blender `3.3.x`
-- Blender `3.6.x`
+- Blender `3.3.x`（源码/Legacy 兼容验证）
+- Blender `3.6.x`（源码/Legacy 兼容验证）
 - Blender `4.2 LTS`
 - Blender `4.5 LTS`
 - Blender `5.0.x`
@@ -104,7 +104,7 @@ python automation/multi_version_test.py --verification
 ## 8. 分发包内容
 
 - 包内包含插件运行所需的 Python 源文件和必要用户文档。
-- 包内不包含自动化测试、开发脚本和历史归档资料。
+- 包内保留运行 `Run Safety Audit` 和 headless CLI 所需的最小自动化脚本与测试套件；不包含本地临时文件、虚拟环境、旧版归档和一次性调试资料。
 - `MANIFEST.in` 与当前目录结构一致。
 - 插件目录结构在 Blender 中可直接识别。
 

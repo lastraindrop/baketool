@@ -242,7 +242,7 @@ def write_summary_reports(
     category,
     json_output_path=None,
 ):
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     report_dir.mkdir(parents=True, exist_ok=True)
 
     if json_output_path:

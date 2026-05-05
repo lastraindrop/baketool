@@ -28,6 +28,8 @@
 - 更新 `ROADMAP.md`：补充参数动态对齐机制、资源生命周期管理、跨版本兼容性说明。
 - 补充技术原理概要：参数传递路径、一致性保证、资源监控机制。
 - 清理所有 `__pycache__` 目录，确保发布包干净。
+- 发布前复核修复：补齐 `verification` 自动化入口、修正动态枚举默认值、统一发布 ZIP 顶层包名、收紧保存路径命名、补强 UDIM 多 tile 检测与 Selected-to-Active 上下文。
+- 跨版本回归修复：恢复动态枚举回调的 Blender 兼容默认值、修复 `cli_runner.py --test` 被 discovery 覆盖的问题、避免 `multi_version_test.py` 并行报告文件名碰撞，并清理 denoise 临时场景删除时的 `lib_remap` 噪声。
 
 ---
 

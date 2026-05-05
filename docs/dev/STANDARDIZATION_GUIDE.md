@@ -60,6 +60,21 @@ BakeNexus 里有一部分 UI 不是直接写死字段名，而是通过映射、
 
 标准做法是将参数定义收敛至 `constants.py` 或明确的集中映射中，并在 `suite_ui_logic` 或更贴近的套件里留下回归测试。
 
+### 2.5 动态 Enum 默认值规则
+
+Blender 的 `EnumProperty` 有一个容易踩坑的差异：
+
+- `items` 是静态列表时，`default` 应使用稳定的字符串 identifier。
+- `items` 是回调函数时，`default` 必须保持整数索引形式，否则 Blender 3.3 到 5.x 都可能在注册阶段报错。
+
+因此，`get_valid_depths`、`get_valid_modes`、`get_channel_source_items` 这类动态枚举必须配套测试。修改这些函数时至少跑：
+
+- `suite_unit.py::test_property_group_integrity`
+- `suite_parameter_matrix.py::test_dynamic_enum_returns_5tuple`
+- 跨版本 `unit`
+
+不要为了“看起来更语义化”把动态枚举默认值改成字符串。
+
 ## 3. Operator 注册完整性原则
 
 ### 3.1 UI 中引用的 operator 必须都已注册
@@ -208,10 +223,10 @@ BT_CUSTOM_<name>
 - 插件运行代码
 - 必要用户文档
 - 版本与许可信息
+- `Run Safety Audit` 和 headless CLI 所需的最小自动化脚本与测试套件
 
 发布包不应包含：
 
-- 自动化测试目录
 - 开发工具目录
 - 历史归档资料
 - 临时输出和报告

@@ -219,11 +219,8 @@ class BakePostProcessor:
                                     if tree and hasattr(tree, "nodes"):
                                         tree.nodes.clear()
 
-                            # 2. B5.0 环境下解除场景用户
-                            if hasattr(s, "user_clear"):
-                                s.user_clear()
-
-                            # 3. 彻底删除
+                            # 2. 彻底删除。不要 user_clear()，否则 Blender 的
+                            # ID remap 用户计数可能出现负数噪声。
                             bpy.data.scenes.remove(s, do_unlink=True)
                         except (ReferenceError, RuntimeError) as e:
                             logger.debug(f"Failed to remove temp scene '{s.name}': {e}")

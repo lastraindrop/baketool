@@ -14,6 +14,23 @@ from ..constants import FORMAT_SETTINGS
 logger = logging.getLogger(__name__)
 
 
+def _clean_path_component(value: str, fallback: str) -> str:
+    """Return a filesystem-safe single path component."""
+    cleaned = bpy.path.clean_name(str(value or "")).strip("._ ")
+    return cleaned or fallback
+
+
+def _resolve_child_path(base_dir: Path, *parts: str) -> Optional[Path]:
+    """Resolve a child path and reject paths outside the selected base dir."""
+    base = base_dir.resolve()
+    target = base.joinpath(*parts).resolve()
+    try:
+        target.relative_to(base)
+    except ValueError:
+        return None
+    return target
+
+
 def _resolve_color_space_name(
     image: bpy.types.Image, space: str
 ) -> str:
@@ -433,7 +450,11 @@ def save_image(
 
     directory = Path(bpy.path.abspath(path))
     if folder:
-        directory = directory / folder_name
+        safe_folder = _clean_path_component(folder_name, "BakeNexus_Output")
+        directory = _resolve_child_path(directory, safe_folder)
+        if directory is None:
+            logger.error("Save failed: folder name resolves outside the target directory.")
+            return None
 
     try:
         directory.mkdir(parents=True, exist_ok=True)
@@ -446,17 +467,21 @@ def save_image(
     if file_format in FORMAT_SETTINGS:
         ext = FORMAT_SETTINGS[file_format]["extensions"][0]
 
+    safe_image_name = _clean_path_component(image.name, "bake_result")
     fname = (
-        f"{image.name}{separator}{str(frame).zfill(fillnum)}{ext}"
+        f"{safe_image_name}{separator}{str(frame).zfill(fillnum)}{ext}"
         if motion
-        else f"{image.name}{ext}"
+        else f"{safe_image_name}{ext}"
     )
 
     if image.source == "TILED" and "<UDIM>" not in fname:
         stem = Path(fname).stem
         fname = f"{stem}.<UDIM>{ext}"
 
-    filepath = directory / fname
+    filepath = _resolve_child_path(directory, fname)
+    if filepath is None:
+        logger.error("Save failed: file name resolves outside the target directory.")
+        return None
     abs_path = str(filepath.resolve())
     
     # H-05: Set format settings via scene render settings

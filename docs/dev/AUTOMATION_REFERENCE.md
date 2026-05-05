@@ -77,7 +77,7 @@ blender -b --factory-startup --python automation/cli_runner.py -- --suite unit
 
 | 类别 | 实际包含内容 |
 |------|--------------|
-| `core` | `unit`、`negative`、`api`、`verification` |
+| `core` | `unit`、`negative`、`api`、`code_review` |
 | `memory` | `memory` |
 | `export` | `export` |
 | `ui` | `ui_logic` |
@@ -178,12 +178,12 @@ BLENDER_PATHS_FILE
 
 脚本会在 `reports/` 下生成：
 
-- `cross_version_report_<timestamp>.txt`
-- `cross_version_report_<timestamp>.json`
+- `cross_version_report_<timestamp_with_microseconds>.txt`
+- `cross_version_report_<timestamp_with_microseconds>.json`
 
 当传入 `--json path/to/report.json` 时，JSON 汇总会写到指定路径，对应文本摘要会写到同目录同名 `.txt` 文件。
 
-这些报告属于验证产物，不应作为插件发布包内容。
+这些报告属于验证产物，不应作为插件发布包内容。文件名包含微秒，避免多个跨版本命令并行运行时互相覆盖。
 
 ## 5. `automation/headless_bake.py`
 
@@ -273,6 +273,8 @@ blender -b scene.blend -P automation/headless_bake.py -- --job "JobName" --outpu
 - View Layer 预检是否仍在入队阶段就拦住非法对象
 - 失败 bake 后是否仍会回收本次新建的图像 datablock
 - `Run Safety Audit` 是否仍通过隔离子进程执行
+- `--test` 是否仍只运行指定测试，不被 discovery 或 category 分支覆盖
+- `multi_version_test.py` 是否仍生成不碰撞的文本/JSON 报告
 
 ## 10. 翻译工作流
 

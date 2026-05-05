@@ -1,7 +1,7 @@
 import bpy
 import numpy as np
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 from .common import safe_context_override
 from ..constants import SYSTEM_NAMES
 
@@ -56,6 +56,37 @@ def detect_object_udim_tile(obj: bpy.types.Object) -> int:
         return 1001
 
 
+def detect_object_udim_tiles(obj: bpy.types.Object) -> Set[int]:
+    """Detect all UDIM tiles used by an object's active UV layer."""
+    if obj.type != "MESH" or not obj.data.uv_layers:
+        return {1001}
+
+    try:
+        uv_layer = obj.data.uv_layers.active
+        n_loops = len(obj.data.loops)
+        if n_loops == 0:
+            return {1001}
+
+        uvs = np.zeros(n_loops * 2, dtype=np.float32)
+        uv_layer.data.foreach_get("uv", uvs)
+        uvs = uvs.reshape(-1, 2)
+
+        u_indices = np.floor(uvs[:, 0]).astype(int)
+        v_indices = np.floor(uvs[:, 1]).astype(int)
+        valid = (
+            (u_indices >= 0) & (u_indices < 10) & (v_indices >= 0) & (v_indices < 10)
+        )
+
+        if not np.any(valid):
+            return {1001}
+
+        tiles = 1001 + u_indices[valid] + (v_indices[valid] * 10)
+        return {int(tile) for tile in np.unique(tiles)}
+    except (ValueError, AttributeError, IndexError) as e:
+        logger.warning(f"UV Detect Failed for {obj.name}: {e}")
+        return {1001}
+
+
 def get_active_uv_udim_tiles(objects: List[bpy.types.Object]) -> List[int]:
     """Get all unique UDIM tiles used by a list of objects.
 
@@ -67,8 +98,7 @@ def get_active_uv_udim_tiles(objects: List[bpy.types.Object]) -> List[int]:
     """
     tiles = set()
     for obj in objects:
-        tile = detect_object_udim_tile(obj)
-        tiles.add(tile)
+        tiles.update(detect_object_udim_tiles(obj))
     if not tiles:
         tiles.add(1001)
     return sorted(list(tiles))
@@ -144,6 +174,9 @@ class UVLayoutManager:
 
     def __enter__(self):
         self._record_and_setup_layers()
+        if self.objects_to_skip:
+            names = ", ".join(sorted(obj.name for obj in self.objects_to_skip))
+            raise RuntimeError(f"Cannot create temporary UV layer for: {names}")
         self._process_layout()
         return self
 

@@ -830,7 +830,7 @@ class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):
             if not res.image:
                 continue
             img = res.image
-            filename = f"{img.name}{ext}"
+            filename = f"{bpy.path.clean_name(img.name)}{ext}"
             filepath = os.path.join(export_dir, filename)
             
             # H-06: Save original state

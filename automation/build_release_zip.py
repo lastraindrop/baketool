@@ -50,6 +50,10 @@ DOC_FILES = [
     "docs/ROADMAP.md",
     "docs/RELEASE_CHECKLIST.md",
     "docs/task.md",
+    "docs/dev/DEVELOPER_GUIDE.md",
+    "docs/dev/AUTOMATION_REFERENCE.md",
+    "docs/dev/ECOSYSTEM_GUIDE.md",
+    "docs/dev/STANDARDIZATION_GUIDE.md",
 ]
 
 
@@ -128,7 +132,9 @@ def main() -> int:
     output_path = args.output if args.output else default_output
 
     try:
-        file_count, zip_path = build_zip(addon_root, output_path, addon_dir_name=addon_id)
+        file_count, zip_path = build_zip(
+            addon_root, output_path, addon_dir_name=addon_root.name
+        )
     except Exception as exc:
         print(f"Release packaging failed: {exc}", file=sys.stderr)
         return 1

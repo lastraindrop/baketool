@@ -18,7 +18,7 @@ BakeNexus 是一个面向 Blender 的专业贴图烘焙插件套件。
 
 ## 当前定位 /Current Position
 
-- 面向 Blender 3.3 到 5.x 的专业贴图烘焙工具/A texture baking tool for Blender 3.3-5.x
+- 面向 Blender 4.2+ Extensions 的专业贴图烘焙工具；源码兼容验证覆盖 Blender 3.3+/A texture baking tool for Blender 4.2+ Extensions; source-level validation covers Blender 3.3+
 - 支持单对象、Selected-to-Active、UDIM 等多种模式/Supports Single Object, Selected-to-Active, UDIM and more
 - 内置批量作业、非破坏式流程和自动化验证/Built-in batch jobs, non-destructive workflow and automation
 
@@ -41,8 +41,8 @@ BakeNexus 是一个面向 Blender 的专业贴图烘焙插件套件。
 |------|-------|
 | 插件版本 /Plugin Version | `1.0.0` |
 | Manifest | `blender_manifest.toml` (Extensions) |
-| 最低版本 /Min Version | Blender 4.2.0+ (Extensions) / 3.3.0 (Legacy) |
-| 当前验证覆盖 /Tested Versions | 3.3.21, 3.4.1, 3.5.1, 3.6.23, 4.0.2, 4.1.1, 4.2.14, 4.3.2, 4.4.3, 4.5.3, 5.0.1, 5.1.0 |
+| 正式扩展最低版本 /Extension Min Version | Blender 4.2.0+ |
+| 源码/Legacy 验证覆盖 /Source & Legacy Tested Versions | 3.3.21, 3.6.23, 4.2.14, 4.3.2, 4.4.3, 4.5.3, 5.0.1, 5.1.0 |
 
 ## 安装 /Installation
 

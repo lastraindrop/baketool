@@ -246,8 +246,7 @@ def update_format_dependent_enums(self, context):
 
 def update_debug_mode(self, context):
     """Update global logger level based on debug setting."""
-    pkg_name = __package__.split(".")[0] if "." in __package__ else __package__
-    logging.getLogger(pkg_name).setLevel(
+    logging.getLogger(__package__).setLevel(
         logging.DEBUG if self.debug_mode else logging.INFO
     )
 
@@ -667,8 +666,16 @@ def get_library_preset_items(self, context):
     if not context:
         return items
 
-    package_name = __package__.split(".")[0] if "." in __package__ else __package__
-    prefs = context.preferences.addons.get(package_name)
+    prefs = context.preferences.addons.get(__package__)
+    if not prefs:
+        prefs = next(
+            (
+                context.preferences.addons.get(key)
+                for key in context.preferences.addons.keys()
+                if key.endswith(f".{__package__}")
+            ),
+            None,
+        )
     if not prefs or not prefs.preferences.library_path:
         return items
 

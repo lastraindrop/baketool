@@ -339,6 +339,9 @@ def safe_context_override(
         kw["active_object"] = active_object
         kw["object"] = active_object
     if selected_objects:
+        selected_objects = list(selected_objects)
+        if active_object and active_object not in selected_objects:
+            selected_objects.append(active_object)
         kw["selected_objects"] = selected_objects
         kw["selected_editable_objects"] = selected_objects
 

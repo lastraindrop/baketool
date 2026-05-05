@@ -369,12 +369,19 @@ class AutoLoadHandler:
     @persistent
     def load_default_preset(dummy):
         """Handler to load default preset on file load if enabled."""
-        package_name = __package__.split(".")[0] if "." in __package__ else __package__
-
-        try:
-            prefs = bpy.context.preferences.addons[package_name].preferences
-        except KeyError:
+        addon = bpy.context.preferences.addons.get(__package__)
+        if not addon:
+            addon = next(
+                (
+                    bpy.context.preferences.addons.get(key)
+                    for key in bpy.context.preferences.addons.keys()
+                    if key.endswith(f".{__package__}")
+                ),
+                None,
+            )
+        if not addon:
             return
+        prefs = addon.preferences
 
         if not prefs.auto_load or not prefs.default_preset_path:
             return
