@@ -176,6 +176,15 @@ class SuiteProductionWorkflow(unittest.TestCase):
 
     def test_full_gltf_export_loop(self):
         """[E2E] Verify the Zero-Friction Delivery Pipeline (GLB Exporter)."""
+        try:
+            import addon_utils
+            addon_utils.enable("io_scene_gltf2")
+        except Exception:
+            self.skipTest("GLTF2 addon not available in this environment")
+        
+        if not hasattr(bpy.ops.export_scene, "gltf"):
+            self.skipTest("GLTF export operator not available")
+        
         with self.subTest("GLB_Export_Textures"):
             with assert_no_leak(self):
                 cleanup_scene()

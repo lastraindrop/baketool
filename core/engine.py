@@ -293,7 +293,7 @@ class BakeStepRunner:
             # Persistent denoise scene for the duration of this step
             denoise_scene = None
             if job.setting.use_denoise:
-                denoise_scene = bpy.data.scenes.new(name="BT_Denoise_Shared")
+                denoise_scene = bpy.data.scenes.new(name="BT_Denoise_Temp")
 
                 def cleanup_denoise_scene(s):
                     if s and s.name in bpy.data.scenes:
