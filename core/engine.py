@@ -504,7 +504,7 @@ class BakeStepRunner:
                 self.context,
                 res_obj,
                 job.setting,
-                folder_name=s.folder_name if s.create_new_folder else task.folder_name,
+                folder_name=job.setting.folder_name if job.setting.create_new_folder else task.folder_name,
                 file_name=task.base_name,
             )
 
