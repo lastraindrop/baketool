@@ -61,6 +61,7 @@ jobs:
       - name: Run Tests
         run: |
           export DISPLAY=:99
+          pip install numpy || true
           ${{ env.BLENDER_DIR }}/blender-*/blender -b --python automation/cli_runner.py -- --json test_report.json --suite all
 
       - name: Upload Report
