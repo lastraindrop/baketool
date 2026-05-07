@@ -390,10 +390,18 @@ _addon_keymaps = []
 13. Add typing.Any import to ui.py
 14. Add comprehensive tests for all fixes
 
-### Phase 2: Documentation (2-4 weeks) - IN PROGRESS
-1. Add module docstrings (`core/__init__.py`)
-2. Add class docstrings (pending)
-3. Add function docstrings for public APIs (pending)
+### Phase 2: Documentation (2-4 weeks) - COMPLETED
+1. Add module docstrings (`core/__init__.py`) ✓
+2. DEVELOPER_GUIDE.md updated with atomic context manager and temp node isolation docs ✓
+3. ROADMAP.md technical principles section rewritten ✓
+
+### Phase 2.5: Pre-release Critical Fixes (2026-05-08) - COMPLETED
+1. `core/node_manager.py` `_find_socket_source` — is_bt_temp filtering for temp Emission nodes ✓
+2. `core/engine.py` `BakeContextManager` — ExitStack.pop_all() atomic context pattern ✓
+3. Project-wide LF line ending standardization (68 files) ✓
+4. `automation/headless_bake.py` — bool return + sys.exit for CI/CD ✓
+5. `ops.py` unused import cleanup ✓
+6. CHANGELOG.md and ROADMAP.md sync ✓
 
 ### Phase 3: Refactoring (4-8 weeks)
 1. Break up long functions (>100 lines)

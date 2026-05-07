@@ -2,6 +2,19 @@
 
 本文件记录 BakeNexus 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
+## 1.0.0 - 2026-05-08
+
+### 发布前最终修复 / Pre-Release Final Fixes
+
+- **节点源匹配修复**：`_find_socket_source` 在搜索 `ShaderNodeEmission` 时过滤 `is_bt_temp` 标记的会话临时节点，避免用户材质无 Emission 节点时静默产出全黑结果。
+- **上下文管理原子化**：`BakeContextManager.__enter__` 改用 `ExitStack.pop_all()` 模式，确保部分 `SceneSettingsContext` 进入失败时已进入的上下文仍能正确清理。
+- **Headless 退出码修复**：`automation/headless_bake.py` 的 `main()` 返回布尔值，`__main__` 通过 `sys.exit()` 传播退出码，CI/CD 与脚本可正确检测烘焙失败。
+- **未使用导入清理**：移除 `ops.py` 中从未使用的 `BakeContextManager`、`BakeStep`、`BakeTask`、`TaskBuilder`、`BakePassExecutor`、`ModelExporter`、`BakeStepRunner`、`UVLayoutManager`、`pack_channels_numpy`、`compat` 等导入。
+- **行尾标准化**：全仓库 68 个文本文件从混合 CRLF/LF 统一为 LF，与 `.gitattributes` 声明一致。
+- **临时文件清理**：移除 `__pycache__`、`dist/`、`test_output/`、`reports/` 及根目录跨版本报告等验证产物。
+
+---
+
 ## 1.0.0 - 2026-05-05
 
 ### 本次发布前综合收尾 / Pre-Release Comprehensive Wrap-up

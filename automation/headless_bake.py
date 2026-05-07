@@ -55,13 +55,13 @@ def main():
 
     if not ensure_addon_registered():
         print("Error: BakeNexus properties could not be initialized.")
-        return
+        return False
 
     scene = bpy.context.scene
     bj_prop = getattr(scene, "BakeJobs", None)
     if not bj_prop:
         print("Error: BakeNexus properties not found in scene.")
-        return
+        return False
 
     # Filter jobs
     jobs_to_run = []
@@ -74,7 +74,7 @@ def main():
 
     if not jobs_to_run:
         print("No jobs to run. Exiting.")
-        return
+        return False
 
     # Override output if provided
     if args.output:
@@ -89,7 +89,7 @@ def main():
     
     if not queue:
         print("Preparation failed. Check logs.")
-        return
+        return False
 
     # Run steps without modal operator (synchronous)
     runner = BakeStepRunner(bpy.context)
@@ -105,8 +105,10 @@ def main():
 
     if failed_steps:
         print(f"BakeNexus CLI: Finished with {failed_steps}/{len(queue)} failures.")
-    else:
-        print("BakeNexus CLI: Finished.")
+        return False
+
+    print("BakeNexus CLI: Finished.")
+    return True
 
 if __name__ == "__main__":
-    main()
+    sys.exit(0 if main() else 1)

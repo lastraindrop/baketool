@@ -25,21 +25,9 @@ from .core.common import (
     manage_channels_logic,
     manage_objects_logic,
 )
-from .core.image_manager import set_image, save_image
-from .core.uv_manager import UVLayoutManager, detect_object_udim_tile
-from .core.math_utils import pack_channels_numpy
-from .core.engine import (
-    BakeStep,
-    BakeTask,
-    TaskBuilder,
-    JobPreparer,
-    BakeContextManager,
-    BakePassExecutor,
-    ModelExporter,
-    BakeStepRunner,
-)
+from .core.uv_manager import detect_object_udim_tile
+from .core.engine import JobPreparer
 from .core.execution import BakeModalOperator
-from .core import compat
 from . import preset_handler
 from .constants import UI_MESSAGES
 from .state_manager import BakeStateManager

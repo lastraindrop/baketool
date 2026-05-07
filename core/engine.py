@@ -3,6 +3,7 @@ import logging
 import time
 import numpy as np
 from collections import namedtuple
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -270,8 +271,6 @@ class BakeStepRunner:
         results: List[Dict[str, Any]] = []
         baked_images: Dict[str, bpy.types.Image] = {}
         array_cache: Dict[bpy.types.Image, np.ndarray] = {}
-
-        from contextlib import ExitStack
 
         with ExitStack() as stack:
             stack.enter_context(BakeContextManager(self.context, job.setting))
@@ -926,9 +925,7 @@ class BakeContextManager:
             context: Blender context.
             setting: BakeJobSetting object.
         """
-        from contextlib import ExitStack
-
-        self.stack = ExitStack()
+        self._stack = None
         self.context = context
         self.configs = [
             (
@@ -956,13 +953,15 @@ class BakeContextManager:
 
     def __enter__(self):
         scene = self.context.scene if self.context else bpy.context.scene
-        for ctx_type, params in self.configs:
-            ctx = SceneSettingsContext(ctx_type, params, scene=scene)
-            self.stack.enter_context(ctx)
+        with ExitStack() as stack:
+            for ctx_type, params in self.configs:
+                ctx = SceneSettingsContext(ctx_type, params, scene=scene)
+                stack.enter_context(ctx)
+            self._stack = stack.pop_all()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.stack.__exit__(exc_type, exc_val, exc_tb)
+        self._stack.__exit__(exc_type, exc_val, exc_tb)
         return False
 
 

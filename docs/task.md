@@ -14,6 +14,18 @@
 - [x] 文档与代码行为 100% 同步。
 - [x] 动态 Enum 默认值、`--test` 单测入口、跨版本报告命名和 denoise 临时场景清理完成发布前回归修复。
 
+### 3. v1.0.0 发布前关键修复 (Pre-release Critical Fixes)
+- [x] **C-01** `core/node_manager.py` `_find_socket_source` — 新增 `is_bt_temp` 过滤，防止临时 Emission 节点被误判为用户材质节点导致黑图。
+- [x] **C-02** `core/engine.py` `BakeContextManager` — 用 `ExitStack.pop_all()` 重写为原子上下文模式；`ExitStack` 提升至模块级导入避免 `NameError`。
+- [x] **C-03** 项目全线 LF 换行统一 (68 files)，`.gitattributes` 配置校验通过。
+- [x] **C-04** `automation/headless_bake.py` — `main()` 返回 `bool`，`__main__` 使用 `sys.exit(0 if main() else 1)` 支持 CI/CD 退出码检测。
+- [x] 清理 `__pycache__`/`dist/`/`test_output/`/`reports/`/根级报告文件。
+- [x] `ops.py` 未使用导入清理（BakeStep, BakeTask, TaskBuilder, BakeContextManager, BakePassExecutor, ModelExporter, BakeStepRunner, pack_channels_numpy, UVLayoutManager, set_image, save_image, compat）。
+- [x] 52 个 `.py` 文件全部通过 `py_compile` 语法检查。
+- [x] `CHANGELOG.md` 更新 2026-05-08 条目。
+- [x] `ROADMAP.md` 更新 v1.0.0 完成状态、短期计划和技术原则章节。
+- [x] `DEVELOPER_GUIDE.md` 新增 BakeContextManager 原子模式和临时节点隔离文档。
+
 ## [v1.1.x] 后续排队功能
 - [ ] 异步烘焙进度条改进。
 - [ ] 自动 UDIM 分页优化。

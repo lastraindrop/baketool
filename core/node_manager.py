@@ -403,7 +403,13 @@ class NodeGraphHandler:
 
         if not found and socket_name in {"color", "emi"}:
             emi = next(
-                (n for n in tree.nodes if n.bl_idname == "ShaderNodeEmission"), None
+                (
+                    n
+                    for n in tree.nodes
+                    if n.bl_idname == "ShaderNodeEmission"
+                    and not n.get("is_bt_temp", False)
+                ),
+                None,
             )
             if emi:
                 found = emi.inputs["Color"]
