@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "bakenexus"
-version = "1.0.0"
+version = "1.0.1"
 name = "BakeNexus"
 tagline = "Professional Texture Baking Pipeline for Blender"
 maintainer = "lastraindrop <contact@github.com>"
@@ -9,7 +9,7 @@ type = "add-on"
 license = ["SPDX:GPL-3.0-or-later"]
 description = "Comprehensive baking tool for Blender, supporting single objects, selected-to-active, UDIM, and custom channel packing"
 blender_version_min = "4.2.0"
-website = "https://github.com/lastraindrop/bakenexus"
+website = "https://github.com/lastraindrop/baketool"
 tags = ["Render", "Pipeline"]
 
 [permissions]

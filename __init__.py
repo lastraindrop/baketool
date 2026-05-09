@@ -2,12 +2,12 @@ bl_info = {
     "name": "BakeNexus",
     "description": "Professional Texture Baking Pipeline for Blender",
     "author": "lastraindrop",
-    "version": (1, 0, 0),
+    "version": (1, 0, 1),
     "blender": (4, 2, 0),
     "location": "View3D > Sidebar > Baking",
-    "warning": "BakeNexus 1.0.0: Backup your scenes before production use",
-    "doc_url": "https://github.com/lastraindrop/bakenexus",
-    "tracker_url": "https://github.com/lastraindrop/bakenexus/issues",
+    "warning": "BakeNexus 1.0.1: Backup your scenes before production use",
+    "doc_url": "https://github.com/lastraindrop/baketool",
+    "tracker_url": "https://github.com/lastraindrop/baketool/issues",
     "category": "Render",
 }
 
