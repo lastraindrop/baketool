@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "bakenexus"
-version = "1.0.1"
+version = "1.0.0"
 name = "BakeNexus"
 tagline = "Professional Texture Baking Pipeline for Blender"
 maintainer = "lastraindrop <contact@github.com>"

@@ -151,7 +151,7 @@ class SuiteCodeReviewFixes(unittest.TestCase):
             content = f.read()
 
         import re
-        match = re.search(r'version\s*=\s*"(\d+)\.(\d+)\.(\d+)"', content)
+        match = re.search(r'\nversion\s*=\s*"(\d+)\.(\d+)\.(\d+)"', content)
         self.assertIsNotNone(match, "Version not found in manifest")
         manifest_version = tuple(int(x) for x in match.groups())
 
