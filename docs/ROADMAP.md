@@ -7,31 +7,25 @@
   - 完善的自动化验证套件（158 测试用例，5 个 Blender 版本 100% 通过）。
   - 支持 UDIM、Selected-to-Active、自定义通道打包、ORM 打包。
   - 修复了渲染参数透传、可见性污染和内存泄露问题。
-  - 跨版本测试框架（Blender 3.3 – 5.1）稳定运行，正式 Extension 发布包定位 4.2+。
-  - 完整翻译支持（en_US, zh_CN, fr_FR, ja_JP, ru_RU）。
-  - 参数动态对齐机制：property.py → constants.py → engine.py 全链路一致性保证。
-- **发布前最终修复 (2026-05-08)**：
-  - 节点源匹配：`_find_socket_source` 过滤会话临时节点，防止全黑结果。
-  - 上下文管理原子化：`BakeContextManager` 使用 `ExitStack.pop_all()` 防止部分失败泄漏。
-  - Headless 退出码：失败时返回非零退出码，CI 可检测。
-  - 未使用导入清理与行尾标准化。
+  - **Blender 5.0 专项适配**：解决了 Compositor Node API 变更导致的全黑/崩溃问题，并验证了降噪管线。
+  - **增强岛屿检测**：`_find_islands_bmesh` 现已支持 Seam 标记与 UV 边界感知分割。
+  - 参数动态对齐机制：`property.py` → `constants.py` → `engine.py` 全链路一致性保证。
+- **发布前最终修复 (2026-05-09)**：
+  - **统一分发策略**：`automation/build_release_zip.py` 现已包含 `dev_tools` 目录。
+  - **B5.0 烘焙类型修复**：修正了 `compat.py` 中过时的 `NORMALS` 强制映射，恢复使用 `NORMAL`。
+  - **Compositor 原子性**：优化了合成器树的初始化与清理流程，防止背景任务场景残留。
 
 ## 2. 短期计划 (v1.1.x) - 生产力增强
-- **CI 门控修复**：移除 lint 步骤的 `|| true`，verify job 实际解析 JSON 报告。
-- **CI 缓存优化**：为 Blender 下载添加 GitHub Actions 缓存，减少 12 倍重复下载。
-- **跨版本脚本兼容**：`multi_version_test.py` 路径分隔符适配 Linux/macOS（`:` 和 `;`）。
-- **image_manager.py 场景参数化**：`save_image()` 接受 `scene` 参数，避免 Modal 烘焙时误写错误场景。
-- **ID_seam 岛检测**：`_find_islands_bmesh` 添加 UV seam 边过滤，使 `ID_seam` 区别于 `ID_ele`。
-- **性能监控**：增加烘焙过程中的显存占用预警。
+- **USD 属性安全审计**：为 `ModelExporter` 的 USD 导出参数添加更严谨的属性存在性检查（替代 `hasattr`）。
+- **崩溃恢复 Schema 验证**：为 `ui.py` 加载的 JSON 崩溃日志添加 Schema 校验，防止因旧版本日志损坏导致启动崩溃。
+- **CI 门控优化**：实现对多版本测试报告的自动解析汇总。
 - **预设库扩展**：内置更多行业标准的 PBR 导出预设（UE5, Unity, Substance 风格）。
-- **参数动态对齐加固**：继续收敛 UI 枚举、RNA 属性、`constants.py` 映射和执行层读取路径。
 
 ## 3. 长期愿景 (v2.x) - 智能烘焙生态
-- **跨软件联动**：支持一键导出到外部渲染引擎的着色器配置。
-- **云端验证**：支持在远程计算节点执行超大规模场景烘焙。
+- **异步像素回传**：研究 B5.0 下的高性能像素拷贝方案。
 - **全自动化资产处理**：从原始高模到优化后的 LOD 资产实现一键全流程自动化。
-- **数据驱动参数系统**：将通道元数据、UI 布局、保存格式约束和执行参数逐步统一为可校验 schema，减少手写映射分叉。
-- **持续跨版本实验室**：建立可重复的 Blender 3.3/3.6/4.2/4.5/5.x 验证矩阵，跟踪动态 RNA、颜色空间、导出 API 和 compositor 行为差异。
+- **数据驱动参数系统**：将通道元数据、UI 布局、保存格式约束和执行参数逐步统一为可校验 schema。
+
 
 ---
 

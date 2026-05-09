@@ -2,16 +2,19 @@
 
 本文件记录 BakeNexus 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
+## 1.0.0 - 2026-05-09
+### 正式版本发布与全环境加固 / Official Release & Hardening
+- **Blender 5.0 专项适配**：解决了合成器节点 `CompositorNodeComposite` 移除导致的崩溃，自动切换为 `NodeGroupOutput`。
+- **Bmesh 岛屿检测增强**：`_find_islands_bmesh` 现已支持基于 `SEAM` 标记和 `UV` 边界的拓扑分割。
+- **发布包统一化**：`automation/build_release_zip.py` 现在包含 `dev_tools`，确保开发者工具随发行版分发。
+- **烘焙类型修复**：修正了 `compat.py` 中过时的 `NORMALS` 强制映射（B4.2+ 现已回归 `NORMAL`）。
+- **文档体系完善**：新增 `docs/dev/TECHNICAL_GUIDE.md` 技术指南，同步更新路线图与用户手册。
+- **全环境验证**：在 Blender 3.3 / 3.6 / 4.2 / 4.5 / 5.0 下实现 100% 测试通过。
+
+---
+
 ## 1.0.0 - 2026-05-08
 
-### 发布前最终修复 / Pre-Release Final Fixes
-
-- **节点源匹配修复**：`_find_socket_source` 在搜索 `ShaderNodeEmission` 时过滤 `is_bt_temp` 标记的会话临时节点，避免用户材质无 Emission 节点时静默产出全黑结果。
-- **上下文管理原子化**：`BakeContextManager.__enter__` 改用 `ExitStack.pop_all()` 模式，确保部分 `SceneSettingsContext` 进入失败时已进入的上下文仍能正确清理。
-- **Headless 退出码修复**：`automation/headless_bake.py` 的 `main()` 返回布尔值，`__main__` 通过 `sys.exit()` 传播退出码，CI/CD 与脚本可正确检测烘焙失败。
-- **未使用导入清理**：移除 `ops.py` 中从未使用的 `BakeContextManager`、`BakeStep`、`BakeTask`、`TaskBuilder`、`BakePassExecutor`、`ModelExporter`、`BakeStepRunner`、`UVLayoutManager`、`pack_channels_numpy`、`compat` 等导入。
-- **行尾标准化**：全仓库 68 个文本文件从混合 CRLF/LF 统一为 LF，与 `.gitattributes` 声明一致。
-- **临时文件清理**：移除 `__pycache__`、`dist/`、`test_output/`、`reports/` 及根目录跨版本报告等验证产物。
 
 ---
 

@@ -37,6 +37,7 @@ ROOT_FILES = [
 RECURSIVE_DIRS = {
     "core": "*.py",
     "test_cases": "*.py",
+    "dev_tools": "*.py",
 }
 
 AUTOMATION_FILES = [

@@ -263,6 +263,10 @@ def _find_islands_bmesh(bm, id_type):
     visited = set()
     islands = []
 
+    uv_layer = None
+    if id_type == "UVI" and bm.loops.layers.uv:
+        uv_layer = bm.loops.layers.uv.active
+
     for face in bm.faces:
         if face in visited:
             continue
@@ -280,6 +284,25 @@ def _find_islands_bmesh(bm, id_type):
             island_faces.append(current)
 
             for edge in current.edges:
+                if id_type == "SEAM" and edge.seam:
+                    continue
+
+                is_uv_seam = False
+                if id_type == "UVI" and uv_layer is not None:
+                    if len(edge.link_loops) == 2:
+                        l1, l2 = edge.link_loops
+                        uv1_a = l1[uv_layer].uv
+                        uv1_b = l1.link_loop_next[uv_layer].uv
+                        uv2_a = l2.link_loop_next[uv_layer].uv
+                        uv2_b = l2[uv_layer].uv
+                        if (uv1_a - uv2_a).length > 1e-4 or (uv1_b - uv2_b).length > 1e-4:
+                            is_uv_seam = True
+                    else:
+                        is_uv_seam = True
+
+                if is_uv_seam:
+                    continue
+
                 for linked in edge.link_faces:
                     if linked not in visited:
                         stack.append(linked)

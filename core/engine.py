@@ -167,12 +167,15 @@ class BakePostProcessor:
             # --- B5.0 COMPOSITE NODE FIX ---
             comp_type = "CompositorNodeComposite"
             if compat.is_blender_5():
+                # In B5.0, the output node for CompositorNodeTree is NodeGroupOutput
                 comp_type = "NodeGroupOutput"
+            
             n_comp = nodes.new(comp_type)
             # -------------------------------
 
             links.new(n_img.outputs[0], n_denoise.inputs[0])
             links.new(n_denoise.outputs[0], n_comp.inputs[0])
+
 
             n_viewer = nodes.new("CompositorNodeViewer")
             links.new(n_denoise.outputs[0], n_viewer.inputs[0])

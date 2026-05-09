@@ -80,8 +80,8 @@ def get_bake_settings(scene: bpy.types.Scene) -> Optional[Any]:
 def get_compositor_tree(scene: bpy.types.Scene) -> Optional[bpy.types.NodeTree]:
     """Retrieve the compositor node tree for a scene in a version-safe way.
 
-    Blender 5.0 introduced scene.compositor and renamed node_tree to
-    compositing_node_group.
+    Blender 5.0 introduced compositing_node_group and use_nodes for the
+    main compositor tree.
 
     Args:
         scene: The Blender scene to query.
@@ -89,19 +89,7 @@ def get_compositor_tree(scene: bpy.types.Scene) -> Optional[bpy.types.NodeTree]:
     Returns:
         The compositor node tree if found or created, else None.
     """
-    # 1. Blender 5.0+ Native Compositor Object
-    if is_blender_5() or hasattr(scene, "compositor"):
-        try:
-            comp = getattr(scene, "compositor", None)
-            if comp:
-                if not comp.use_nodes:
-                    comp.use_nodes = True
-                if hasattr(comp, "node_tree") and comp.node_tree:
-                    return comp.node_tree
-        except (AttributeError, RuntimeError):
-            pass
-
-    # 2. Blender 5.0+ Renamed Property
+    # 1. Blender 5.0+ Renamed Property
     if hasattr(scene, "compositing_node_group"):
         try:
             if hasattr(scene, "use_nodes") and not scene.use_nodes:
@@ -128,14 +116,14 @@ def get_compositor_tree(scene: bpy.types.Scene) -> Optional[bpy.types.NodeTree]:
         except (AttributeError, RuntimeError):
             pass
 
-    # 3. Legacy / Common Fallback
+    # 2. Legacy / Common Fallback (3.x - 4.x)
     try:
         if hasattr(scene, "use_nodes"):
             if not scene.use_nodes:
                 scene.use_nodes = True
 
             tree = getattr(scene, "node_tree", None)
-            # Safe type check: B5.0 alias might return Annotation tree
+            # Safe type check
             if tree and hasattr(tree, "type") and tree.type in {"COMPOSITING", "CompositorNodeTree"}:
                 return tree
 
@@ -159,20 +147,20 @@ def set_bake_type(scene: bpy.types.Scene, bake_type: str) -> bool:
     Returns:
         bool: True if the bake type was successfully applied.
     """
+    # V1.0.0-p3: Unified 'NORMAL' for B4.2+ and B5.0. 
+    # Only use 'NORMALS' as fallback if 'NORMAL' fails.
     target_bake_type = BAKE_MAPPING.get(bake_type, bake_type)
-    if bake_type == "NORMAL" and (is_blender_4() or is_blender_5()):
-        target_bake_type = "NORMALS"
-
+    
     try:
         # PRIORITY: Cycles-specific bake type property (Exists in 3.6 - 5.0+)
         if hasattr(scene, "cycles") and hasattr(scene.cycles, "bake_type"):
             try:
+                # Try the direct bake_type first (e.g. 'NORMAL')
                 scene.cycles.bake_type = bake_type
-                # NORMALS and DISPLACEMENT often need special handling in older builds
-                if bake_type not in {"NORMALS", "DISPLACEMENT", "VECTOR_DISPLACEMENT"}:
-                    return True
+                return True
             except (AttributeError, TypeError, ValueError):
                 try:
+                    # Try the mapped target_bake_type (e.g. 'NORMALS')
                     scene.cycles.bake_type = target_bake_type
                     return True
                 except (AttributeError, TypeError, ValueError):
@@ -194,24 +182,10 @@ def set_bake_type(scene: bpy.types.Scene, bake_type: str) -> bool:
                         return True
                     except (AttributeError, TypeError, ValueError):
                         pass
-
-        # Last resort fallback for B3.3 and others
-        if hasattr(scene.render, "bake_type"):
-            try:
-                scene.render.bake_type = bake_type
-                return True
-            except (AttributeError, TypeError, ValueError):
-                try:
-                    scene.render.bake_type = target_bake_type
-                    return True
-                except (AttributeError, TypeError, ValueError):
-                    pass
-
-        logger.warning(f"Failed to set bake type to {bake_type} on {bake_settings}")
-        return False
     except (AttributeError, RuntimeError) as e:
         logger.warning(f"Unexpected error setting bake type: {e}")
-        return False
+    return False
+
 
 
 def get_version_string() -> str:
