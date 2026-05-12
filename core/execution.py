@@ -77,6 +77,7 @@ class BakeModalOperator:
         # Initialize instance variables defensively
         self._timer = None
         self.state_mgr = BakeStateManager()
+        self._original_frame = context.scene.frame_current
         
         if not hasattr(self, "bake_queue") or self.bake_queue is None:
             self.bake_queue = []
@@ -188,6 +189,11 @@ class BakeModalOperator:
         if self.state_mgr: 
             self.state_mgr.finish_session(context, status)
         self._remove_timer(context)
+        if hasattr(self, "_original_frame"):
+            try:
+                context.scene.frame_set(self._original_frame)
+            except (RuntimeError, AttributeError):
+                pass
 
     def finish(self, context):
         self._cleanup_state(context, "Finished")
@@ -202,13 +208,21 @@ class BakeModalOperator:
         
         if self.bake_queue and hasattr(self.bake_queue[0].job, 'setting'):
              s = self.bake_queue[0].job.setting
-             if getattr(s, 'save_and_quit', False): 
-                logger.warning("BakeNexus: save_and_quit enabled - saving and exiting Blender.")
-                # M-06: Always try to save before exit if this flag is set
-                try:
-                    bpy.ops.wm.save_mainfile()
-                except Exception as e:
-                    logger.error(f"Failed to save before exit: {e}")
+             if getattr(s, 'save_and_quit', False):
+                logger.warning(
+                    "BakeNexus: save_and_quit enabled - "
+                    "saving all changes and exiting Blender. "
+                    "Any unsaved changes in other areas will also be saved."
+                )
+                if not bpy.data.filepath:
+                    logger.error(
+                        "BakeNexus: save_and_quit cancelled - blend file not saved on disk."
+                    )
+                else:
+                    try:
+                        bpy.ops.wm.save_mainfile()
+                    except Exception as e:
+                        logger.error(f"BakeNexus: save_mainfile failed before quit: {e}")
                 bpy.ops.wm.quit_blender()
 
     def cancel(self, context):

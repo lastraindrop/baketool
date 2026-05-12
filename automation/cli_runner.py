@@ -1,6 +1,7 @@
 import sys
 import unittest
 import argparse
+import importlib
 import bpy
 import os
 from pathlib import Path
@@ -43,10 +44,10 @@ def setup_environment():
     if parent_dir not in sys.path:
         sys.path.insert(0, parent_dir)
 
-    # Clear modules to force reload
-    for mod in list(sys.modules.keys()):
-        if mod == addon_name or mod.startswith(f"{addon_name}."):
-            del sys.modules[mod]
+    # Use importlib.reload to ensure a clean module state
+    # rather than brute-force del sys.modules which can orphan live references.
+    import baketool
+    importlib.reload(baketool)
 
     print(f"\n>>> Environment Setup: Blender {bpy.app.version_string}")
     print(f">>> Addon Root: {addon_root}")
@@ -110,113 +111,80 @@ def main():
         print("    - integration: Integration tests")
         return
 
-    try:
-        # Try to import and register; if it fails, check if already registered
-        try:
-            import baketool
-            is_registered = True
-        except ImportError:
-            # Blender < 4.1 may fail to import; check registration via scene property
-            is_registered = hasattr(bpy.context.scene, "BakeJobs")
-            if not is_registered:
-                print(">>> ERROR: BakeNexus addon not registered and cannot be imported.")
-                sys.exit(1)
-            # Re-import may still fail; skip explicit register if so
-            try:
-                import baketool
-                if hasattr(bpy.types.Scene, "BakeJobs"):
-                    try:
-                        baketool.unregister()
-                    except Exception:
-                        pass
-                baketool.register()
-                print(">>> Addon registered successfully.")
-            except ImportError:
-                # Already registered well enough; proceed
-                print(">>> Addon assumed registered (import not available).")
+    import baketool
+    if not hasattr(bpy.types.Scene, "BakeJobs"):
+        baketool.register()
+        print(">>> Addon registered via direct register call.")
+    else:
+        print(">>> Addon already registered.")
+
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+
+    if args.test:
+        print(f">>> Loading specific test: {args.test}")
+        suite = loader.loadTestsFromName(args.test)
+    elif args.discover:
+        print(">>> Discovering all suite_*.py...")
+        suite = loader.discover(
+            start_dir=test_dir, pattern="suite_*.py", top_level_dir=parent_dir
+        )
+    elif args.category != "all":
+        print(f">>> Loading tests by category: {args.category}")
+        suite = _load_category(args.category, loader)
+    else:
+        if args.suite == "all":
+            pattern = "suite_*.py"
         else:
-            # Import succeeded; do normal register flow
-            if hasattr(bpy.types.Scene, "BakeJobs"):
-                try:
-                    baketool.unregister()
-                except Exception:
-                    pass
-            baketool.register()
-            print(">>> Addon registered successfully.")
+            pattern = f"suite_{args.suite}.py"
+        print(f">>> Loading suites matching pattern: {pattern}")
+        suite = loader.discover(
+            start_dir=test_dir, pattern=pattern, top_level_dir=parent_dir
+        )
 
-        loader = unittest.TestLoader()
-        suite = unittest.TestSuite()
+    print(f">>> Running {suite.countTestCases()} tests...")
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
 
-        if args.test:
-            print(f">>> Loading specific test: {args.test}")
-            suite = loader.loadTestsFromName(args.test)
-        elif args.discover:
-            print(">>> Discovering all suite_*.py...")
-            suite = loader.discover(
-                start_dir=test_dir, pattern="suite_*.py", top_level_dir=parent_dir
-            )
-        elif args.category != "all":
-            print(f">>> Loading tests by category: {args.category}")
-            suite = _load_category(args.category, loader)
-        else:
-            if args.suite == "all":
-                pattern = "suite_*.py"
-            else:
-                pattern = f"suite_{args.suite}.py"
-            print(f">>> Loading suites matching pattern: {pattern}")
-            suite = loader.discover(
-                start_dir=test_dir, pattern=pattern, top_level_dir=parent_dir
-            )
+    if args.json:
+        import json
+        import time
 
-        print(f">>> Running {suite.countTestCases()} tests...")
-        runner = unittest.TextTestRunner(verbosity=2)
-        result = runner.run(suite)
+        report = {
+            "timestamp": time.time(),
+            "blender_version": list(bpy.app.version),
+            "blender_version_str": bpy.app.version_string,
+            "os": sys.platform,
+            "summary": {
+                "total": result.testsRun,
+                "passed": result.testsRun
+                - len(result.failures)
+                - len(result.errors)
+                - len(result.skipped),
+                "failures": len(result.failures),
+                "errors": len(result.errors),
+                "skipped": len(result.skipped),
+            },
+            "details": {
+                "failures": [str(f[0]) + ": " + str(f[1])[:200] for f in result.failures],
+                "errors": [str(e[0]) + ": " + str(e[1])[:200] for e in result.errors],
+            },
+        }
+        json_path = Path(args.json)
+        json_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=4)
+        print(f">>> JSON Report saved to: {args.json}")
 
-        if args.json:
-            import json
-            import time
-
-            report = {
-                "timestamp": time.time(),
-                "blender_version": list(bpy.app.version),
-                "blender_version_str": bpy.app.version_string,
-                "os": sys.platform,
-                "summary": {
-                    "total": result.testsRun,
-                    "passed": result.testsRun
-                    - len(result.failures)
-                    - len(result.errors)
-                    - len(result.skipped),
-                    "failures": len(result.failures),
-                    "errors": len(result.errors),
-                    "skipped": len(result.skipped),
-                },
-                "details": {
-                    "failures": [str(f[0]) + ": " + str(f[1])[:200] for f in result.failures],
-                    "errors": [str(e[0]) + ": " + str(e[1])[:200] for e in result.errors],
-                },
-            }
-            json_path = Path(args.json)
-            json_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(json_path, "w", encoding="utf-8") as f:
-                json.dump(report, f, indent=4)
-            print(f">>> JSON Report saved to: {args.json}")
-
-        if result.wasSuccessful() and result.testsRun > 0:
-            print("\n>>> CONSOLIDATED SUITES PASSED")
-            print(">>> ALL TESTS PASSED")
-            sys.exit(0)
-        else:
-            print("\n>>> TESTS FAILED")
-            print(f">>> Failures: {len(result.failures)}, Errors: {len(result.errors)}")
-            if result.testsRun == 0:
-                print(">>> WARNING: No tests were run! (Check discovery pattern)")
-            sys.exit(1)
-
-    except Exception as e:
-        import traceback
-
-        traceback.print_exc()
+    if result.wasSuccessful() and result.testsRun > 0:
+        print("\n>>> CONSOLIDATED SUITES PASSED")
+        print(">>> ALL TESTS PASSED")
+        sys.exit(0)
+    else:
+        print("\n>>> TESTS FAILED")
+        print(f">>> Failures: {len(result.failures)}, Errors: {len(result.errors)}")
+        if result.testsRun == 0:
+            print(">>> WARNING: No tests were run! (Check discovery pattern)")
         sys.exit(1)
 
 

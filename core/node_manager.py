@@ -77,7 +77,7 @@ def bake_node_to_image(
                         type="EMIT",
                         margin=settings.margin,
                         use_clear=True,
-                        target="IMAGE_TEXTURES",
+                        target=compat.get_bake_target(),
                     )
 
                     if settings.use_external_save:
@@ -256,7 +256,7 @@ class NodeGraphHandler:
         d = bpy.data.images.get(SYSTEM_NAMES["DUMMY_IMG"]) or bpy.data.images.new(
             SYSTEM_NAMES["DUMMY_IMG"], 32, 32, alpha=True
         )
-        d.use_fake_user = False
+        d.use_fake_user = True
 
         for obj in objects:
             if obj.type != "MESH":

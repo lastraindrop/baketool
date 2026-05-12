@@ -57,25 +57,102 @@ Blender 4.2+ 对 `EnumProperty` 的回调函数要求更严格。我们通过返
 
 ## 5. 参数对齐与一致性 (Parameter Alignment)
 
-为解决“重构导致 UI 与引擎不一致”的问题，我们实施了以下约束：
+为解决"重构导致 UI 与引擎不一致"的问题，我们实施了以下约束：
 
 1.  **单一事实源 (SSOT)**：所有通道的默认后缀、色彩空间和启用状态均定义在 `constants.py` 的 `BAKE_CHANNEL_INFO` 中。
 2.  **动态 UI 映射**：`ui.py` 不再硬编码属性路径，而是读取 `CHANNEL_UI_LAYOUT` 配置。
 3.  **一致性测试**：`SuiteCodeReview` 会扫描 `BakeChannel` 属性与 `constants.py` 定义的交集，任何命名不匹配都会拦截构建。
 
+### 5.1 参数传递路径图
+
+```
+property.py (RNA 定义)
+    ↓
+ui.py 通过 CHANNEL_UI_LAYOUT 渲染属性
+    ↓
+engine.py: JobPreparer / BakePassExecutor 消费属性
+    → _handle_save / _execute_blender_bake_op
+    ↓
+image_manager.py: save_image 使用图像格式参数
+core/shading.py: apply_baked_result 消费通道映射
+```
+
+### 5.2 一致性关键规则
+
+- **`folder_name` 传递规则**：优先 `s.folder_name if s.create_new_folder else task.folder_name`
+- **动态枚举默认值**：`items` 为回调函数的 `EnumProperty` 必须使用整数默认值（而非字符串 identifier），否则 Blender 4.2+ 注册时抛出 `RuntimeError`
+- **降噪场景清理**：`BakePostProcessor.apply_denoise(context, img)` 必须注入 `context` 参数 + `temp_override`，渲染失败时 `finally` 块确保临时场景被删除
+
 ---
 
-## 6. 开发者调试工具 (`dev_tools/`)
+## 6. 代码审核发现的强化实践 (Hardening Practices from Code Review)
 
-为了支持高效开发，插件内置了一系列工具：
-- **`extract_translations.py`**：基于 AST 的多语言提取工具，支持动态 UI 文本识别。
-- **`cli_runner.py`**：支持在无界面环境下针对特定 Blender 版本运行单个测试用例。
-- **`multi_version_test.py`**：生成跨版本兼容性矩阵报告。
+### 6.1 上下文注入 (Context Injection)
+所有需要 `bpy.context` 的函数都应支持可选的 `context` 参数，避免在头模式或无激活场景时崩溃：
+
+```python
+# 推荐模式
+def bake(objects=None, use_selection=True, context=None):
+    ctx = context if context is not None else bpy.context
+    # ...
+```
+
+**适用场景**：`core/api.py:bake()`、`core/engine.py:BakePostProcessor.apply_denoise()`、`core/uv_manager.py:_apply_smart_uv()`
+
+### 6.2 依赖图求值优化
+`bpy.context.evaluated_depsgraph_get()` 是全场景求值操作，成本高昂。在循环体内调用相当于 N 次全场景求值：
+
+```python
+# 错误：N 高模 = N 次全场景求值
+for hp_obj in high_polys:
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+
+# 正确：求值一次，多次使用
+depsgraph = bpy.context.evaluated_depsgraph_get()
+for hp_obj in high_polys:
+    ...
+```
+
+### 6.3 错误日志防膨胀
+`bake_error_log` 是 `StringProperty`，无限制追加会导致场景内存无限增长。采用滚动窗口：
+
+```python
+if len(log) > max_log:
+    log = log[-max_log // 2:]
+context.scene.bake_error_log = log + f"{message}\n"
+```
+
+### 6.4 资源保护
+- **保护镜像 GC 预防**：临时 `DUMMY_IMG` 创建时设置 `use_fake_user = True`，防止在节点引用建立前被垃圾回收
+- **预览材质崩溃恢复**：`RestorePreviewMaterialsHandler` 在 `load_post` 时扫描 `_bt_orig_mat_name` 自定义属性，自动恢复原始材质
+- **降噪渲染安全**：`apply_denoise` 使用 `try/finally` 确保 `BT_Denoise_Temp` 场景在渲染失败时被清理
+
+### 6.5 CI 管道有效性
+CI 必须能够真实反映项目质量，不能有静默通过的环节：
+
+1. **verify job 必须解析 JSON 报告**：逐文件检查 `failures > 0 or errors > 0`，发现失败则返回非零退出码
+2. **lint 不能使用 `|| true`**：lint 失败应阻断合并
+3. **跨平台路径分隔符**：`multi_version_test.py` 中使用 `os.pathsep` 替代硬编码 `";"`
 
 ---
 
-## 7. 未来扩展建议
+## 6. 跨版本兼容性设计 (Cross-Version Compatibility)
 
-- **参数 Schema 化**：进一步将 `constants.py` 转换为 JSON/YAML Schema，实现跨语言验证。
-- **异步像素下载**：在 B5.0 中探索更高效的 GPU-to-CPU 像素回传 API。
-- **智能节点优化**：针对复杂的 Custom Channel 逻辑，引入节点树预编译机制以提升 NumPy 组装速度。
+BakeNexus 支持从 Blender 3.3 LTS 到 5.0+ 的所有主流版本：
+
+### 6.1 Blender 5.0 适配
+- **合成器 (Compositor)**：B5.0 移除了 `CompositorNodeComposite`。系统自动识别 B5.0 并切换至 `NodeGroupOutput`，同时适配了 `compositing_node_group` 新属性。
+- **GPU 资源管理**：B5.0 移除了 `image.gl_free()`。系统在 `BakeModalOperator` 的 GC 管道中自动检测并安全跳过，同时保留 `buffers_free()` 以释放内存。
+
+### 6.2 动态枚举 (Dynamic Enums)
+Blender 4.2+ 对 `EnumProperty` 的回调函数要求更严格。我们通过返回完整的 5 元组（含 ID 整数）来确保 UI 列表在所有版本中的渲染与索引稳定性。
+
+### 6.3 Bake Target 集中管理
+`bpy.ops.object.bake` 的 `target` 参数通过 `compat.get_bake_target()` 集中管理，未来版本变更时只需修改一个函数：
+
+```python
+# core/compat.py
+def get_bake_target() -> str:
+    """Return version-appropriate bake target string."""
+    return "IMAGE_TEXTURES"
+```

@@ -196,3 +196,15 @@ def get_version_string() -> str:
     """
     v = bpy.app.version
     return f"{v[0]}.{v[1]}.{v[2]}"
+
+
+def get_bake_target() -> str:
+    """Return version-appropriate bake target string.
+
+    Centralizes this value so a future Blender API change
+    can be fixed in one place.
+
+    Returns:
+        str: Bake target (e.g., 'IMAGE_TEXTURES').
+    """
+    return "IMAGE_TEXTURES"

@@ -321,11 +321,12 @@ def calculate_cage_proximity(low_poly, high_polys, margin=0.0):
         lp_mesh = low_poly.data
         hp_data = []
 
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+
         for hp_obj in high_polys:
             if hp_obj.type != "MESH":
                 continue
             try:
-                depsgraph = bpy.context.evaluated_depsgraph_get()
                 bm = bmesh.new()
                 bm.from_object(hp_obj, depsgraph)
                 bm.transform(hp_obj.matrix_world)
@@ -367,7 +368,7 @@ class TexelDensityCalculator:
     """Calculate texel density for objects."""
 
     @staticmethod
-    def get_mesh_density(mesh, uv_layer):
+    def get_mesh_density(mesh, uv_layer, resolution=1024.0):
         """Calculate average texel density for a mesh."""
         try:
             uv_data = uv_layer.data
@@ -402,9 +403,7 @@ class TexelDensityCalculator:
             if world_area <= 1e-6 or total_uv_area <= 1e-6:
                 return 0.0
 
-            # Default resolution if not specified
-            avg_res = 1024.0
-            return (avg_res * total_uv_area) / world_area
+            return (resolution * total_uv_area) / world_area
 
         except Exception:
             return 0.0

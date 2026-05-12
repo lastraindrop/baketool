@@ -46,7 +46,8 @@ def load_preset_thumbnails(directory):
 def get_icon_id(name):
     """Get preview icon ID for a preset name."""
     pcoll = get_preview_collection("presets")
-    return pcoll.get(name).icon_id if pcoll.get(name) else 0
+    icon = pcoll.get(name)
+    return icon.icon_id if icon else 0
 
 
 def clear_all_previews():

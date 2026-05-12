@@ -38,7 +38,11 @@ def log_error(
     logger.error(technical_msg)
 
     if context and hasattr(context, "scene"):
-        context.scene.bake_error_log += f"{message}\n"
+        log = context.scene.bake_error_log
+        max_log = 8000
+        if len(log) > max_log:
+            log = log[-max_log // 2:]
+        context.scene.bake_error_log = log + f"{message}\n"
 
     if state_mgr:
         try:
@@ -426,7 +430,7 @@ class SceneSettingsContext:
                 if v is not None and v != "":
                     try:
                         setattr(target, real_key, v)
-                    except Exception as e:
+                    except (AttributeError, TypeError, ValueError, RuntimeError) as e:
                         logger.warning(
                             f"Failed to set {self.category}.{real_key} to '{v}': {e}"
                         )
@@ -551,7 +555,11 @@ def create_simple_baked_material(
     tree.links.new(bsdf.outputs[0], out.inputs[0])
     y_pos = 0
 
-    # Extended mapping supports standard vs specific IDs
+    from ..constants import CHANNEL_BAKE_INFO
+    non_color_channels = {
+        k for k, v in CHANNEL_BAKE_INFO.items() if v.get("def_cs") == "Non-Color"
+    }
+
     for chan_id, image in texture_map.items():
         if not image:
             continue
@@ -570,13 +578,6 @@ def create_simple_baked_material(
         tex.image = image
         tex.location = (-600 if chan_id == "normal" else -300, y_pos)
         y_pos -= 280
-
-        # M-15: Derive non-color channels from CHANNEL_BAKE_INFO metadata
-        from ..constants import CHANNEL_BAKE_INFO
-
-        non_color_channels = {
-            k for k, v in CHANNEL_BAKE_INFO.items() if v.get("def_cs") == "Non-Color"
-        }
 
         if chan_id in non_color_channels:
             try:

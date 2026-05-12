@@ -138,12 +138,14 @@ class CageAnalyzer:
             context.view_layer.objects.active = low_obj
             try:
                 bpy.ops.object.mode_set(mode="VERTEX_PAINT")
-                for area in context.screen.areas:
-                    if area.type == "VIEW_3D":
-                        for space in area.spaces:
-                            if space.type == "VIEW_3D":
-                                space.shading.type = "SOLID"
-                                space.shading.color_type = "VERTEX"
+                screen = getattr(context, "screen", None)
+                if screen:
+                    for area in screen.areas:
+                        if area.type == "VIEW_3D":
+                            for space in area.spaces:
+                                if space.type == "VIEW_3D":
+                                    space.shading.type = "SOLID"
+                                    space.shading.color_type = "VERTEX"
             except (RuntimeError, AttributeError) as e:
                 logger.warning(f"Failed to switch Viewport to Vertex Paint: {e}")
                 try:

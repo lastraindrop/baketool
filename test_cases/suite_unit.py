@@ -490,7 +490,7 @@ class SuiteUnit(unittest.TestCase):
         img.pixels.foreach_set(arr)
 
         try:
-            BakePostProcessor.apply_denoise(img)
+            BakePostProcessor.apply_denoise(bpy.context, img)
             new_arr = np.empty(16 * 16 * 4, dtype=np.float32)
             img.pixels.foreach_get(new_arr)
             self.assertFalse(
@@ -561,7 +561,7 @@ class SuiteUnit(unittest.TestCase):
         img = image_manager.set_image("Leak_Test", 16, 16)
 
         try:
-            BakePostProcessor.apply_denoise(img)
+            BakePostProcessor.apply_denoise(bpy.context, img)
         finally:
             # TB-3: Only check for leaked BT_ scenes to avoid interference from elsewhere
             bt_scenes = [s for s in bpy.data.scenes if s.name.startswith("BT_")]

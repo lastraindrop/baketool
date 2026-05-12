@@ -118,7 +118,9 @@ class BakePostProcessor:
 
     @staticmethod
     def apply_denoise(
-        image: bpy.types.Image, reuse_scene: Optional[bpy.types.Scene] = None
+        context: bpy.types.Context,
+        image: bpy.types.Image,
+        reuse_scene: Optional[bpy.types.Scene] = None
     ) -> None:
         """Apply denoising to a baked image using Cycles compositor.
 
@@ -126,6 +128,7 @@ class BakePostProcessor:
         of scene creation/deletion.
 
         Args:
+            context: Blender context.
             image: Baked image to denoise.
             reuse_scene: Optional existing temp scene to reuse (avoids overhead).
         """
@@ -167,11 +170,9 @@ class BakePostProcessor:
             # --- B5.0 COMPOSITE NODE FIX ---
             comp_type = "CompositorNodeComposite"
             if compat.is_blender_5():
-                # In B5.0, the output node for CompositorNodeTree is NodeGroupOutput
                 comp_type = "NodeGroupOutput"
             
             n_comp = nodes.new(comp_type)
-            # -------------------------------
 
             links.new(n_img.outputs[0], n_denoise.inputs[0])
             links.new(n_denoise.outputs[0], n_comp.inputs[0])
@@ -181,7 +182,10 @@ class BakePostProcessor:
             links.new(n_denoise.outputs[0], n_viewer.inputs[0])
 
             # 3. Execute "render" to process pixels
-            with bpy.context.temp_override(scene=tmp_scene):
+            # Safety: use provided context override
+            override = context.copy()
+            override["scene"] = tmp_scene
+            with context.temp_override(**override):
                 bpy.ops.render.render()
 
             viewer_img = bpy.data.images.get(SYSTEM_NAMES["VIEWER_IMG"])
@@ -338,7 +342,9 @@ class BakeStepRunner:
                         scene.bake_status = (
                             f"[{i + 1}/{total_ch}] Denoising {c['name']}..."
                         )
-                        BakePostProcessor.apply_denoise(img, reuse_scene=denoise_scene)
+                        BakePostProcessor.apply_denoise(
+                            self.context, img, reuse_scene=denoise_scene
+                        )
 
                     baked_images[BakePassExecutor.get_result_key(c)] = img
 
@@ -1132,7 +1138,7 @@ class BakePassExecutor:
                 "type": compat.get_bake_operator_type(bake_type),
                 "margin": setting.margin,
                 "use_clear": setting.use_clear_image,
-                "target": DEFAULT_BAKE_TARGET,
+                "target": compat.get_bake_target(),
             }
 
             if bake_type == "NORMAL":

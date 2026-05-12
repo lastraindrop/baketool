@@ -4,22 +4,28 @@
 - **核心定位**：从实验性脚本转向工业级稳定的 Blender 插件。
 - **完成项**：
   - 全面品牌重塑 (BakeTool -> BakeNexus)。
-  - 完善的自动化验证套件（158 测试用例，5 个 Blender 版本 100% 通过）。
+  - 完善的自动化验证套件（158 测试用例，12 个 Blender 版本 100% 通过）。
   - 支持 UDIM、Selected-to-Active、自定义通道打包、ORM 打包。
   - 修复了渲染参数透传、可见性污染和内存泄露问题。
   - **Blender 5.0 专项适配**：解决了 Compositor Node API 变更导致的全黑/崩溃问题，并验证了降噪管线。
   - **增强岛屿检测**：`_find_islands_bmesh` 现已支持 Seam 标记与 UV 边界感知分割。
   - 参数动态对齐机制：`property.py` → `constants.py` → `engine.py` 全链路一致性保证。
-- **发布前最终修复 (2026-05-09)**：
-  - **统一分发策略**：`automation/build_release_zip.py` 现已包含 `dev_tools` 目录。
-  - **B5.0 烘焙类型修复**：修正了 `compat.py` 中过时的 `NORMALS` 强制映射，恢复使用 `NORMAL`。
-  - **Compositor 原子性**：优化了合成器树的初始化与清理流程，防止背景任务场景残留。
+- **发布前最终修复 (2026-05-13)**：
+  - **全量 Code Review**：两轮审查共修复 20 个 CRITICAL/HIGH/MEDIUM 问题。
+  - **性能优化**：`evaluated_depsgraph_get()` 移出高模循环（N 次→1 次），大幅提升多重烘焙速度。
+  - **降噪安全增强**：注入 `context` 参数替代全局 `bpy.context`，渲染失败时确保临时场景清理。
+  - **预览材质可靠性**：新增 `RestorePreviewMaterialsHandler`，崩溃后加载文件自动恢复原始材质。
+  - **CI 管道加固**：verify job 解析 JSON 报告阻断失败；lint 失败生效；路径分隔符修复跨平台兼容性。
+  - **错误日志治理**：`bake_error_log` 添加 8000 字符滚动窗口，防止场景内存无限膨胀。
+  - **上下文物联网**：`core/api.py` 支持可选的 `context` 参数，headless/API 模式安全调用。
+  - 更多修复详情见 `CHANGELOG.md` 和 `STYLE_GUIDE_ANALYSIS.md`。
 
 ## 2. 短期计划 (v1.1.x) - 生产力增强
-- **USD 属性安全审计**：为 `ModelExporter` 的 USD 导出参数添加更严谨的属性存在性检查（替代 `hasattr`）。
-- **崩溃恢复 Schema 验证**：为 `ui.py` 加载的 JSON 崩溃日志添加 Schema 校验，防止因旧版本日志损坏导致启动崩溃。
-- **CI 门控优化**：实现对多版本测试报告的自动解析汇总。
+- **CI 门控优化**：添加 Blender 可执行文件缓存，减少跨版本验证时间。
 - **预设库扩展**：内置更多行业标准的 PBR 导出预设（UE5, Unity, Substance 风格）。
+- **崩溃恢复 Schema 验证**：为 `ui.py` 加载的 JSON 崩溃日志添加 Schema 校验，防止因旧版本日志损坏导致启动崩溃。
+- **API 响应性提升**：`core/api.py` 添加异步回调接口，支持外部脚本实时监听烘焙进度。
+- **资源利用率优化**：为 `ModelExporter` 的 USD 导出参数添加更严谨的属性存在性检查。
 
 ## 3. 长期愿景 (v2.x) - 智能烘焙生态
 - **异步像素回传**：研究 B5.0 下的高性能像素拷贝方案。

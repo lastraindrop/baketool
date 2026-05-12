@@ -93,7 +93,33 @@ jobs:
 
       - name: Check Results
         run: |
-          echo "All test reports downloaded to 'reports/' directory"
+          python -c "
+import json, os, sys
+reports_dir = 'reports'
+if not os.path.exists(reports_dir):
+    print('No reports directory found')
+    sys.exit(1)
+report_files = [f for f in os.listdir(reports_dir) if f.endswith('.json')]
+if not report_files:
+    print('No JSON report files found')
+    sys.exit(1)
+exit_code = 0
+for rf in sorted(report_files):
+    path = os.path.join(reports_dir, rf)
+    with open(path) as fh:
+        data = json.load(fh)
+    s = data.get('summary', {})
+    total = s.get('total', 0)
+    passed = s.get('passed', 0)
+    fails = s.get('failures', 0)
+    errors = s.get('errors', 0)
+    skipped = s.get('skipped', 0)
+    status = 'PASS' if fails == 0 and errors == 0 else 'FAIL'
+    print(f'[{status}] {rf}: {passed}/{total} passed ({fails} fails, {errors} errors, {skipped} skipped)')
+    if fails > 0 or errors > 0:
+        exit_code = 1
+sys.exit(exit_code)
+"
 
   lint:
     runs-on: ubuntu-latest
@@ -111,7 +137,7 @@ jobs:
 
       - name: Run linting
         run: |
-          pycodestyle --max-line-length=120 --exclude=.venv,__pycache__,docs/legacy . || true
+          pycodestyle --max-line-length=120 --exclude=.venv,__pycache__,docs/legacy .
 
   style-check:
     runs-on: ubuntu-latest

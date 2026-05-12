@@ -28,7 +28,7 @@ runner_script = str(current_dir / "cli_runner.py")
 def _split_paths(value):
     if not value:
         return []
-    return [segment.strip() for segment in value.split(";") if segment.strip()]
+    return [segment.strip() for segment in value.split(os.pathsep) if segment.strip()]
 
 
 def _normalize_path(value):

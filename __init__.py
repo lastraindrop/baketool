@@ -203,6 +203,7 @@ def register():
     # Register Auto Load Handler
     preset_handler.AutoLoadHandler.register()
     preset_handler.UpdateCrashCacheHandler.register()
+    preset_handler.RestorePreviewMaterialsHandler.register()
 
     # 制作 keymap // Create keymap
     wm = bpy.context.window_manager
@@ -229,6 +230,7 @@ def unregister():
     # 3. Handlers
     preset_handler.AutoLoadHandler.unregister()
     preset_handler.UpdateCrashCacheHandler.unregister()
+    preset_handler.RestorePreviewMaterialsHandler.unregister()
 
     # 4. Menus
     bpy.types.VIEW3D_MT_object_context_menu.remove(menu_func_quick_bake)

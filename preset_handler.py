@@ -460,3 +460,38 @@ class UpdateCrashCacheHandler:
     def unregister(cls):
         if cls.update_crash_cache in bpy.app.handlers.load_post:
             bpy.app.handlers.load_post.remove(cls.update_crash_cache)
+
+
+class RestorePreviewMaterialsHandler:
+    """Restore original materials on load if a crash left preview materials active."""
+
+    @staticmethod
+    @persistent
+    def restore_materials(dummy=None):
+        for obj in bpy.data.objects:
+            if obj.type != "MESH":
+                continue
+            orig_mat_name = obj.get("_bt_orig_mat_name")
+            if not orig_mat_name:
+                continue
+            orig_mat = bpy.data.materials.get(orig_mat_name)
+            if orig_mat:
+                obj.active_material = orig_mat
+            del obj["_bt_orig_mat_name"]
+
+        mat = bpy.data.materials.get("BT_Packing_Preview")
+        if mat and mat.users == 0:
+            try:
+                bpy.data.materials.remove(mat)
+            except (ReferenceError, RuntimeError):
+                pass
+
+    @classmethod
+    def register(cls):
+        if cls.restore_materials not in bpy.app.handlers.load_post:
+            bpy.app.handlers.load_post.append(cls.restore_materials)
+
+    @classmethod
+    def unregister(cls):
+        if cls.restore_materials in bpy.app.handlers.load_post:
+            bpy.app.handlers.load_post.remove(cls.restore_materials)

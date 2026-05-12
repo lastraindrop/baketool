@@ -42,7 +42,40 @@ def __exit__(self, exc_type, exc_val, exc_tb):
 - 若任意一个 `SceneSettingsContext` 的 `__enter__` 抛出异常，外层 `with ExitStack()` 自动清理已进入的上下文，不会留下半截状态。
 - `ExitStack` 必须在模块级别导入（不能局部 `from contextlib import ExitStack`），否则 `__enter__` 被调用时可能触发 `NameError`。
 
-### 1.4 临时节点隔离 (Temporary Node Isolation)
+### 1.4 上下文注入模式 (Context Injection Pattern)
+BakeNexus 的所有执行路径必须支持从外部注入 `bpy.types.Context`，而非固化为全局 `bpy.context`。这在 headless/API/子进程烘焙场景下至关重要：
+
+```python
+# 正确模式 — core/api.py
+def bake(objects=None, use_selection=True, context=None):
+    ctx = context if context is not None else bpy.context
+    # ...
+
+# 正确模式 — core/engine.py
+def apply_denoise(self, context, image, reuse_scene=None):
+    override = context.copy()
+    override["scene"] = tmp_scene
+    with context.temp_override(**override):
+        bpy.ops.render.render()
+```
+
+**规则**：任何访问 `bpy.context`、`context.screen`、`context.scene` 的函数都应优先使用参数注入的 context，仅在参数为 `None` 时回退全局。
+
+### 1.5 依赖图求值实践 (Depsgraph Evaluation)
+`evaluated_depsgraph_get()` 是全场景求值，成本极高。严禁在循环内重复调用：
+
+```python
+# 错误 — N 次全场景求值
+for hp_obj in high_polys:
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+
+# 正确 — 仅求值一次
+depsgraph = bpy.context.evaluated_depsgraph_get()
+for hp_obj in high_polys:
+    ...
+```
+
+### 1.6 临时节点隔离 (Temporary Node Isolation)
 `NodeGraphHandler` (`core/node_manager.py`) 在烘焙时为材质动态创建 Texture 和 Emission 节点用于生成烘焙纹理，烘焙完成后必须精确移除这些临时节点，不得误删或残留。采用 `is_bt_temp` 自定义属性标记所有临时节点：
 
 - 会话节点（`_prepare_session_nodes`, line 164-165）：为每个材质创建的基础 `ShaderNodeTexImage` 和 `ShaderNodeEmission` 均标记 `n["is_bt_temp"] = True`。
@@ -63,6 +96,20 @@ def __exit__(self, exc_type, exc_val, exc_tb):
 ### 2.2 资源清理机制 (Cleanup Strategy)
 - **标记清除**：所有临时产生的图像 `name` 均以 `BT_TEMP_` 开头。
 - **引用回收**：`core/cleanup.py` 会在烘焙结束或插件禁用时扫描场景，删除没有用户关联的、带特定前缀的 datablocks。
+
+### 2.3 跨版本兼容层 (Compat Layer)
+`core/compat.py` 是所有 Blender 版本差异的唯一适配点：
+
+| 函数 | 作用 |
+|------|------|
+| `set_bake_type(scene, bake_type)` | 安全设置烘焙类型，自动处理 `NORMAL` vs `NORMALS` 映射 |
+| `get_compositor_tree(scene)` | 返回合成器节点树，适配 B5.0 `compositing_node_group` |
+| `get_bake_settings(scene)` | 返回烘焙设置结构体，兼容 3.3–5.0+ |
+| `get_bake_operator_type(bake_type)` | 映射引擎内部类型到 operator.type 参数 |
+| `get_bake_target()` | 返回 `bpy.ops.object.bake` 的 target 参数 |
+| `is_blender_5()` / `is_blender_3()` | 版本检测快捷方式 |
+
+**规则**：任何 `bpy.ops.object.bake` 调用的 `target` 参数必须经过 `compat.get_bake_target()`，禁止硬编码 `"IMAGE_TEXTURES"`。
 
 ## 3. 测试与验证策略 (Testing Strategy)
 
@@ -88,3 +135,23 @@ def __exit__(self, exc_type, exc_val, exc_tb):
 - 发布扩展：`extension_validation`、`code_review`、`localization`
 
 若变更触及保存路径、UDIM、Selected-to-Active、动态枚举、打包规则或 UI 映射，必须补跑对应专项套件，而不是只依赖单一 happy path。
+
+### 3.4 CI 管道有效性规则
+Github Actions 管道必须在合并前验证测试报告的内容，而非仅检查退出码：
+
+1. **verify job 必须解析 JSON 报告**：遍历所有测试报告，`failures > 0 or errors > 0` 则返回非零退出码
+2. **lint 不能使用 `|| true`**：lint failures should gate merges
+3. **路径分隔符跨平台**：`os.pathsep` 替代硬编码分号
+
+### 3.5 API 模式下的上下文约定
+当通过 `core/api.py` 在 headless 或子进程中调用烘焙时：
+
+```python
+from baketool.core import api
+
+# Headless / background mode
+ctx = bpy.context  # 可能为 None
+success = api.bake(objects=my_meshes, context=ctx)
+```
+
+**测试原则**：所有直接调用 `apply_denoise`、`run()` 等引擎方法的测试必须传递 `bpy.context` 或有效的上下文对象，禁止使用旧版单参数签名。

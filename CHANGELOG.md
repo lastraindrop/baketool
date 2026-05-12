@@ -2,18 +2,41 @@
 
 本文件记录 BakeNexus 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
-## 1.0.0 - 2026-05-09
-### 正式版本发布与全环境加固 / Official Release & Hardening
-- **Blender 5.0 专项适配**：解决了合成器节点 `CompositorNodeComposite` 移除导致的崩溃，自动切换为 `NodeGroupOutput`。
-- **Bmesh 岛屿检测增强**：`_find_islands_bmesh` 现已支持基于 `SEAM` 标记和 `UV` 边界的拓扑分割。
-- **发布包统一化**：`automation/build_release_zip.py` 现在包含 `dev_tools`，确保开发者工具随发行版分发。
-- **烘焙类型修复**：修正了 `compat.py` 中过时的 `NORMALS` 强制映射（B4.2+ 现已回归 `NORMAL`）。
-- **文档体系完善**：新增 `docs/dev/TECHNICAL_GUIDE.md` 技术指南，同步更新路线图与用户手册。
-- **全环境验证**：在 Blender 3.3 / 3.6 / 4.2 / 4.5 / 5.0 下实现 100% 测试通过。
+## 1.0.0 - 2026-05-13
+### 发布前最终 Code Review 加固 / Pre-release Code Review Hardening
+
+#### 核心执行引擎修复 / Engine Fixes
+- **降噪安全增强**：`apply_denoise` 注入 `context` 参数替代全局 `bpy.context`；渲染失败时 `try/finally` 确保 `BT_Denoise_Temp` 清理。
+- **Depsgraph 性能优化**：`calculate_cage_proximity` 将 `evaluated_depsgraph_get()` 移出循环（N 次→1 次）。
+- **预览材质崩溃恢复**：新增 `RestorePreviewMaterialsHandler`，`load_post` 时自动恢复原始材质。
+- **Bake Target 统一管理**：通过 `compat.get_bake_target()` 集中管控，`engine.py` 和 `node_manager.py` 统一调用。
+- **纹素密度参数化**：`TexelDensityCalculator.get_mesh_density` 新增 `resolution` 参数，消除 1024 硬编码。
+- **场景上下文容错**：`SceneSettingsContext.__enter__` except 收紧为具体异常（AttributeError/TypeError/ValueError/RuntimeError）。
+- **错误日志防膨胀**：`bake_error_log` 添加 8000 字符滚动窗口。
+
+#### API 与自动化修复 / API & Automation Fixes
+- **API 上下文注入**：`api.bake()` 和 `api.validate_settings()` 新增可选的 `context` 参数，headless 模式安全调用。
+- **模块加载优化**：`cli_runner.py` 使用 `importlib.reload()` 替代 `del sys.modules` 暴力删除。
+- **路径分隔符跨平台**：`multi_version_test.py` 使用 `os.pathsep` 替代硬编码分号。
+- **测试签名同步**：更新 `suite_unit.py` 和 `suite_denoise.py` 中 `apply_denoise` 的三处旧签名调用。
+- **CI 管道加固**：verify job 解析 JSON 报告验证测试结果；lint 移除 `|| true` 使其生效。
+- **导入性测试补全**：`suite_code_review.test_all_test_suites_importable` 补充 `suite_custom_channel_hardened`。
+
+#### 资源与状态管理 / Resource & State Management
+- **保护镜像 GC 预防**：`node_manager.py` 中 `DUMMY_IMG` 创建时设置 `use_fake_user = True`。
+- **时间轴状态恢复**：`BakeModalOperator` 在 `init_modal` 保存 `_original_frame`，`_cleanup_state` 恢复。
+- **无头模式崩溃修复**：`cage_analyzer.py` 添加 `context.screen` None 守卫。
+- **缩略图 TOCTOU 修复**：`thumbnail_manager.get_icon_id` 缓存 `pcoll.get()` 结果。
+
+#### 代码审查与文档 / Code Review & Documentation
+- **全量两轮 Code Review**：审查 44 个源文件，修复 20 个 CRITICAL/HIGH/MEDIUM 问题。
+- **完善技术指南**：新增上下文注入模式、Depsgraph 优化实践、错误日志治理、CI 有效性规则章节。
+- **更新路线图**：同步 v1.0.0 最终修复记录，调整短期计划反映已完成优化。
+- **更新开发者指南**：新增上下文注入模式、Compat Layer 函数表、API 上下文约定。
 
 ---
 
-## 1.0.0 - 2026-05-08
+## 1.0.0 - 2026-05-09## 1.0.0 - 2026-05-08
 
 
 ---

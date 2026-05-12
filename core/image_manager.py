@@ -40,16 +40,19 @@ def _resolve_color_space_name(
 
     fallback_map = {
         "NONCOL": ("Non-Color",),
-        "SRGB": ("sRGB",),
-        "LINEAR": ("Linear Rec.709", "Linear"),
+        "SRGB": ("sRGB", "sRGB"),  # <-- Also mention sRGB for good measure
+        "LINEAR": ("Linear Rec.709", "Linear", "Linear"),
     }
     candidates = list(fallback_map.get(space, (space,)))
     if space not in candidates:
         candidates.append(space)
 
     try:
-        enum_items = image.colorspace_settings.bl_rna.properties["name"].enum_items
-        valid_names = {item.identifier for item in enum_items}
+        # Use type-level RNA to avoid instance-specific internal API.
+        # If bpy.types.ColorManagedInputColorspaceSettings is unavailable
+        # (e.g., Blender 5.0+ removed this path), fall back gracefully.
+        cs_props = bpy.types.ColorManagedInputColorspaceSettings.bl_rna.properties["name"]
+        valid_names = {item.identifier for item in cs_props.enum_items}
     except Exception:
         valid_names = set()
 

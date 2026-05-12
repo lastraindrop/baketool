@@ -25,7 +25,7 @@ class SuiteDenoise(unittest.TestCase):
         # Note: We can't easily check pixels in headless without a real render,
         # but we can verify the node structure logic doesn't crash.
         try:
-            BakePostProcessor.apply_denoise(img)
+            BakePostProcessor.apply_denoise(bpy.context, img)
         except Exception as e:
             self.fail(f"BakePostProcessor.apply_denoise failed: {e}")
             
