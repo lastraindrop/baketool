@@ -18,8 +18,9 @@ class SuiteAutomationTools(unittest.TestCase):
             paths_file = handle.name
 
         try:
+            sep = os.pathsep
             env = {
-                "BLENDER_PATHS": "C:\\A\\blender.exe;D:\\B\\blender.exe",
+                "BLENDER_PATHS": sep.join(["C:\\A\\blender.exe", "D:\\B\\blender.exe"]),
                 "BLENDER_PATHS_FILE": "",
             }
             paths = multi_version_test.load_blender_paths(
