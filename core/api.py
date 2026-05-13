@@ -79,7 +79,7 @@ def get_udim_tiles(objects: List[bpy.types.Object]) -> List[int]:
 
 def validate_settings(
     job: Any, context: Optional[bpy.types.Context] = None
-) -> Any:
+) -> "ValidationResult":
     """Programmatically validate a BakeJob's settings."""
     from .common import ValidationResult
     ctx = context if context is not None else bpy.context

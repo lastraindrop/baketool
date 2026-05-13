@@ -480,7 +480,7 @@ def apply_baked_result(
     if col.name not in scene.collection.children:
         try:
             scene.collection.children.link(col)
-        except Exception as e:
+        except (ReferenceError, RuntimeError, AttributeError) as e:
             logger.debug(
                 f"BakeNexus: Result collection linkage failed (likely already linked): {e}"
             )
@@ -495,7 +495,7 @@ def apply_baked_result(
         if old_data and old_data.users == 0:
             try:
                 bpy.data.meshes.remove(old_data, do_unlink=True)
-            except Exception as e:
+            except (ReferenceError, RuntimeError) as e:
                 logger.debug(
                     f"BakeNexus: Failed to remove old baked mesh data {old_data.name}: {e}"
                 )

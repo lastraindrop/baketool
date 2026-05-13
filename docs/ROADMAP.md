@@ -28,6 +28,15 @@
 - **累计效果**：pycodestyle 385 → 97 (-75%)；5 版本跨版本全部通过。
 - 更多细节见 `CHANGELOG.md` 2026-05-14 条目。
 
+## 3. 已完成发布前最终加固 (2026-05-14) ✅
+- **异常安全加固**：全项目 18 处 `except Exception` 收紧为具体异常类型，覆盖 `core/engine.py`、`core/execution.py`、`ops.py`、`property.py`、`automation/*.py` 等 9 个文件。
+- **全局状态封装**：`__init__.py` 引入 `_RegistryState` 类封装 `classes_to_register`/`addon_keymaps`；`thumbnail_manager.py` 的 `preview_collections` 改为模块私有 `_preview_collections`。
+- **上下文管理统一**：`save_image` 和 `bake_node_to_image` 改用 `SceneSettingsContext`，消除手动场景设置恢复。
+- **CI 管道修复**：verify job 改用 heredoc 避免 YAML 缩进歧义。
+- **类型标注改进**：`api.validate_settings` 返回类型 `Any` → `ValidationResult`；`compat.get_bake_settings` 返回类型 `Optional[Any]` → `object`。
+- **命名一致性**：`cleanup.py` operator 前缀统一为 `baketool.`。
+- **代码清理**：重复 import 删除、CHANGELOG 格式修复、translations.py 模块 docstring 补全、constants.py license 占位符替换。
+
 ## 3. 短期计划 (v1.1.x) - 生产力增强
 - **CI 门控优化**：添加 Blender 可执行文件缓存，减少跨版本验证时间；逐步启用 `ruff` 替代 `pycodestyle`。
 - **剩余风格债务清理**：继续推进 Phase 5（函数拆分：`BakeStepRunner.run` 129行→拆分）和 Phase 6（CI 集成：`isort` + `ruff`）。

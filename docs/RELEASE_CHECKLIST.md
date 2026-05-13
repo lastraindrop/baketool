@@ -8,6 +8,16 @@
 - 确认 `blender_manifest.toml` 中的 `version`、`blender_version_min`、`website` 正确。
 - 确认 `README.md`、`CHANGELOG.md` 与当前版本号一致。
 - 确认 `doc_url` 和 `tracker_url` 不再使用占位地址。
+- 确认 `__init__.py` 中 `bl_info["warning"]` 已更新为发布版（非 Beta 提示）。
+
+## 2. 代码规范与一致性
+
+- 确认无 bare `except:` 子句残留（应已清零）。
+- 确认全项目 `except Exception` 仅位于顶层 `main()` 入口，核心路径中已收紧为具体类型。
+- 确认模块级可变状态已封装（`_RegistryState` / `_preview_collections`）。
+- 确认 `cleanup.py` operator 前缀统一为 `baketool.`。
+- 确认所有临时场景设置修改通过 `SceneSettingsContext` 管理。
+- 确认无命名冲突变量（`l`、`O`、`I`）。
 
 ## 2. 仓库整洁度
 

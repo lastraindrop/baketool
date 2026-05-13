@@ -133,7 +133,7 @@ def get_channel_source_items(self, context):
             if items
             else [("NONE", "None", "No enabled channels available", "NONE", 0)]
         )
-    except Exception as e:
+    except (AttributeError, RuntimeError, TypeError) as e:
         logger.debug(f"Error getting channel sources: {e}")
         return [("NONE", "None", "No enabled channels available", "NONE", 0)]
 
@@ -174,7 +174,7 @@ def get_valid_depths(self, context):
                 filtered.append(_build_enum_item(legacy_item, len(filtered)))
 
         return filtered if filtered else default_items
-    except Exception as e:
+    except (AttributeError, RuntimeError, TypeError) as e:
         logger.error(f"Error in get_valid_depths: {e}")
         return [("8", "8", "Fallback 8-bit", "NONE", 0)]
 
@@ -214,7 +214,7 @@ def get_valid_modes(self, context):
                 filtered.append(_build_enum_item(legacy_item, len(filtered)))
 
         return filtered if filtered else default_items
-    except Exception as e:
+    except (AttributeError, RuntimeError, TypeError) as e:
         logger.error(f"Error in get_valid_modes: {e}")
         return [("RGB", "RGB", "Fallback RGB", "NONE", 0)]
 
@@ -655,7 +655,7 @@ def update_library_preset(self, context):
                 data = json.load(f)
             if not preset_handler.load_preset_into_jobs_manager(self, data):
                 raise ValueError("Unsupported preset schema")
-        except Exception as e:
+        except (OSError, json.JSONDecodeError, ValueError) as e:
             logger.error(f"Failed to load preset from library: {e}")
         finally:
             # Allow retrying the same preset after either success or failure.

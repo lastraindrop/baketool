@@ -137,7 +137,7 @@ class BakeModalOperator:
                 step = self.bake_queue[self.current_step_idx]
                 self._process_single_step(context, step)
 
-            except Exception as e:
+            except (AttributeError, RuntimeError, TypeError, ValueError) as e:
                 self._handle_step_error(context, e)
 
             self.current_step_idx += 1
@@ -230,7 +230,7 @@ class BakeModalOperator:
                 else:
                     try:
                         bpy.ops.wm.save_mainfile()
-                    except Exception as e:
+                    except (RuntimeError, AttributeError) as e:
                         logger.error(f"BakeNexus: save_mainfile failed before quit: {e}")
                 bpy.ops.wm.quit_blender()
 

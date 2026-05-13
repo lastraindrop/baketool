@@ -6,7 +6,6 @@ job management, target selection, channel configuration, and result inspection.
 
 import bpy
 import os
-import json
 from typing import Any, Tuple
 from bpy.app.translations import pgettext
 from .constants import (
@@ -282,6 +281,7 @@ def draw_crash_report(layout: bpy.types.UILayout, context: bpy.types.Context) ->
 
         if isinstance(crash_data, str):
             try:
+                import json
                 data = json.loads(crash_data)
             except json.JSONDecodeError:
                 return

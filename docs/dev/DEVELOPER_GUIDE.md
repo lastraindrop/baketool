@@ -111,6 +111,31 @@ for hp_obj in high_polys:
 
 **规则**：任何 `bpy.ops.object.bake` 调用的 `target` 参数必须经过 `compat.get_bake_target()`，禁止硬编码 `"IMAGE_TEXTURES"`。
 
+### 2.4 全局状态封装 (Global State Encapsulation)
+Google Python Style Guide §3.5 要求避免模块级可变状态。BakeNexus 采用 Registry 模式：
+
+```python
+# __init__.py
+class _RegistryState:
+    def __init__(self):
+        self.classes_to_register: list = []
+        self.addon_keymaps: list = []
+
+registry = _RegistryState()
+```
+
+所有 `register()` / `unregister()` 操作通过 `registry.classes_to_register` 和 `registry.addon_keymaps` 访问。`thumbnail_manager.py` 中的 `preview_collections` 字典同样已改为模块私有 `_preview_collections`，通过函数 API 访问。
+
+### 2.5 异常安全策略 (Exception Safety)
+- 禁止 bare `except:`，必须显式指定异常类型。
+- `except Exception` 仅允许在顶层 `main()` 入口使用，核心逻辑中必须收紧。
+- `finally` 块中的异常必须捕获。
+- 具体类型建议：
+  - Blender API 操作：`(AttributeError, RuntimeError, ReferenceError)`
+  - 文件操作：`(OSError, IOError, PermissionError)`
+  - JSON 操作：`(json.JSONDecodeError, OSError)`
+  - 子进程操作：`(subprocess.TimeoutExpired, OSError)`
+
 ## 3. 测试与验证策略 (Testing Strategy)
 
 ### 3.1 跨版本自动化

@@ -160,7 +160,7 @@ class BAKETOOL_OT_RunDevTests(bpy.types.Operator):
             return completed.returncode == 0, f"Isolated audit finished without report: {tail}"
         except subprocess.TimeoutExpired:
             return False, f"Safety audit timed out after {cls._SUBPROCESS_TIMEOUT_SECONDS}s."
-        except Exception as exc:
+        except (subprocess.TimeoutExpired, OSError, json.JSONDecodeError) as exc:
             logger.exception("Failed to launch isolated BakeNexus safety audit")
             return False, f"Safety audit launch failed: {exc}"
         finally:
@@ -747,7 +747,7 @@ class BAKETOOL_OT_ExportResult(bpy.types.Operator):
             img.file_format = self._get_format_from_path(self.filepath)
             img.save()
             self.report({"INFO"}, f"Exported {img.name} to {self.filepath}")
-        except Exception as e:
+        except (RuntimeError, OSError) as e:
             self.report({"ERROR"}, f"Export failed: {e}")
             return {"CANCELLED"}
         finally:
@@ -758,7 +758,6 @@ class BAKETOOL_OT_ExportResult(bpy.types.Operator):
         return {"FINISHED"}
 
     def _get_format_from_path(self, path: str) -> str:
-        import os
         ext = os.path.splitext(path)[1].lower()
         format_map = {
             ".png": "PNG",
@@ -827,7 +826,7 @@ class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):
                 img.file_format = target_fmt
                 img.save()
                 success_count += 1
-            except Exception as e:
+            except (OSError, RuntimeError) as e:
                 logger.error(f"Failed to export {img.name}: {e}")
                 error_count += 1
             finally:
@@ -853,7 +852,7 @@ class BAKETOOL_OT_ManageObjects(bpy.types.Operator):
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         bj = context.scene.BakeJobs
-        if not bj.jobs:
+        if not bj.jobs or bj.job_index < 0 or bj.job_index >= len(bj.jobs):
             return {"CANCELLED"}
         job = bj.jobs[bj.job_index]
 
@@ -878,7 +877,7 @@ class BAKETOOL_OT_SaveSetting(bpy.types.Operator, ExportHelper):
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         bj = context.scene.BakeJobs
-        if not bj.jobs:
+        if not bj.jobs or bj.job_index < 0 or bj.job_index >= len(bj.jobs):
             return {"CANCELLED"}
         job = bj.jobs[bj.job_index]
 

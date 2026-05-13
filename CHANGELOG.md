@@ -28,6 +28,16 @@
 - bare `except` 子句清零（17→0）。
 - 全部 4 个 Phase 通过跨版本回归验证（5 个 Blender 版本，各 158 测试）。
 
+#### Phase 5: 发布前最终加固 / Pre-release Final Hardening
+- **异常安全大幅提升**：全项目 18 处 `except Exception` 收紧为具体异常类型，覆盖 `core/engine.py`、`core/execution.py`、`ops.py`、`property.py`、`automation/*.py` 等 9 个文件。
+- **全局状态封装**：`__init__.py` 引入 `_RegistryState` 类封装模块级可变状态；`thumbnail_manager.py` 的 `preview_collections` 改为模块私有 `_preview_collections`。
+- **上下文管理统一**：`save_image` 和 `bake_node_to_image` 改用 `SceneSettingsContext` 管理场景设置，消除手动恢复。
+- **CI 修复**：verify job 改用 heredoc 避免 YAML 缩进歧义。
+- **类型标注**：`api.validate_settings` 返回类型 `Any` → `ValidationResult`；`compat.get_bake_settings` 返回类型 `Optional[Any]` → `object`。
+- **命名一致性**：`cleanup.py` operator 前缀统一为 `baketool.`。
+- **代码清理**：重复 import 删除、CHANGELOG 格式修复、translations.py 模块 docstring 补全、constants.py license 占位符替换。
+- **文档同步**：更新 ROADMAP.md、TECHNICAL_GUIDE.md、DEVELOPER_GUIDE.md、STYLE_GUIDE_ANALYSIS.md，确保发布前文档一致。
+
 ---
 
 ## 1.0.0 - 2026-05-13
@@ -64,7 +74,9 @@
 
 ---
 
-## 1.0.0 - 2026-05-09## 1.0.0 - 2026-05-08
+## 1.0.0 - 2026-05-09
+
+## 1.0.0 - 2026-05-08
 
 
 ---

@@ -141,9 +141,15 @@ def get_classes():
     return classes
 
 
-classes_to_register = []  # Will be populated during register()
+class _RegistryState:
+    """Encapsulates mutable module-level state for safe register/unregister."""
 
-addon_keymaps = []
+    def __init__(self):
+        self.classes_to_register: list = []
+        self.addon_keymaps: list = []
+
+
+registry = _RegistryState()
 
 
 def menu_func_quick_bake(self, context):
@@ -152,10 +158,9 @@ def menu_func_quick_bake(self, context):
 
 
 def register():
-    global classes_to_register
-    classes_to_register = get_classes()
+    registry.classes_to_register = get_classes()
 
-    for cls in classes_to_register:
+    for cls in registry.classes_to_register:
         bpy.utils.register_class(cls)
 
     bpy.types.Object.bake_map_index = props.IntProperty(
@@ -212,7 +217,7 @@ def register():
         km = kc.keymaps.new(name="Object Mode")
         kmi = km.keymap_items.new("wm.call_panel", "B", "PRESS", ctrl=True, shift=True)
         kmi.properties.name = "BAKE_PT_BakePanel"
-        addon_keymaps.append((km, kmi))
+        registry.addon_keymaps.append((km, kmi))
     # 制作翻译 // Create translations
     # Register all loaded languages using the package name as the context/domain
     bpy.app.translations.register(__name__, translations.translation_dict)
@@ -223,9 +228,9 @@ def unregister():
     bpy.app.translations.unregister(__name__)
 
     # 2. Keymaps
-    for km, kmi in addon_keymaps:
+    for km, kmi in registry.addon_keymaps:
         km.keymap_items.remove(kmi)
-    addon_keymaps.clear()
+    registry.addon_keymaps.clear()
 
     # 3. Handlers
     preset_handler.AutoLoadHandler.unregister()
@@ -265,7 +270,7 @@ def unregister():
         del bpy.types.Scene.baketool_crash_data_cache
 
     # 6. Classes (Registered first, unregister last)
-    for cls in reversed(classes_to_register):
+    for cls in reversed(registry.classes_to_register):
         bpy.utils.unregister_class(cls)
 
     # Cleanup Previews (Side effect)

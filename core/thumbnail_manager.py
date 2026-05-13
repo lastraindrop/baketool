@@ -3,30 +3,28 @@ import bpy
 import logging
 from pathlib import Path
 
-preview_collections = {}
+_preview_collections = {}
 
 _HAS_PREVIEWS = hasattr(bpy.utils, "previews")
 
 
 def get_preview_collection(name="main"):
     """Get or create a preview collection."""
-    global preview_collections
-    if name not in preview_collections:
+    if name not in _preview_collections:
         if _HAS_PREVIEWS:
             pcoll = bpy.utils.previews.new()
         else:
             pcoll = _PreviewCollectionPlaceholder(name)
-        preview_collections[name] = pcoll
-    return preview_collections[name]
+        _preview_collections[name] = pcoll
+    return _preview_collections[name]
 
 
 def clear_preview_collection(name="main"):
     """Clear a specific preview collection."""
-    global preview_collections
-    if name in preview_collections:
+    if name in _preview_collections:
         if _HAS_PREVIEWS:
-            bpy.utils.previews.remove(preview_collections[name])
-        del preview_collections[name]
+            bpy.utils.previews.remove(_preview_collections[name])
+        del _preview_collections[name]
 
 
 def load_preset_thumbnails(directory):
@@ -48,7 +46,7 @@ def load_preset_thumbnails(directory):
     for f in directory.glob("*.png"):
         try:
             pcoll.load(f.stem, str(f.resolve()), "IMAGE")
-        except Exception as e:
+        except (OSError, RuntimeError, AttributeError) as e:
             logger.warning(f"Failed to load preset icon {f.name}: {e}")
 
 
@@ -63,11 +61,10 @@ def get_icon_id(name):
 
 def clear_all_previews():
     """Clear all preview collections."""
-    global preview_collections
     if _HAS_PREVIEWS:
-        for pcoll in preview_collections.values():
+        for pcoll in _preview_collections.values():
             bpy.utils.previews.remove(pcoll)
-    preview_collections.clear()
+    _preview_collections.clear()
 
 
 class _PreviewCollectionPlaceholder:

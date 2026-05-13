@@ -85,6 +85,8 @@ class RuntimeJobSettingProxy:
         self.active_object = override_active
 
     def __getattr__(self, name):
+        if "_orig" not in self.__dict__:
+            raise AttributeError(name)
         return getattr(self._orig, name)
 
 
@@ -102,6 +104,8 @@ class RuntimeJobProxy:
         self.custom_bake_channels = original_job.custom_bake_channels
 
     def __getattr__(self, name):
+        if "_orig" not in self.__dict__:
+            raise AttributeError(name)
         return getattr(self._orig, name)
 
 
@@ -213,7 +217,7 @@ class BakePostProcessor:
 
                         image.pixels.foreach_set(viewer_img.pixels)
                         image.update()
-                    except Exception as e:
+                    except (AttributeError, RuntimeError) as e:
                         logger.error(
                             f"Failed to write back denoised pixels: {e}"
                         )
@@ -1170,7 +1174,7 @@ class BakePassExecutor:
             with SceneSettingsContext("bake", bake_settings, scene=scene):
                 bpy.ops.object.bake(**params)
             return True
-        except Exception as e:
+        except (RuntimeError, AttributeError, TypeError, ValueError) as e:
             from .common import log_error
             log_error(context, f"Bake Error {chan_id}: {e}", include_traceback=True)
             return False
@@ -1575,5 +1579,5 @@ class ModelExporter:
                             )
                 except (ReferenceError, AttributeError):
                     pass
-        except Exception as e:
+        except (ReferenceError, AttributeError, RuntimeError) as e:
             logger.error(f"Failed to restore state: {e}")

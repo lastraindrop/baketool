@@ -44,65 +44,62 @@ def bake_node_to_image(
 
     img = set_image(f"{material.name}_{node.name}", settings.res_x, settings.res_y)
 
-    # Store original engine
-    orig_engine = context.scene.render.engine
-    context.scene.render.engine = "CYCLES"
+    from .common import SceneSettingsContext
 
     try:
-        with safe_context_override(context, context.active_object):
-            with NodeGraphHandler([material]) as h:
-                tree = material.node_tree
-                out = next(
-                    (
-                        n
-                        for n in tree.nodes
-                        if n.bl_idname == "ShaderNodeOutputMaterial"
-                        and n.is_active_output
-                    ),
-                    None,
-                )
-                if out:
-                    emi = h._add_node(
-                        material,
-                        "ShaderNodeEmission",
-                        location=(out.location.x - 200, out.location.y),
+        with SceneSettingsContext("scene", {"engine": "CYCLES"}, scene=context.scene):
+            with safe_context_override(context, context.active_object):
+                with NodeGraphHandler([material]) as h:
+                    tree = material.node_tree
+                    out = next(
+                        (
+                            n
+                            for n in tree.nodes
+                            if n.bl_idname == "ShaderNodeOutputMaterial"
+                            and n.is_active_output
+                        ),
+                        None,
                     )
-                    tree.links.new(node.outputs[0], emi.inputs[0])
-                    tree.links.new(emi.outputs[0], out.inputs[0])
-
-                    # Use compatibility layer for bake settings
-                    compat.set_bake_type(context.scene, "EMIT")
-
-                    bpy.ops.object.bake(
-                        type="EMIT",
-                        margin=settings.margin,
-                        use_clear=True,
-                        target=compat.get_bake_target(),
-                    )
-
-                    if settings.use_external_save:
-                        save_image(
-                            img,
-                            settings.external_save_path,
-                            file_format=settings.image_settings.external_save_format,
-                            color_depth=settings.image_settings.color_depth,
-                            color_mode=settings.image_settings.color_mode,
-                            quality=settings.image_settings.quality,
-                            exr_code=settings.image_settings.exr_code,
-                            tiff_codec=settings.image_settings.tiff_codec,
+                    if out:
+                        emi = h._add_node(
+                            material,
+                            "ShaderNodeEmission",
+                            location=(out.location.x - 200, out.location.y),
                         )
-                    else:
-                        img.pack()
+                        tree.links.new(node.outputs[0], emi.inputs[0])
+                        tree.links.new(emi.outputs[0], out.inputs[0])
 
-        return img
+                        # Use compatibility layer for bake settings
+                        compat.set_bake_type(context.scene, "EMIT")
+
+                        bpy.ops.object.bake(
+                            type="EMIT",
+                            margin=settings.margin,
+                            use_clear=True,
+                            target=compat.get_bake_target(),
+                        )
+
+                        if settings.use_external_save:
+                            save_image(
+                                img,
+                                settings.external_save_path,
+                                file_format=settings.image_settings.external_save_format,
+                                color_depth=settings.image_settings.color_depth,
+                                color_mode=settings.image_settings.color_mode,
+                                quality=settings.image_settings.quality,
+                                exr_code=settings.image_settings.exr_code,
+                                tiff_codec=settings.image_settings.tiff_codec,
+                            )
+                        else:
+                            img.pack()
+
+            return img
     except (AttributeError, KeyError, ReferenceError) as e:
         logger.exception(f"Node baking failed: {e}")
         return None
     except RuntimeError as e:
         logger.error(f"Bake operation failed: {e}")
         return None
-    finally:
-        context.scene.render.engine = orig_engine
 
 
 class NodeGraphHandler:

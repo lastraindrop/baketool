@@ -85,74 +85,67 @@ core/shading.py: apply_baked_result 消费通道映射
 
 ---
 
-## 6. 代码审核发现的强化实践 (Hardening Practices from Code Review)
+## 7. 全局状态与模块级可变状态 (Global State Management)
 
-### 6.1 上下文注入 (Context Injection)
-所有需要 `bpy.context` 的函数都应支持可选的 `context` 参数，避免在头模式或无激活场景时崩溃：
+为符合 Google Python Style Guide §3.5，BakeNexus 对模块级可变状态进行了封装：
 
-```python
-# 推荐模式
-def bake(objects=None, use_selection=True, context=None):
-    ctx = context if context is not None else bpy.context
-    # ...
-```
-
-**适用场景**：`core/api.py:bake()`、`core/engine.py:BakePostProcessor.apply_denoise()`、`core/uv_manager.py:_apply_smart_uv()`
-
-### 6.2 依赖图求值优化
-`bpy.context.evaluated_depsgraph_get()` 是全场景求值操作，成本高昂。在循环体内调用相当于 N 次全场景求值：
+### 7.1 Registry Pattern（`__init__.py`）
 
 ```python
-# 错误：N 高模 = N 次全场景求值
-for hp_obj in high_polys:
-    depsgraph = bpy.context.evaluated_depsgraph_get()
+class _RegistryState:
+    def __init__(self):
+        self.classes_to_register: list = []
+        self.addon_keymaps: list = []
 
-# 正确：求值一次，多次使用
-depsgraph = bpy.context.evaluated_depsgraph_get()
-for hp_obj in high_polys:
-    ...
+registry = _RegistryState()
 ```
 
-### 6.3 错误日志防膨胀
-`bake_error_log` 是 `StringProperty`，无限制追加会导致场景内存无限增长。采用滚动窗口：
+所有 `register()` / `unregister()` 操作通过 `registry.classes_to_register` 和 `registry.addon_keymaps` 访问，避免模块级 `global` 声明和多次注册/注销时的残留风险。
+
+### 7.2 Private Module State（`thumbnail_manager.py`）
 
 ```python
-if len(log) > max_log:
-    log = log[-max_log // 2:]
-context.scene.bake_error_log = log + f"{message}\n"
+_preview_collections = {}  # 模块私有，通过函数 API 访问
 ```
 
-### 6.4 资源保护
-- **保护镜像 GC 预防**：临时 `DUMMY_IMG` 创建时设置 `use_fake_user = True`，防止在节点引用建立前被垃圾回收
-- **预览材质崩溃恢复**：`RestorePreviewMaterialsHandler` 在 `load_post` 时扫描 `_bt_orig_mat_name` 自定义属性，自动恢复原始材质
-- **降噪渲染安全**：`apply_denoise` 使用 `try/finally` 确保 `BT_Denoise_Temp` 场景在渲染失败时被清理
-
-### 6.5 CI 管道有效性
-CI 必须能够真实反映项目质量，不能有静默通过的环节：
-
-1. **verify job 必须解析 JSON 报告**：逐文件检查 `failures > 0 or errors > 0`，发现失败则返回非零退出码
-2. **lint 不能使用 `|| true`**：lint 失败应阻断合并
-3. **跨平台路径分隔符**：`multi_version_test.py` 中使用 `os.pathsep` 替代硬编码 `";"`
+外部代码通过 `get_preview_collection()` / `clear_all_previews()` 函数接口操作，而非直接修改字典。
 
 ---
 
-## 6. 跨版本兼容性设计 (Cross-Version Compatibility)
+## 8. 异常安全策略 (Exception Safety)
 
-BakeNexus 支持从 Blender 3.3 LTS 到 5.0+ 的所有主流版本：
+BakeNexus 遵循以下异常处理原则：
 
-### 6.1 Blender 5.0 适配
-- **合成器 (Compositor)**：B5.0 移除了 `CompositorNodeComposite`。系统自动识别 B5.0 并切换至 `NodeGroupOutput`，同时适配了 `compositing_node_group` 新属性。
-- **GPU 资源管理**：B5.0 移除了 `image.gl_free()`。系统在 `BakeModalOperator` 的 GC 管道中自动检测并安全跳过，同时保留 `buffers_free()` 以释放内存。
+1. **禁止 bare `except:`**：必须显式指定可捕获的异常类型。
+2. **`except Exception` 仅用于顶层入口**（如 `main()` 函数），核心逻辑中必须收紧：
+   - Blender API 操作：`(AttributeError, RuntimeError, ReferenceError)`
+   - 文件操作：`(OSError, IOError, PermissionError)`
+   - JSON 操作：`(json.JSONDecodeError, OSError)`
+   - 子进程操作：`(subprocess.TimeoutExpired, OSError)`
+3. **`finally` 块中的异常必须捕获**（`finally` 中抛异常会覆盖原始异常）。
+4. **`KeyboardInterrupt` 和 `SystemExit` 永远不捕获**。
 
-### 6.2 动态枚举 (Dynamic Enums)
-Blender 4.2+ 对 `EnumProperty` 的回调函数要求更严格。我们通过返回完整的 5 元组（含 ID 整数）来确保 UI 列表在所有版本中的渲染与索引稳定性。
+当前状态：全项目 0 个 bare `except`，0 个 `except Exception` 在生产代码核心路径中。
 
-### 6.3 Bake Target 集中管理
-`bpy.ops.object.bake` 的 `target` 参数通过 `compat.get_bake_target()` 集中管理，未来版本变更时只需修改一个函数：
+---
 
-```python
-# core/compat.py
-def get_bake_target() -> str:
-    """Return version-appropriate bake target string."""
-    return "IMAGE_TEXTURES"
+## 9. 参数传递路径图 (Parameter Flow)
+
 ```
+property.py (RNA 定义)
+    ↓
+ui.py 通过 CHANNEL_UI_LAYOUT 渲染属性
+    ↓
+engine.py: JobPreparer / BakePassExecutor 消费属性
+    → _handle_save / _execute_blender_bake_op
+    ↓
+image_manager.py: save_image 使用图像格式参数 (通过 SceneSettingsContext)
+core/shading.py: apply_baked_result 消费通道映射
+```
+
+### 9.1 一致性关键规则
+
+- **`folder_name` 传递规则**：优先 `s.folder_name if s.create_new_folder else task.folder_name`
+- **动态枚举默认值**：`items` 为回调函数的 `EnumProperty` 必须使用整数默认值
+- **降噪场景清理**：`apply_denoise` 使用 `context` 参数 + `temp_override`，`finally` 块确保临时场景删除
+- **save_image 上下文安全**：所有场景渲染设置修改通过 `SceneSettingsContext` 管理，而非直接操作 `bpy.context.scene.render`

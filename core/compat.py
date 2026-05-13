@@ -61,17 +61,8 @@ def is_extension() -> bool:
     return pkg.startswith("bl_ext")
 
 
-def get_bake_settings(scene: bpy.types.Scene) -> Optional[Any]:
-    """Get the bake settings object in a version-safe way.
-
-    Blender 4.0+ moved/added bake settings into scene.render.bake.
-
-    Args:
-        scene: The target Blender scene.
-
-    Returns:
-        The bake settings object or None if not available.
-    """
+def get_bake_settings(scene: bpy.types.Scene) -> object:
+    """Get the bake settings object in a version-safe way."""
     if hasattr(scene.render, "bake"):
         return scene.render.bake
     return scene.render

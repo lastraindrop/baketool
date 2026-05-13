@@ -42,13 +42,13 @@ class SuiteCleanup(unittest.TestCase):
         from baketool.core import thumbnail_manager
         # Ensure a collection exists
         thumbnail_manager.get_preview_collection("test_leak")
-        self.assertIn("test_leak", thumbnail_manager.preview_collections)
+        self.assertIn("test_leak", thumbnail_manager._preview_collections)
 
         # Unregister
         baketool.unregister()
 
         # Check collections are gone
-        self.assertEqual(len(thumbnail_manager.preview_collections), 0, "All preview collections should be cleared on unregister")
+        self.assertEqual(len(thumbnail_manager._preview_collections), 0, "All preview collections should be cleared on unregister")
 
         # Restore for other tests
         baketool.register()

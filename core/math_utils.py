@@ -406,5 +406,5 @@ class TexelDensityCalculator:
 
             return (resolution * total_uv_area) / world_area
 
-        except Exception:
+        except (AttributeError, RuntimeError, ValueError):
             return 0.0

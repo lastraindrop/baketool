@@ -1,3 +1,9 @@
+"""Translation data loading for BakeNexus.
+
+Loads the translations.json file and converts it into the format expected
+by Blender's translation system for UI internationalization.
+"""
+
 import json
 from pathlib import Path
 import logging

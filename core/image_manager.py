@@ -53,7 +53,7 @@ def _resolve_color_space_name(
         # (e.g., Blender 5.0+ removed this path), fall back gracefully.
         cs_props = bpy.types.ColorManagedInputColorspaceSettings.bl_rna.properties["name"]
         valid_names = {item.identifier for item in cs_props.enum_items}
-    except Exception:
+    except (AttributeError, RuntimeError, KeyError):
         valid_names = set()
 
     for candidate in candidates:
@@ -487,41 +487,23 @@ def save_image(
         return None
     abs_path = str(filepath.resolve())
 
-    # H-05: Set format settings via scene render settings
-    render = bpy.context.scene.render
-    s = render.image_settings
-
-    old_fmt = s.file_format
-    old_depth = s.color_depth
-    old_mode = s.color_mode
-    old_quality = s.quality
-    old_exr = s.exr_codec
-    old_tiff = s.tiff_codec
+    from .common import SceneSettingsContext
 
     try:
-        s.file_format = file_format
-        s.color_depth = color_depth
-        s.color_mode = color_mode
-        s.quality = quality
-        s.exr_codec = exr_code
-        s.tiff_codec = tiff_codec
-
-        # We also set it on image for consistency, though image.save()
-        # is heavily dependent on scene settings for the details.
-        image.filepath_raw = abs_path
-        image.file_format = file_format
-        image.save()
+        with SceneSettingsContext("image", {
+            "file_format": file_format,
+            "color_depth": color_depth,
+            "color_mode": color_mode,
+            "quality": quality,
+            "exr_codec": exr_code,
+            "tiff_codec": tiff_codec,
+        }):
+            image.filepath_raw = abs_path
+            image.file_format = file_format
+            image.save()
     except (OSError, RuntimeError, AttributeError) as e:
         logger.error(f"Save failed: {e}")
         return None
-    finally:
-        # Restore original scene settings
-        s.file_format = old_fmt
-        s.color_depth = old_depth
-        s.color_mode = old_mode
-        s.quality = old_quality
-        s.exr_codec = old_exr
-        s.tiff_codec = old_tiff
 
 
     if not motion and reload:

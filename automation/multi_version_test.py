@@ -102,7 +102,7 @@ def get_blender_version(path):
             [path, "--version"], capture_output=True, text=True, check=True
         )
         return res.stdout.splitlines()[0]
-    except Exception:
+    except (OSError, subprocess.TimeoutExpired):
         return "Unknown Version"
 
 
@@ -219,7 +219,7 @@ def run_tests_on_blender(
             "failure_reason": "timeout",
             "report": None,
         }
-    except Exception as e:
+    except (subprocess.TimeoutExpired, OSError) as e:
         return {
             "success": False,
             "stdout": "",

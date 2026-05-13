@@ -32,7 +32,7 @@ def ensure_addon_registered():
     except ValueError:
         # Already registered but Blender state was partially initialized.
         pass
-    except Exception as exc:
+    except (ValueError, RuntimeError) as exc:
         print(f"Error: Failed to register BakeNexus addon: {exc}")
         return False
 
@@ -100,7 +100,7 @@ def main():
         print(f"[{i+1}/{len(queue)}] Baking: {base_name}")
         try:
             runner.run(step, queue_idx=i)
-        except Exception as exc:
+        except (RuntimeError, AttributeError) as exc:
             failed_steps += 1
             print(f"[{i+1}/{len(queue)}] FAILED: {exc}")
 

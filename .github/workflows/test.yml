@@ -93,7 +93,7 @@ jobs:
 
       - name: Check Results
         run: |
-          python -c "
+          python << 'PYEOF'
 import json, os, sys
 reports_dir = 'reports'
 if not os.path.exists(reports_dir):
@@ -119,7 +119,7 @@ for rf in sorted(report_files):
     if fails > 0 or errors > 0:
         exit_code = 1
 sys.exit(exit_code)
-"
+PYEOF
 
   lint:
     runs-on: ubuntu-latest

@@ -1,6 +1,4 @@
-# ##### BEGIN GPL LICENSE BLOCK #####
-# (GPL License header...)
-# ##### END GPL LICENSE BLOCK #####
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 """Enum definitions, channel metadata, UI layout config, and system constants."""
 

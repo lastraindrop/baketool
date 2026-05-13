@@ -37,7 +37,7 @@ def log_cleanup_detail(message: str) -> None:
 class BAKETOOL_OT_EmergencyCleanup(bpy.types.Operator):
     """Clean up temporary data left behind after a crash or interrupted bake."""
 
-    bl_idname = "bake.emergency_cleanup"
+    bl_idname = "baketool.emergency_cleanup"
     bl_label = "Clean Up Bake Junk"
     bl_options = {"REGISTER"}
 
