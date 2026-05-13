@@ -1,10 +1,12 @@
+
+"""Blender version compatibility layer tests."""
 import unittest
 import bpy
 from ..core import compat
 
 class SuiteCompat(unittest.TestCase):
     """Verifies version compatibility layer and API stability."""
-    
+
     def test_version_detection_consistency(self):
         """Ensure compat functions match bpy.app.version."""
         v = bpy.app.version

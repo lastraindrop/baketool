@@ -5,8 +5,7 @@ Verifies the fixes applied during the code review process.
 
 import unittest
 import bpy
-import uuid
-from .helpers import cleanup_scene, create_test_object, JobBuilder, MockSetting
+from .helpers import cleanup_scene
 
 
 class SuiteCodeReviewFixes(unittest.TestCase):
@@ -131,7 +130,7 @@ class SuiteCodeReviewFixes(unittest.TestCase):
             logger.setLevel(original_level)
 
         log_content = log_capture.getvalue()
-        warning_lines = [l for l in log_content.strip().split('\n') if l]
+        warning_lines = [line for line in log_content.strip().split('\n') if line]
         unique_warnings = set(warning_lines)
         self.assertEqual(
             len(warning_lines), len(unique_warnings),

@@ -2,6 +2,8 @@
 # (GPL License header...)
 # ##### END GPL LICENSE BLOCK #####
 
+"""Enum definitions, channel metadata, UI layout config, and system constants."""
+
 # --- UI Enum Definitions (Used in property.py) ---
 
 JOB_TYPES = [

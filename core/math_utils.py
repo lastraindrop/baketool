@@ -1,9 +1,10 @@
+"""Math utilities: NumPy pixel ops, PBR conversion, BVH cage proximity."""
 import bpy
 import bmesh
 import numpy as np
 import colorsys
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 from mathutils.bvhtree import BVHTree
 from ..constants import SYSTEM_NAMES
 

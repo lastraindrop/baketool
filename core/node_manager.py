@@ -7,7 +7,7 @@ links, and providing protection for non-active materials.
 
 import bpy
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional
 
 from ..constants import BSDF_COMPATIBILITY_MAP, SOCKET_DEFAULT_TYPE, SYSTEM_NAMES
 from . import compat
@@ -120,10 +120,10 @@ class NodeGraphHandler:
 
     Attributes:
         materials (List[bpy.types.Material]): Active materials being managed.
-        session_nodes (Dict): Temporary texture and emission nodes per material.
-        temp_logic_nodes (Dict): List of other temporary logic nodes per material.
-        temp_attributes (List): Temporary vertex attributes created for ID maps.
-        original_links (Dict): Snapshot of node links before modification.
+        session_nodes (dict): Temporary texture and emission nodes per material.
+        temp_logic_nodes (dict): List of other temporary logic nodes per material.
+        temp_attributes (list): Temporary vertex attributes created for ID maps.
+        original_links (dict): Snapshot of node links before modification.
     """
 
     def __init__(self, materials: List[bpy.types.Material]):
@@ -144,8 +144,8 @@ class NodeGraphHandler:
         for mat in self.materials:
             tree = mat.node_tree
             links_data = []  # List of (from_socket, to_socket) pairs
-            for l in tree.links:
-                links_data.append((l.from_socket, l.to_socket))
+            for link in tree.links:
+                links_data.append((link.from_socket, link.to_socket))
             self.original_links[mat] = links_data
 
         self._prepare_session_nodes()
@@ -200,7 +200,7 @@ class NodeGraphHandler:
                 continue
             tree = mat.node_tree
 
-            # HI-08: Surgical link restoration instead of full clear if possible, 
+            # HI-08: Surgical link restoration instead of full clear if possible,
             # but for simplicity and reliability of BSDF redirection, we use clear with protection.
             try:
                 tree.links.clear()
@@ -227,9 +227,11 @@ class NodeGraphHandler:
 
         # 4. Explicitly remove the protection dummy image
         d = bpy.data.images.get(SYSTEM_NAMES["DUMMY_IMG"])
-        if d and d.users == 0:
+        if d:
             try:
-                bpy.data.images.remove(d)
+                d.use_fake_user = False
+                if d.users == 0:
+                    bpy.data.images.remove(d)
             except (ReferenceError, RuntimeError):
                 pass
 

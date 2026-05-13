@@ -1,15 +1,17 @@
+
+"""Parametric channel and naming matrix tests."""
 import unittest
 import bpy
 from pathlib import Path
 from .helpers import cleanup_scene, create_test_object, JobBuilder
-from ..constants import BAKE_MODES, BAKE_TYPES, BASIC_FORMATS
+from ..constants import BAKE_MODES, BAKE_TYPES
 
 class SuiteParameterMatrix(unittest.TestCase):
     """
     Exhaustive validation of all parameter combinations.
     Ensures that for any Mode/Type/Format, the system can generate a valid queue.
     """
-    
+
     def setUp(self):
         cleanup_scene()
         self.obj = create_test_object("MatrixCube")
@@ -20,10 +22,10 @@ class SuiteParameterMatrix(unittest.TestCase):
     def test_exhaustive_queue_generation(self):
         """Matrix test for [Mode] x [Type] x [Format] queue generation."""
         from ..core.engine import JobPreparer
-        
+
         # We test a subset of formats to keep it fast, but all modes and types
         test_formats = ['PNG', 'JPEG', 'OPEN_EXR']
-        
+
         for mode_id, _, _, _ in BAKE_MODES:
             for type_id, _, _, _ in BAKE_TYPES:
                 for fmt in test_formats:
@@ -33,13 +35,13 @@ class SuiteParameterMatrix(unittest.TestCase):
                         builder = JobBuilder(f"Job_{mode_id}_{type_id}")
                         builder.mode(mode_id).type(type_id).save_to(str(tmp_path), format=fmt)
                         builder.add_objects(self.obj)
-                        
+
                         if mode_id == 'SELECT_ACTIVE':
                             builder.setting.active_object = self.obj
-                        
+
                         job = builder.build()
                         queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
-                        
+
                         # Assertions
                         self.assertGreater(len(queue), 0, f"Failed to generate queue for {mode_id}/{type_id}")
                         for step in queue:
@@ -52,7 +54,7 @@ class SuiteParameterMatrix(unittest.TestCase):
         """Verify naming consistency across all NAMING_MODES."""
         from ..core.common import get_safe_base_name
         from ..constants import NAMING_MODES
-        
+
         mat = self.obj.data.materials[0]
         for name_mode, _, _ in NAMING_MODES:
             with self.subTest(policy=name_mode):
@@ -60,19 +62,21 @@ class SuiteParameterMatrix(unittest.TestCase):
                 builder.setting.name_setting = name_mode
                 name = get_safe_base_name(builder.setting, self.obj, mat)
                 self.assertIsNotNone(name)
-                if name_mode == 'OBJECT': self.assertEqual(name, self.obj.name)
-                if name_mode == 'MAT': self.assertEqual(name, mat.name)
+                if name_mode == 'OBJECT':
+                    self.assertEqual(name, self.obj.name)
+                if name_mode == 'MAT':
+                    self.assertEqual(name, mat.name)
 
     def test_no_material_object_graceful_skip(self):
         """Verify that objects without materials are gracefully skipped during queue generation."""
         from ..core.engine import JobPreparer
         obj_no_mat = create_test_object("NoMat")
         obj_no_mat.data.materials.clear()
-        
+
         builder = JobBuilder("NoMatJob")
         builder.mode('SINGLE_OBJECT').resolution(16).add_objects(obj_no_mat)
         job = builder.build()
-        
+
         queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
         self.assertEqual(len(queue), 0)
 

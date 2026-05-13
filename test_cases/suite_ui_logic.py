@@ -1,9 +1,10 @@
+
+"""UI panel visibility and operator integrity tests."""
 import unittest
 from unittest import mock
 import bpy
 from .helpers import cleanup_scene, create_test_object
-from ..ui import BAKE_PT_BakePanel
-from ..constants import UI_MESSAGES, FORMAT_SETTINGS
+from ..constants import UI_MESSAGES
 
 try:
     from ..ui import (

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""AST-based translation extraction, audit, and sync tool."""
 from __future__ import annotations
 
 import argparse
@@ -132,6 +133,8 @@ def _string_from_node(node):
 
 
 class TranslationExtractor(ast.NodeVisitor):
+    """AST visitor that collects human-facing translatable strings from Python source."""
+
     def __init__(self):
         self.strings = set()
 

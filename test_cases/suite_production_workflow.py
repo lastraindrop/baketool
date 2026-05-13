@@ -1,3 +1,5 @@
+
+"""End-to-end production workflow tests."""
 import unittest
 import bpy
 import os
@@ -24,10 +26,10 @@ class SuiteProductionWorkflow(unittest.TestCase):
 
     def setUp(self):
         cleanup_scene()
-        
+
     def tearDown(self):
         cleanup_scene()
-        
+
     def test_full_pipeline_execution(self):
         """
         [E2E] Run complete bake loops for major architectures.
@@ -46,40 +48,40 @@ class SuiteProductionWorkflow(unittest.TestCase):
             # We skip it for 3.3 in E2E to achieve stable CI signaling for production-ready core.
             if mode == 'UDIM' and bpy.app.version < (3, 4, 0):
                 continue
-                
+
             with self.subTest(mode=mode):
                 with assert_no_leak(self):
                     cleanup_scene() # Fresh start
-                    
+
                     # 1. Setup Scene Data
                     obj = create_test_object(name, color=(1, 0, 0, 1), mat_count=mat_count)
                     objs = [obj]
-                    
+
                     if mode == 'SELECT_ACTIVE':
                         high = create_test_object(f"{name}_High", location=(0,0,0.1), color=(0, 1, 0, 1))
                         objs = [high] # High poly is the source
-                    
+
                     # 2. Build Job
                     builder = JobBuilder(name)
                     builder.mode(mode).type('BASIC').resolution(32)
                     builder.add_objects(objs)
                     builder.save_to(self.temp_dir, format='PNG')
-                    
+
                     if mode == 'UDIM':
                         builder.setting.use_udim = True
-                    
+
                     builder.setting.name_setting = 'CUSTOM'
                     builder.setting.custom_name = name
-                    
+
                     if mode == 'SELECT_ACTIVE':
                         builder.setting.active_object = obj # Low poly is target
-                        
+
                     job = builder.build()
-                    
+
                     # 3. Prepare & Execute Engine
                     queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
                     self.assertGreater(len(queue), 0, f"Preparation failed for {mode}")
-                    
+
                     runner = BakeStepRunner(bpy.context)
                     for i, step in enumerate(queue):
                         results = runner.run(step, queue_idx=i)
@@ -90,12 +92,12 @@ class SuiteProductionWorkflow(unittest.TestCase):
                     # 4. Final Assertions
                     scene = bpy.context.scene
                     self.assertGreater(len(scene.baked_image_results), 0, "No result added to UI list")
-                    
+
                     res = scene.baked_image_results[-1]
                     self.assertEqual(res.res_x, 32)
                     self.assertIsNotNone(res.image, "Baked image is None")
                     self.assertTrue(res.duration > 0, "Duration was not tracked")
-                    
+
                     # File existence check
                     abs_path = bpy.path.abspath(res.filepath)
                     if "<UDIM>" in abs_path:
@@ -103,10 +105,10 @@ class SuiteProductionWorkflow(unittest.TestCase):
                         self.assertTrue(found, f"UDIM tiles not found on disk: {res.filepath}")
                     else:
                         self.assertTrue(os.path.exists(abs_path), f"File not found on disk: {res.filepath}")
-                    
+
                     if mode != 'SELECT_ACTIVE':
                         self.assertIn(name, res.image.name)
-                    
+
                     # Ensure cleanup happens BEFORE checking for leaks
                     cleanup_scene()
 
@@ -124,35 +126,35 @@ class SuiteProductionWorkflow(unittest.TestCase):
                     builder.save_to(self.temp_dir, format=fmt)
                     builder.enable_channel('diff')
                     job = builder.build()
-                    
+
                     queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
                     runner = BakeStepRunner(bpy.context)
                     for i, step in enumerate(queue):
                         runner.run(step, queue_idx=i)
-                    
+
                     files = os.listdir(self.temp_dir)
                     ext_map = {'PNG': '.png', 'JPEG': '.jpg', 'OPEN_EXR': '.exr', 'TIFF': '.tif'}
                     target_ext = ext_map.get(fmt, '.png')
                     found = any(f.endswith(target_ext) or f.endswith(target_ext + 'f') for f in files)
                     self.assertTrue(found, f"Output file for format {fmt} not generated. Dir contents: {files}")
-                    
+
                     # Cleanup WITHIN the leak context to avoid false positives
                     cleanup_scene()
-                    
+
     def test_denoise_integration_trigger(self):
         """Verify that use_denoise=True triggers the denoise post-processor."""
         from ..core.engine import BakePostProcessor
-        
+
         call_count = 0
         original_apply = BakePostProcessor.apply_denoise
-        
-        def mock_apply(image, **kwargs):
+
+        def mock_apply(context, image, **kwargs):
             nonlocal call_count
             call_count += 1
-            return original_apply(image, **kwargs)
-            
+            return original_apply(context, image, **kwargs)
+
         BakePostProcessor.apply_denoise = mock_apply
-        
+
         try:
             with assert_no_leak(self):
                 cleanup_scene()
@@ -162,14 +164,14 @@ class SuiteProductionWorkflow(unittest.TestCase):
                 builder.denoise(True)
                 builder.enable_channel('diff')
                 job = builder.build()
-                
+
                 queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
                 runner = BakeStepRunner(bpy.context)
                 for i, step in enumerate(queue):
                     runner.run(step, queue_idx=i)
-                
+
                 self.assertGreater(call_count, 0, "BakePostProcessor.apply_denoise was NOT called despite use_denoise=True")
-                
+
                 cleanup_scene()
         finally:
             BakePostProcessor.apply_denoise = original_apply
@@ -181,19 +183,19 @@ class SuiteProductionWorkflow(unittest.TestCase):
             addon_utils.enable("io_scene_gltf2")
         except Exception:
             self.skipTest("GLTF2 addon not available in this environment")
-        
+
         if not hasattr(bpy.ops.export_scene, "gltf"):
             self.skipTest("GLTF export operator not available")
-        
+
         with self.subTest("GLB_Export_Textures"):
             with assert_no_leak(self):
                 cleanup_scene()
                 obj = create_test_object("GLB_Export_Test", color=(0, 0, 1, 1), mat_count=1)
-                
+
                 builder = JobBuilder("Job_GLB")
                 builder.mode('SINGLE_OBJECT').type('BASIC').resolution(16)
                 builder.add_objects([obj])
-                
+
                 # Setup specific export flags
                 s = builder.setting
                 s.use_external_save = True
@@ -204,23 +206,23 @@ class SuiteProductionWorkflow(unittest.TestCase):
                 s.export_textures_with_model = True
                 s.create_new_folder = False
                 s.name_setting = 'OBJECT' # Force consistent filename for test assertion
-                
+
                 builder.enable_channel('diff')
                 job = builder.build()
-                
+
                 queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
                 runner = BakeStepRunner(bpy.context)
                 for i, step in enumerate(queue):
                     runner.run(step, queue_idx=i)
-                
+
                 # Verify export existence
                 expected_filepath = os.path.join(self.temp_dir, "GLB_Export_Test.glb")
                 self.assertTrue(os.path.exists(expected_filepath), "GLB File was not exported!")
-                
+
                 # Check size to ensure it's not a tiny mesh without textures (typically > 300 bytes)
                 size = os.path.getsize(expected_filepath)
                 self.assertGreater(size, 200, "GLB File seems too small to contain a mesh + embedded PBR textures")
-                
+
                 # Also verify the original object did NOT get a baked material since apply_to_scene=False
                 mat_name = obj.material_slots[0].material.name if obj.material_slots else ""
                 self.assertNotIn("Baked", mat_name, "Original object was polluted despite apply_to_scene=False!")
@@ -238,18 +240,18 @@ class SuiteProductionWorkflow(unittest.TestCase):
             builder.folder("my_subfolder")
             builder.enable_channel('diff')
             job = builder.build()
-            
+
             queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
             runner = BakeStepRunner(bpy.context)
             for i, step in enumerate(queue):
                 runner.run(step, queue_idx=i)
-            
+
             subfolder_path = os.path.join(self.temp_dir, "my_subfolder")
             self.assertTrue(os.path.isdir(subfolder_path), f"Subfolder was not created: {subfolder_path}")
-            
+
             files = os.listdir(subfolder_path)
             self.assertGreater(len(files), 0, f"No files found in subfolder: {subfolder_path}")
-            
+
             cleanup_scene()
 
     def test_crash_recovery_resilience(self):
@@ -257,7 +259,7 @@ class SuiteProductionWorkflow(unittest.TestCase):
             from ..state_manager import BakeStateManager
             mgr = BakeStateManager()
             mgr.finish_session()
-        
+
         # 写入格式不正确的日志文件，验证读取时不会崩溃
         import json
         mgr._write({'invalid': 'data', 'status': 'CORRUPTED'})
@@ -278,29 +280,29 @@ class SuiteProductionWorkflow(unittest.TestCase):
             builder.mode('SINGLE_OBJECT').resolution(16)
             builder.add_objects([obj])
             builder.save_to(self.temp_dir)
-            
+
             s = builder.setting
             s.bake_motion = True
             s.bake_motion_use_custom = True
             s.bake_motion_start = 1
-            s.bake_motion_last = 2 
+            s.bake_motion_last = 2
             s.bake_motion_digit = 4
             s.bake_motion_separator = '_'
-            
+
             builder.enable_channel('diff')
             job = builder.build()
-            
+
             queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
             self.assertEqual(len(queue), 2)
-            
+
             runner = BakeStepRunner(bpy.context)
             for i, step in enumerate(queue):
                 runner.run(step, queue_idx=i)
-            
+
             files = os.listdir(self.temp_dir)
             self.assertTrue(any("0001" in f for f in files), f"Frame 1 not found: {files}")
             self.assertTrue(any("0002" in f for f in files), f"Frame 2 not found: {files}")
-            
+
             cleanup_scene()
 
     def test_split_material_3_mats_e2e(self):
@@ -314,18 +316,18 @@ class SuiteProductionWorkflow(unittest.TestCase):
             builder.save_to(self.temp_dir)
             builder.enable_channel('diff')
             job = builder.build()
-            
+
             queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
             self.assertEqual(len(queue), 3)
-            
+
             runner = BakeStepRunner(bpy.context)
             for i, step in enumerate(queue):
                 runner.run(step, queue_idx=i)
-            
+
             # Precise search: only match files starting with SplitObj_Mat_SplitObj and containing 'color'
             files = [f for f in os.listdir(self.temp_dir) if "color" in f.lower() and f.startswith("SplitObj_Mat_SplitObj")]
             self.assertEqual(len(files), 3, f"Expected 3 color files for Split Material, found: {files}. Total in dir: {os.listdir(self.temp_dir)}")
-            
+
             cleanup_scene()
 
     def test_library_material_protection_skip(self):
@@ -339,7 +341,7 @@ class SuiteProductionWorkflow(unittest.TestCase):
                     h.setup_protection()
             except Exception as e:
                 self.fail(f"NodeGraphHandler protection failed: {e}")
-            
+
             cleanup_scene()
 
 if __name__ == '__main__':

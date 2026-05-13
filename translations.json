@@ -404,13 +404,6 @@
             "ru_RU": "Автоматически переключать в режим раскраски вершин",
             "zh_CN": "自动切换到顶点绘制"
         },
-        "Auto UV": {
-            "en_US": "Auto UV",
-            "fr_FR": "UV automatique",
-            "ja_JP": "自動UV",
-            "ru_RU": "Авто UV",
-            "zh_CN": "自动 UV"
-        },
         "Auto-Apply": {
             "en_US": "Auto-Apply",
             "fr_FR": "Application automatique",
@@ -1076,6 +1069,13 @@
             "ru_RU": "Удалить все",
             "zh_CN": "删除所有"
         },
+        "Denoise": {
+            "en_US": "Denoise",
+            "fr_FR": "Débruitage",
+            "ja_JP": "ノイズ除去",
+            "ru_RU": "Шумоподавление",
+            "zh_CN": "降噪"
+        },
         "Denoise (OIDN)": {
             "en_US": "Denoise (OIDN)",
             "fr_FR": "Débruitage (OIDN)",
@@ -1258,12 +1258,12 @@
             "ru_RU": "Экспортировать все",
             "zh_CN": "导出所有"
         },
-        "Export Bake Settings": {
-            "en_US": "Export Bake Settings",
-            "fr_FR": "Exporter les paramètres de bake",
-            "ja_JP": "ベイク設定をエクスポート",
-            "ru_RU": "Экспортировать настройки запекания",
-            "zh_CN": "导出烘焙设置"
+        "Export Bake Nexus Settings": {
+            "en_US": "Export Bake Nexus Settings",
+            "fr_FR": "Exporter les paramètres Bake Nexus",
+            "ja_JP": "Bake Nexus 設定をエクスポート",
+            "ru_RU": "Экспортировать настройки Bake Nexus",
+            "zh_CN": "导出 Bake Nexus 设置"
         },
         "Export Mesh": {
             "en_US": "Export Mesh",
@@ -1299,6 +1299,13 @@
             "ja_JP": "テクスチャ付きでエクスポート",
             "ru_RU": "Экспортировать с текстурами",
             "zh_CN": "连同贴图导出"
+        },
+        "Bind Textures": {
+            "en_US": "Bind Textures",
+            "fr_FR": "Lier les textures",
+            "ja_JP": "テクスチャを割り当て",
+            "ru_RU": "Привязать текстуры",
+            "zh_CN": "绑定贴图"
         },
         "Ext": {
             "en_US": "Ext",
@@ -1369,6 +1376,20 @@
             "ja_JP": "フレーム桁数",
             "ru_RU": "Разрядность кадра",
             "zh_CN": "帧位数"
+        },
+        "Digits": {
+            "en_US": "Digits",
+            "fr_FR": "Chiffres",
+            "ja_JP": "桁数",
+            "ru_RU": "Разряды",
+            "zh_CN": "位数"
+        },
+        "Frames": {
+            "en_US": "Frames",
+            "fr_FR": "Images",
+            "ja_JP": "フレーム",
+            "ru_RU": "Кадры",
+            "zh_CN": "帧"
         },
         "GLB": {
             "en_US": "GLB",
@@ -1461,12 +1482,12 @@
             "ru_RU": "Импорт",
             "zh_CN": "导入"
         },
-        "Import Bake Settings": {
-            "en_US": "Import Bake Settings",
-            "fr_FR": "Importer les paramètres de bake",
-            "ja_JP": "ベイク設定をインポート",
-            "ru_RU": "Импортировать настройки запекания",
-            "zh_CN": "导入烘焙设置"
+        "Import Bake Nexus Settings": {
+            "en_US": "Import Bake Nexus Settings",
+            "fr_FR": "Importer les paramètres Bake Nexus",
+            "ja_JP": "Bake Nexus 設定をインポート",
+            "ru_RU": "Импортировать настройки Bake Nexus",
+            "zh_CN": "导入 Bake Nexus 设置"
         },
         "Ind": {
             "en_US": "Ind",
@@ -1616,7 +1637,11 @@
             "zh_CN": "任务 '{}' 已跳过：无有效的网格目标。"
         },
         "Job '{}' skipped: Objects not in current View Layer: {}": {
-            "en_US": "Job '{}' skipped: Objects not in current View Layer: {}"
+            "en_US": "Job '{}' skipped: Objects not in current View Layer: {}",
+            "fr_FR": "Job '{}' ignoré : objets absents du View Layer actuel : {}",
+            "ja_JP": "ジョブ '{}' をスキップ: 現在のビューレイヤーにないオブジェクト: {}",
+            "ru_RU": "Задача '{}' пропущена: объекты отсутствуют в текущем View Layer: {}",
+            "zh_CN": "任务 '{}' 已跳过：物体不在当前视图层中：{}"
         },
         "Job Name": {
             "en_US": "Job Name",
@@ -1869,13 +1894,6 @@
             "ja_JP": "命名",
             "ru_RU": "Именование",
             "zh_CN": "命名"
-        },
-        "Naming:": {
-            "en_US": "Naming:",
-            "fr_FR": "Nommage:",
-            "ja_JP": "命名:",
-            "ru_RU": "Именование:",
-            "zh_CN": "命名:"
         },
         "New Folder": {
             "en_US": "New Folder",
@@ -2668,6 +2686,13 @@
             "ru_RU": "Разделитель",
             "zh_CN": "分隔符"
         },
+        "Sep": {
+            "en_US": "Sep",
+            "fr_FR": "Sép.",
+            "ja_JP": "区切り",
+            "ru_RU": "Разд.",
+            "zh_CN": "分隔"
+        },
         "Settings Suffix": {
             "en_US": " Settings",
             "fr_FR": " - paramètres",
@@ -3080,6 +3105,13 @@
             "ja_JP": "UDIMモード",
             "ru_RU": "Режим UDIM",
             "zh_CN": "UDIM 模式"
+        },
+        "UDIM": {
+            "en_US": "UDIM",
+            "fr_FR": "UDIM",
+            "ja_JP": "UDIM",
+            "ru_RU": "UDIM",
+            "zh_CN": "UDIM"
         },
         "UDIM Tile": {
             "en_US": "UDIM Tile",

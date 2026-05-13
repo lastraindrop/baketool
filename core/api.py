@@ -6,17 +6,16 @@ scripts and other add-ons to interact with BakeNexus programmatically.
 """
 import bpy
 import logging
-from typing import Optional, List
+from typing import Any, Optional, List
 from .engine import JobPreparer, BakeStepRunner
-from .common import ValidationResult
 from .uv_manager import detect_object_udim_tile
 
 logger = logging.getLogger(__name__)
 
 def bake(
-    objects: Optional[List] = None,
+    objects: Optional[List[bpy.types.Object]] = None,
     use_selection: bool = True,
-    context: Optional = None
+    context: Optional[bpy.types.Context] = None,
 ) -> bool:
     """
     Main entry point for programmatic baking.
@@ -71,14 +70,17 @@ def bake(
     return True
 
 
-def get_udim_tiles(objects):
+def get_udim_tiles(objects: List[bpy.types.Object]) -> List[int]:
     """Returns a list of unique UDIM tiles used by the given objects."""
     tiles = set()
     for obj in objects:
         tiles.add(detect_object_udim_tile(obj))
     return sorted(list(tiles))
 
-def validate_settings(job, context=None):
+def validate_settings(
+    job: Any, context: Optional[bpy.types.Context] = None
+) -> Any:
     """Programmatically validate a BakeJob's settings."""
+    from .common import ValidationResult
     ctx = context if context is not None else bpy.context
     return JobPreparer.validate_job(job, ctx.scene, ctx.view_layer)

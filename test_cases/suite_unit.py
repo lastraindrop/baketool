@@ -1,3 +1,5 @@
+
+"""Core unit tests for engine and math utilities."""
 import unittest
 import bpy
 import numpy as np
@@ -7,9 +9,8 @@ from .helpers import (
     JobBuilder,
     ensure_cycles,
     MockSetting,
-    DataLeakChecker,
 )
-from ..core import image_manager, uv_manager, math_utils, common, compat
+from ..core import image_manager, uv_manager, math_utils, common
 from ..core.engine import BakePassExecutor, BakeStepRunner, BakeTask
 from ..core.node_manager import NodeGraphHandler
 
@@ -86,7 +87,7 @@ class SuiteUnit(unittest.TestCase):
         )
 
         self.assertIsNotNone(new_obj)
-        
+
         # Verify collection logic (Baked_Results)
         found_in_coll = False
         if "Baked_Results" in bpy.data.collections:

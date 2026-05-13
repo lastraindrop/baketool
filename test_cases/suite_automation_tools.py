@@ -1,3 +1,5 @@
+
+"""Automation tool integration tests."""
 import os
 import tempfile
 import unittest

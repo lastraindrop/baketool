@@ -1,3 +1,4 @@
+"""Core bake engine: context, execution, pass orchestration, and model export."""
 import bpy
 import logging
 import time
@@ -13,7 +14,6 @@ from .common import (
     safe_context_override,
     SceneSettingsContext,
     apply_baked_result,
-    reset_channels_logic,
 )
 from .image_manager import set_image, save_image
 from .math_utils import (
@@ -34,7 +34,6 @@ from ..constants import (
     CHANNEL_BAKE_INFO,
     CHANNEL_MESH_TYPE_MAP,
     DATA_BAKE_FORCE_SINGLE_SAMPLE,
-    DEFAULT_BAKE_TARGET,
     SYSTEM_NAMES,
 )
 from . import compat
@@ -171,7 +170,7 @@ class BakePostProcessor:
             comp_type = "CompositorNodeComposite"
             if compat.is_blender_5():
                 comp_type = "NodeGroupOutput"
-            
+
             n_comp = nodes.new(comp_type)
 
             links.new(n_img.outputs[0], n_denoise.inputs[0])
@@ -181,12 +180,18 @@ class BakePostProcessor:
             n_viewer = nodes.new("CompositorNodeViewer")
             links.new(n_denoise.outputs[0], n_viewer.inputs[0])
 
+            if tmp_scene.camera is None:
+                cam_data = bpy.data.cameras.new("BT_Denoise_Camera")
+                cam_obj = bpy.data.objects.new("BT_Denoise_Camera", cam_data)
+                tmp_scene.collection.objects.link(cam_obj)
+                tmp_scene.camera = cam_obj
+
             # 3. Execute "render" to process pixels
             # Safety: use provided context override
             override = context.copy()
             override["scene"] = tmp_scene
             with context.temp_override(**override):
-                bpy.ops.render.render()
+                bpy.ops.render.render(scene=tmp_scene.name)
 
             viewer_img = bpy.data.images.get(SYSTEM_NAMES["VIEWER_IMG"])
             if not viewer_img:
@@ -422,7 +427,7 @@ class BakeStepRunner:
         return path
 
     def _handle_channel_packing(
-        self, s: Any, task: BakeTask, baked_images: Dict[str, bpy.types.Image], 
+        self, s: Any, task: BakeTask, baked_images: Dict[str, bpy.types.Image],
         f_info: Optional[Dict], array_cache: Dict
     ) -> Optional[Dict]:
         """Internal helper to pack multiple channels into one image.
@@ -1301,12 +1306,14 @@ class BakePassExecutor:
 
     @classmethod
     def get_result_key(cls, c_config):
+        """Return the storage key for a channel's baked result."""
         if c_config["id"] == "CUSTOM":
             return f"{cls.CUSTOM_SOURCE_PREFIX}{c_config['name']}"
         return c_config["id"]
 
     @classmethod
     def normalize_source_id(cls, source_id, current_results=None):
+        """Resolve a channel source ID, handling the custom channel prefix."""
         if not source_id:
             return "NONE"
         if source_id.startswith(cls.CUSTOM_SOURCE_PREFIX):
@@ -1385,6 +1392,7 @@ class BakePassExecutor:
 
     @staticmethod
     def get_udim_configuration(setting, objects):
+        """Return sorted UDIM tile list for the bake mode, or None if not a UDIM bake."""
         if setting.bake_mode != "UDIM":
             return None
         if setting.udim_mode == "DETECT":
@@ -1453,7 +1461,7 @@ class ModelExporter:
                 pass
 
             export_obj, is_temp = ModelExporter._prepare_export_obj(context, obj, setting)
-            
+
             bpy.ops.object.select_all(action="DESELECT")
             export_obj.select_set(True)
             context.view_layer.objects.active = export_obj
@@ -1505,7 +1513,7 @@ class ModelExporter:
     def _execute_format_export(abs_filepath: str, setting: Any) -> None:
         fmt = setting.export_format
         use_tex = getattr(setting, "export_textures_with_model", True)
-        
+
         if fmt == "FBX":
             if hasattr(bpy.ops.export_scene, "fbx"):
                 path_mode = "COPY" if use_tex else "AUTO"

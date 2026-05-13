@@ -1,3 +1,4 @@
+"""Shared utilities for baking: context management, material creation, validation."""
 import bpy
 import logging
 import traceback
@@ -6,8 +7,8 @@ from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Tuple
 from ..constants import (
     BAKE_CHANNEL_INFO,
+    CHANNEL_BAKE_INFO,
     BSDF_COMPATIBILITY_MAP,
-    SOCKET_DEFAULT_TYPE,
     APPLY_RESULT_CHANNEL_MAP,
     SYSTEM_NAMES,
 )

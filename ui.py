@@ -279,7 +279,7 @@ def draw_crash_report(layout: bpy.types.UILayout, context: bpy.types.Context) ->
     if has_crash and crash_data:
         # T-02: Use translated messages for crash report
         msg_check = bpy.app.translations.pgettext("Check this object's UV/Mesh complexity")
-        
+
         if isinstance(crash_data, str):
             try:
                 data = json.loads(crash_data)
@@ -471,7 +471,7 @@ def draw_env_status(layout: bpy.types.UILayout, setting: Any) -> None:
         is_valid = bool(path) and os.path.exists(path)
         if setting.path_valid != is_valid:
             setting.path_valid = is_valid
-        
+
         if not setting.path_valid:
             box = layout.box()
             box.alert = True
@@ -501,11 +501,11 @@ class BAKE_PT_NodePanel(bpy.types.Panel):
 
     def draw(self, context: bpy.types.Context) -> None:
         """Draw the node-specific bake options."""
-        l = self.layout
+        layout = self.layout
         bj = context.scene.BakeJobs
         nbs = bj.node_bake_settings
 
-        b = l.box()
+        b = layout.box()
         draw_header(b, "Res & Save", "PREFERENCES")
 
         r = b.row(align=True)
@@ -517,7 +517,7 @@ class BAKE_PT_NodePanel(bpy.types.Panel):
             draw_file_path(b, nbs, "external_save_path", 2)
             draw_image_format_options(b, nbs.image_settings, "")
 
-        l.operator("baketool.selected_node_bake", text="Bake Node", icon="RENDER_STILL")
+        layout.operator("baketool.selected_node_bake", text="Bake Node", icon="RENDER_STILL")
 
 
 class BAKE_PT_BakePanel(bpy.types.Panel):
@@ -631,9 +631,9 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             row.scale_y = 2.0
             row.operator("baketool.execute", text="START BAKE PIPELINE", icon="PLAY")
 
-    def draw_inputs(self, context: bpy.types.Context, l: bpy.types.UILayout, bj: Any, s: Any) -> None:
+    def draw_inputs(self, context: bpy.types.Context, layout: bpy.types.UILayout, bj: Any, s: Any) -> None:
         """Draw Setup & Targets section."""
-        row = l.row(align=True)
+        row = layout.row(align=True)
         row.prop(
             bj,
             "open_inputs",
@@ -644,7 +644,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         if not bj.open_inputs:
             return
 
-        col = l.column(align=True)
+        col = layout.column(align=True)
         r = col.row(align=True)
         r.prop(s, "res_x", text="X")
         r.prop(s, "res_y", text="Y")
@@ -713,9 +713,9 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
                 icon="PIVOT_ACTIVE",
             ).action = "SMART_SET"
 
-    def draw_channels(self, context: bpy.types.Context, l: bpy.types.UILayout, bj: Any, s: Any) -> None:
+    def draw_channels(self, context: bpy.types.Context, layout: bpy.types.UILayout, bj: Any, s: Any) -> None:
         """Draw Bake Channels section."""
-        row = l.row(align=True)
+        row = layout.row(align=True)
         row.prop(
             bj,
             "open_channels",
@@ -726,7 +726,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         if not bj.open_channels:
             return
 
-        col = l.column(align=True)
+        col = layout.column(align=True)
         r = col.row(align=True)
         r.template_list(
             "BAKE_UL_ChannelList",
@@ -750,9 +750,9 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         r.prop(s, "use_mesh_map", text="Mesh", toggle=True)
         r.prop(s, "use_extension_map", text="PBR", toggle=True)
 
-    def draw_saves(self, context: bpy.types.Context, l: bpy.types.UILayout, bj: Any, s: Any) -> None:
+    def draw_saves(self, context: bpy.types.Context, layout: bpy.types.UILayout, bj: Any, s: Any) -> None:
         """Draw Output & Export section."""
-        row = l.row(align=True)
+        row = layout.row(align=True)
         row.prop(
             bj,
             "open_saves",
@@ -763,7 +763,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         if not bj.open_saves:
             return
 
-        col = l.column(align=True)
+        col = layout.column(align=True)
 
         # --- Common Job Settings (always visible) ---
         r = col.row(align=True)
@@ -845,9 +845,9 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         r.prop(s, "texel_density", text="Texel")
         r.prop(s, "auto_switch_vertex_paint", text="Auto-VP", toggle=True)
 
-    def draw_others(self, context: bpy.types.Context, l: bpy.types.UILayout, bj: Any, s: Any) -> None:
+    def draw_others(self, context: bpy.types.Context, layout: bpy.types.UILayout, bj: Any, s: Any) -> None:
         """Draw Custom Maps section."""
-        row = l.row(align=True)
+        row = layout.row(align=True)
         row.prop(
             bj,
             "open_other",
@@ -858,7 +858,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         if not bj.open_other:
             return
 
-        col = l.column(align=True)
+        col = layout.column(align=True)
         job_index = bj.job_index
         if job_index < 0 or job_index >= len(bj.jobs):
             job_index = 0

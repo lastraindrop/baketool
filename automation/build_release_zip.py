@@ -37,7 +37,6 @@ ROOT_FILES = [
 RECURSIVE_DIRS = {
     "core": "*.py",
     "test_cases": "*.py",
-    "dev_tools": "*.py",
 }
 
 AUTOMATION_FILES = [
@@ -59,12 +58,14 @@ DOC_FILES = [
 
 
 def load_manifest(addon_root: Path) -> dict:
+    """Load and parse the blender_manifest.toml from the addon root."""
     manifest_path = addon_root / "blender_manifest.toml"
     with manifest_path.open("rb") as handle:
         return tomllib.load(handle)
 
 
 def collect_files(addon_root: Path) -> list[Path]:
+    """Collect all files to include in the release ZIP, validating existence."""
     missing = [
         path
         for path in ROOT_FILES + DOC_FILES + AUTOMATION_FILES
@@ -98,6 +99,7 @@ def collect_files(addon_root: Path) -> list[Path]:
 
 
 def build_zip(addon_root: Path, output_path: Path, addon_dir_name: str | None = None) -> tuple[int, Path]:
+    """Build a clean release ZIP containing only runtime files."""
     if addon_dir_name is None:
         addon_dir_name = addon_root.name
     files = collect_files(addon_root)
@@ -116,6 +118,7 @@ def build_zip(addon_root: Path, output_path: Path, addon_dir_name: str | None = 
 
 
 def main() -> int:
+    """Entry point: parse args, build release ZIP from manifest metadata."""
     addon_root = Path(__file__).resolve().parent.parent
     manifest = load_manifest(addon_root)
     addon_id = manifest.get("id", addon_root.name)

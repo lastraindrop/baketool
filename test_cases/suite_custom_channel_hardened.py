@@ -1,3 +1,5 @@
+
+"""Custom channel source resolution tests."""
 import unittest
 import bpy
 import numpy as np
@@ -23,7 +25,7 @@ class SuiteCustomChannelHardened(unittest.TestCase):
         custom = job.custom_bake_channels.add()
         custom.name = "TestDefault"
         custom.bw = True
-        
+
         # Set a specific default value (e.g., 0.75 gray)
         custom.bw_settings.use_map = False
         custom.bw_settings.default_value = 0.75
@@ -35,7 +37,7 @@ class SuiteCustomChannelHardened(unittest.TestCase):
             base_name="DefaultTest",
             folder_name="",
         )
-        
+
         c_config = {
             "id": "CUSTOM",
             "name": custom.name,
@@ -60,7 +62,7 @@ class SuiteCustomChannelHardened(unittest.TestCase):
         self.assertIsNotNone(img)
         arr = np.empty(img.size[0] * img.size[1] * 4, dtype=np.float32)
         img.pixels.foreach_get(arr)
-        
+
         # All pixels should be 0.75 (R, G, B)
         self.assertAlmostEqual(arr[0], 0.75, places=2)
         self.assertAlmostEqual(arr[1], 0.75, places=2)
@@ -120,25 +122,25 @@ class SuiteCustomChannelHardened(unittest.TestCase):
     def test_custom_channel_self_reference_filter(self):
         """Verify that a custom channel cannot select itself as a source."""
         from ..property import get_channel_source_items
-        
+
         job = JobBuilder("SelfRefJob").build()
         c1 = job.custom_bake_channels.add()
         c1.name = "Channel_A"
-        
+
         c2 = job.custom_bake_channels.add()
         c2.name = "Channel_B"
-        
+
         # Test context for EnumProperty
         # In Blender, when get_channel_source_items is called, 'self' is the PropertyGroup
-        
+
         # Case 1: Checking items for Channel_A's settings
         # We simulate the call by passing c1.bw_settings as 'self'
         items = get_channel_source_items(c1.bw_settings, bpy.context)
-        
+
         item_names = [it[1] for it in items]
         self.assertIn("Channel_B", item_names)
         self.assertNotIn("Channel_A", item_names, "Channel_A should be filtered out from its own source list")
-        
+
         # Case 2: Checking items for Channel_B's settings
         items_b = get_channel_source_items(c2.bw_settings, bpy.context)
         item_names_b = [it[1] for it in items_b]

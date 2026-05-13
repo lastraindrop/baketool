@@ -1,3 +1,4 @@
+"""BVH-based cage overlap analysis for selected-to-active baking."""
 import bpy
 import bmesh
 from mathutils.bvhtree import BVHTree

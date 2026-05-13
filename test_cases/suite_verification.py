@@ -1,3 +1,5 @@
+
+"""Release-critical regression verification tests."""
 import unittest
 import bpy
 import tracemalloc
@@ -30,11 +32,11 @@ class SuiteVerification(unittest.TestCase):
         from ..core import image_manager
         img = image_manager.set_image("Verify_DeleteImg", 64, 64)
         img_name = img.name
-        
+
         res = bpy.context.scene.baked_image_results.add()
         res.image = img
         bpy.context.scene.baked_image_results_index = len(bpy.context.scene.baked_image_results) - 1
-        
+
         self.assertIn(img_name, bpy.data.images)
         # Use string operator call to avoid static import dependency
         bpy.ops.baketool.delete_result()
@@ -43,19 +45,20 @@ class SuiteVerification(unittest.TestCase):
     def test_fix_numpy_memory_optimization(self):
         """[FIX] Verify memory-efficient clearing of large images."""
         from ..core import image_manager
-        img = image_manager.set_image("Verify_4K", 2048, 2048) 
+        img = image_manager.set_image("Verify_4K", 2048, 2048)
         tracemalloc.start()
         image_manager._physical_clear_pixels(img, (0.5, 0.5, 0.5, 1.0))
         _, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
-        
+
         peak_mb = peak / 1024 / 1024
         self.assertLess(peak_mb, 100, f"Peak memory usage too high: {peak_mb:.2f}MB")
 
     def test_fix_ui_poll_safety(self):
         """[FIX] Verify that UI poll functions handle None space_data."""
         from ..ui import BAKE_PT_NodePanel
-        class MockContext: pass
+        class MockContext:
+            pass
         ctx = MockContext()
         # Should return False instead of crashing with AttributeError
         self.assertFalse(BAKE_PT_NodePanel.poll(ctx))

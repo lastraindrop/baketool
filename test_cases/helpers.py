@@ -1,4 +1,5 @@
 import bpy
+from contextlib import contextmanager
 
 
 def ensure_object_mode():
@@ -260,9 +261,6 @@ class DataLeakChecker:
                 leaks.append(f"{key}: {initial} -> {current} (New: {new_ids})")
 
         return leaks
-
-
-from contextlib import contextmanager
 
 
 @contextmanager

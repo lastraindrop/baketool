@@ -1,6 +1,8 @@
+
+"""Viewport preview material tests."""
 import unittest
 import bpy
-from .helpers import cleanup_scene, create_test_object, ensure_cycles, assert_no_leak, MockSetting
+from .helpers import cleanup_scene, create_test_object, ensure_cycles, MockSetting
 from ..core import shading
 
 class SuiteShading(unittest.TestCase):
@@ -8,7 +10,7 @@ class SuiteShading(unittest.TestCase):
     Tests for core/shading.py.
     Verifies preview material creation, application, and restoration.
     """
-    
+
     @classmethod
     def setUpClass(cls):
         ensure_cycles()
@@ -26,7 +28,7 @@ class SuiteShading(unittest.TestCase):
         mat = shading.create_preview_material(self.obj, ms)
         self.assertIsInstance(mat, bpy.types.Material)
         self.assertTrue(mat.use_nodes)
-        
+
         # Verify specific nodes exist
         nodes = mat.node_tree.nodes
         has_combine = any(n.bl_idname in {'ShaderNodeCombineColor', 'ShaderNodeCombineRGB'} for n in nodes)
@@ -37,13 +39,13 @@ class SuiteShading(unittest.TestCase):
         ms = MockSetting(pack_r='color', pack_g='rough', pack_b='metal')
         orig_mat = self.obj.material_slots[0].material
         orig_name = orig_mat.name
-        
+
         # 1. Apply
         shading.apply_preview(self.obj, ms)
         new_mat = self.obj.data.materials[0]
         self.assertNotEqual(new_mat.name, orig_name)
         self.assertEqual(self.obj["_bt_orig_mat_name"], orig_name)
-        
+
         # 2. Remove
         shading.remove_preview(self.obj)
         restored_mat = self.obj.data.materials[0]
@@ -57,9 +59,9 @@ class SuiteShading(unittest.TestCase):
         shading.apply_preview(self.obj, ms)
         # The preview material name is BT_Packing_Preview (PREVIEW_MAT_NAME)
         self.assertIn(shading.PREVIEW_MAT_NAME, bpy.data.materials)
-        
+
         # Unlink from object before removal to ensure 0 users
-        self.obj.data.materials.clear() 
+        self.obj.data.materials.clear()
         shading.remove_preview(self.obj)
         self.assertNotIn(shading.PREVIEW_MAT_NAME, bpy.data.materials)
 
@@ -68,7 +70,7 @@ class SuiteShading(unittest.TestCase):
         ms = MockSetting()
         shading.apply_preview(self.obj, ms)
         initial_preview = self.obj.data.materials[0].name
-        
+
         shading.apply_preview(self.obj, ms)
         self.assertEqual(self.obj.data.materials[0].name, initial_preview)
 
@@ -76,7 +78,7 @@ class SuiteShading(unittest.TestCase):
         """Verify objects without materials are handled safely."""
         obj_no_mat = create_test_object("NoMatObj")
         obj_no_mat.data.materials.clear()
-        
+
         try:
             shading.apply_preview(obj_no_mat, "NoMatPreview")
         except Exception as e:

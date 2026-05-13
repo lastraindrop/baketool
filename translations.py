@@ -24,16 +24,16 @@ def load_translations():
 
     # Blender expects: {locale: { (context, src): dest, ... } }
     # Our JSON is: { src: { locale: dest, ... } }
-    
+
     translations_map = {}
 
     raw_data = data.get("data", {})
-    
+
     for src_text, locales in raw_data.items():
         for locale, dest_text in locales.items():
             if locale not in translations_map:
                 translations_map[locale] = {}
-            
+
             # Register for all contexts ("*") and Operator context as fallback
             # Blender uses ("*", src) for general UI
             translations_map[locale][("*", src_text)] = dest_text

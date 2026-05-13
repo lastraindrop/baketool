@@ -1,3 +1,4 @@
+"""Preset serialization, migration, auto-load, and crash cache handlers."""
 import bpy
 import json
 import logging

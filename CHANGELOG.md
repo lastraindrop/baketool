@@ -2,6 +2,34 @@
 
 本文件记录 BakeNexus 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
+## 1.0.0 - 2026-05-14
+### 正式发布前代码风格系统整肃 / Pre-release Code Style Overhaul
+
+#### Phase 1: 自动修复与 import 清理 / Automated Cleanup & Import Sanitation
+- **空白字符批量清除**：修复 196 处空白行空格 (W293)、23 处行末空格 (W291)、2 处缺失 EOF 换行 (W292)、10 处缩进错误 (E111/E117)。
+- **40 个未使用 import 删除**：涵盖全部生产代码 (`ops.py`、`core/*.py`、`automation/*.py`) 和测试代码。
+- **发现并修复两个潜伏 Bug**：`core/common.py` 中 `reset_channels_logic` 依赖未导入的 `BAKE_CHANNEL_INFO`；`core/thumbnail_manager.py` 中 Blender 4.2+ 已移除的 `bpy.utils.previews` API 增加降级守卫。
+
+#### Phase 2: 命名规范与多语句修复 / Naming & Multi-Statement Fixes
+- **E741 (ambiguous `l` 变量) 全清除**：`ui.py` 中 5 处 `l = self.layout` → `layout`；`node_manager.py` `l` → `link`；`suite_api.py` `l` → `loop`；`suite_code_review.py` `l` → `line`；`suite_memory.py` `l` → `entry`。
+- **E701/E702 全清除**：`headless_bake.py`、`suite_api.py`、`suite_parameter_matrix.py`、`suite_verification.py` 中的 6 处单行多语句拆分为多行。
+
+#### Phase 3: 文档补全 / Documentation Completion
+- **34 个模块 docstring 全部补全**：覆盖 `core/*.py`、`automation/*.py`、`dev_tools/*.py`、`test_cases/suite_*.py` 和 `property.py`/`preset_handler.py` 等关键文件。
+- **关键类/函数 docstring 补全**：`BakeJobs`、`BakeJobSetting`、`TranslationExtractor`、`build_release_zip.py` 全部函数、`multi_version_test.py` 核心函数、`BakeModalOperator`、`BakePassExecutor` 等。
+
+#### Phase 4: 类型标注强化 / Type Annotation Hardening
+- **公共 API 完整类型化**：`core/api.py`（`bake`、`get_udim_tiles`、`validate_settings`）、`core/execution.py`（`add_bake_result_to_ui`、`BakeModalOperator` 全部方法）。
+- **所有 Operator `execute()`/`invoke()` 返回类型验证**：全部已标注 `-> Set[str]`。
+- 类型覆盖率从 25% → 30.8%。
+
+#### 累计效果 / Cumulative Impact
+- pycodestyle 违规总数从 385 降至 97（-75%）。
+- bare `except` 子句清零（17→0）。
+- 全部 4 个 Phase 通过跨版本回归验证（5 个 Blender 版本，各 158 测试）。
+
+---
+
 ## 1.0.0 - 2026-05-13
 ### 发布前最终 Code Review 加固 / Pre-release Code Review Hardening
 

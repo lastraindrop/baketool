@@ -26,7 +26,17 @@
 - [x] `ROADMAP.md` 更新 v1.0.0 完成状态、短期计划和技术原则章节。
 - [x] `DEVELOPER_GUIDE.md` 新增 BakeContextManager 原子模式和临时节点隔离文档。
 
+### 4. 发布前代码风格整肃 (2026-05-14) ✅
+- [x] **Phase 1**: 空白字符清除 + 40 个未使用 import 删除 + 修复 2 个潜伏 bug。
+- [x] **Phase 2**: E741 (ambiguous `l`) 全清除 + E701/E702 全清除。
+- [x] **Phase 3**: 34 模块 docstring + 关键类/函数 docstring 补全。
+- [x] **Phase 4**: 公共 API 类型化 + operator 返回类型验证。
+- [x] pycodestyle 385 → 97（-75%）；跨版本 5/5 全部通过。
+
 ## [v1.1.x] 后续排队功能
+- [ ] Phase 5: 函数拆分（`BakeStepRunner.run` 129 行、`BakePassExecutor._run_blender_bake_pipeline`）。
+- [ ] Phase 6: CI 集成（`isort` + `ruff` + `mypy` incremental）。
+- [ ] 类型覆盖率目标 50%+（`core/common.py` + `core/engine.py`）。
 - [ ] 异步烘焙进度条改进。
 - [ ] 自动 UDIM 分页优化。
 - [ ] 更加智能的导出文件重命名规则。

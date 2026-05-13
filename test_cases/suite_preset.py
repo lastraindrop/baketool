@@ -1,7 +1,7 @@
+
+"""Preset serialization round-trip tests."""
 import unittest
 import bpy
-import os
-import tempfile
 from bpy import props
 from .helpers import cleanup_scene, create_test_object, JobBuilder, ensure_cycles
 from ..preset_handler import PropertyIO, load_preset_into_jobs_manager
@@ -224,7 +224,7 @@ class SuitePresetAndState(unittest.TestCase):
                 }
             }]
         }
-        
+
         try:
             io.from_dict(bj, data)
             job = next((j for j in bj.jobs if j.name == job_name), None)
@@ -244,7 +244,7 @@ class SuitePresetAndState(unittest.TestCase):
         data = io.to_dict(bj)
         bj.jobs.clear()
         io.from_dict(bj, data)
-        
+
         new_job = bj.jobs[0]
         new_ids = [c.id for c in new_job.setting.channels]
         # TB-2: Assert order is identical
@@ -272,7 +272,7 @@ class SuitePresetAndState(unittest.TestCase):
         io = PropertyIO()
         bj = bpy.context.scene.BakeJobs
         bj.jobs.clear()
-        
+
         # Trigger an error by passing garbage to a simple integer property
         corrupt_data = {"jobs": [{"setting": {"res_x": "NotAnInt"}}]}
         io.from_dict(bj, corrupt_data)

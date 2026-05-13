@@ -1,3 +1,5 @@
+
+"""Model and texture export safety tests."""
 import unittest
 import bpy
 import os

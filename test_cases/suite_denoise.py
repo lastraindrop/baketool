@@ -1,3 +1,5 @@
+
+"""Denoise post-processor compositor tests."""
 import unittest
 import bpy
 import os
@@ -20,7 +22,7 @@ class SuiteDenoise(unittest.TestCase):
     def test_denoise_compositor_setup(self):
         """Test HP-1: Verify compositor tree setup across versions (especially B5.0)."""
         img = bpy.data.images.new("TestDenoise", 128, 128)
-        
+
         # Test apply_denoise (will create temp scene internally)
         # Note: We can't easily check pixels in headless without a real render,
         # but we can verify the node structure logic doesn't crash.
@@ -28,13 +30,13 @@ class SuiteDenoise(unittest.TestCase):
             BakePostProcessor.apply_denoise(bpy.context, img)
         except Exception as e:
             self.fail(f"BakePostProcessor.apply_denoise failed: {e}")
-            
+
     def test_get_compositor_tree_persistence(self):
         """Test that get_compositor_tree correctly handles B5.0 scene.compositor."""
         scene = bpy.context.scene
         tree = compat.get_compositor_tree(scene)
         self.assertIsNotNone(tree, "Compositor tree should be accessible/creatable")
-        
+
         if compat.is_blender_5():
             # In B5.0+, the property was renamed to compositing_node_group
             self.assertTrue(hasattr(scene, "compositing_node_group"), "Blender 5.0 scene should have compositing_node_group property")

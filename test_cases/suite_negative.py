@@ -1,11 +1,12 @@
+
+"""Negative path and error handling tests."""
 import unittest
 from unittest import mock
 import bpy
 import os
 import tempfile
-from pathlib import Path
 from .helpers import cleanup_scene, create_test_object, JobBuilder, ensure_cycles, MockSetting
-from ..core import common, node_manager
+from ..core import node_manager
 
 class SuiteNegative(unittest.TestCase):
     """
@@ -29,10 +30,10 @@ class SuiteNegative(unittest.TestCase):
         from ..core.engine import JobPreparer
         builder = JobBuilder("DeletedRefJob").add_objects(self.obj)
         job = builder.build()
-        
+
         # Delete the object from Blender
         bpy.data.objects.remove(self.obj, do_unlink=True)
-        
+
         # This should fail validation/preparation but NOT crash Blender
         queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
         self.assertEqual(len(queue), 0)
@@ -63,7 +64,7 @@ class SuiteNegative(unittest.TestCase):
         from ..preset_handler import PropertyIO
         bj = bpy.context.scene.BakeJobs
         io = PropertyIO()
-        
+
         # Non-dict input
         io.from_dict(bj, "This is not a dict")
         self.assertGreaterEqual(io.stats['error'], 0)
@@ -73,7 +74,7 @@ class SuiteNegative(unittest.TestCase):
         from ..preset_handler import PropertyIO
         bj = bpy.context.scene.BakeJobs
         io = PropertyIO()
-        
+
         # Empty dict or dict with missing keys
         io.from_dict(bj, {"random_key": "ignored"})
         # Should finish without raising KeyError
@@ -85,7 +86,7 @@ class SuiteNegative(unittest.TestCase):
         builder.setting.res_x = 0
         builder.setting.res_y = -10
         job = builder.build()
-        
+
         # Preparer should ideally clamp or reject, but definitely NOT crash
         queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
         # Even if it proceeds, individual steps should guard against 0-size images
@@ -114,14 +115,14 @@ class SuiteNegative(unittest.TestCase):
         """Verify that BakeContextManager performs cleanup even if an exception occurs."""
         from ..core.engine import BakeContextManager
         orig_engine = bpy.context.scene.render.engine
-        
+
         try:
             with BakeContextManager(bpy.context, MockSetting()):
                 bpy.context.scene.render.engine = 'CYCLES'
                 raise RuntimeError("Simulated crash")
         except RuntimeError:
             pass
-            
+
         self.assertEqual(bpy.context.scene.render.engine, orig_engine, "Context manager failed to restore engine after exception")
 
     def test_node_handler_cleanup_restores_links(self):
@@ -129,14 +130,14 @@ class SuiteNegative(unittest.TestCase):
         mat = self.obj.data.materials[0]
         nodes = mat.node_tree.nodes
         links = mat.node_tree.links
-        
+
         # Create a specific link
         bsdf = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')
         out = next(n for n in nodes if n.type == 'OUTPUT_MATERIAL')
         links.new(bsdf.outputs[0], out.inputs[0])
-        
+
         orig_link_count = len(links)
-        
+
         try:
             # Fix: NodeGraphHandler expects materials, not objects
             with node_manager.NodeGraphHandler([mat]) as h:
@@ -145,7 +146,7 @@ class SuiteNegative(unittest.TestCase):
                 raise RuntimeError("Abort mid-process")
         except RuntimeError:
             pass
-            
+
         self.assertEqual(len(links), orig_link_count, "Node links were not restored after exception in NodeGraphHandler")
 
     def test_empty_channel_list_no_crash(self):
@@ -155,7 +156,7 @@ class SuiteNegative(unittest.TestCase):
         # Disable all default channels
         for c in builder.setting.channels:
             c.enabled = False
-            
+
         job = builder.build()
         queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
         # It should probably return 0 steps

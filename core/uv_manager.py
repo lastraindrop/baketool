@@ -1,3 +1,4 @@
+"""UV detection, layout management, and UDIM packing utilities."""
 import bpy
 import numpy as np
 import logging

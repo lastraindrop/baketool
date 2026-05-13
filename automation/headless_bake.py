@@ -3,10 +3,8 @@ BakeNexus Headless CLI Entry Point
 Usage: blender -b scene.blend -P headless_bake.py -- --job "JobName" --output "C:/path"
 """
 import sys
-import os
 import bpy
 import argparse
-import logging
 from pathlib import Path
 
 addon_dir = str(Path(__file__).resolve().parent.parent)
@@ -41,6 +39,7 @@ def ensure_addon_registered():
     return hasattr(bpy.context.scene, "BakeJobs")
 
 def main():
+    """Entry point: register addon, parse args, run headless bake jobs."""
     # Parse CLI arguments after '--'
     if "--" in sys.argv:
         args_idx = sys.argv.index("--") + 1
@@ -67,8 +66,10 @@ def main():
     jobs_to_run = []
     if args.job:
         job = next((j for j in bj_prop.jobs if j.name == args.job), None)
-        if job: jobs_to_run = [job]
-        else: print(f"Error: Job '{args.job}' not found.")
+        if job:
+            jobs_to_run = [job]
+        else:
+            print(f"Error: Job '{args.job}' not found.")
     else:
         jobs_to_run = [j for j in bj_prop.jobs if j.enabled]
 
@@ -83,10 +84,10 @@ def main():
             job.setting.use_external_save = True
 
     print(f"BakeNexus CLI: Starting {len(jobs_to_run)} jobs...")
-    
+
     # Execution Queue using standard preparer
     queue = JobPreparer.prepare_execution_queue(bpy.context, jobs_to_run)
-    
+
     if not queue:
         print("Preparation failed. Check logs.")
         return False

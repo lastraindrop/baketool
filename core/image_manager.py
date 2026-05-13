@@ -390,7 +390,7 @@ def _touch_udim_buffer_v3(image: bpy.types.Image) -> bpy.types.Image:
         if not image.filepath:
             tmp_dir = tempfile.gettempdir()
             image.filepath_raw = os.path.join(tmp_dir, f"{image.name}.<UDIM>.png")
-        
+
         is_packed = getattr(image, "is_packed", False)
         if hasattr(image, "packed_files") and not is_packed:
             is_packed = len(image.packed_files) > 0
@@ -486,18 +486,18 @@ def save_image(
         logger.error("Save failed: file name resolves outside the target directory.")
         return None
     abs_path = str(filepath.resolve())
-    
+
     # H-05: Set format settings via scene render settings
     render = bpy.context.scene.render
     s = render.image_settings
-    
+
     old_fmt = s.file_format
     old_depth = s.color_depth
     old_mode = s.color_mode
     old_quality = s.quality
     old_exr = s.exr_codec
     old_tiff = s.tiff_codec
-    
+
     try:
         s.file_format = file_format
         s.color_depth = color_depth
@@ -505,8 +505,8 @@ def save_image(
         s.quality = quality
         s.exr_codec = exr_code
         s.tiff_codec = tiff_codec
-        
-        # We also set it on image for consistency, though image.save() 
+
+        # We also set it on image for consistency, though image.save()
         # is heavily dependent on scene settings for the details.
         image.filepath_raw = abs_path
         image.file_format = file_format

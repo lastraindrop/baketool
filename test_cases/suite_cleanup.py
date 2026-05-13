@@ -1,3 +1,5 @@
+
+"""Scene cleanup and resource leak tests."""
 import unittest
 import bpy
 import os
@@ -22,16 +24,16 @@ class SuiteCleanup(unittest.TestCase):
             baketool.unregister()
         except Exception as e:
             self.fail(f"Unregister failed: {e}")
-            
+
         # Check properties are gone
         self.assertFalse(hasattr(bpy.types.Scene, "BakeJobs"), "BakeJobs property should be removed")
-        
+
         # Register again
         try:
             baketool.register()
         except Exception as e:
             self.fail(f"Register failed: {e}")
-            
+
         # Check properties exist
         self.assertTrue(hasattr(bpy.types.Scene, "BakeJobs"), "BakeJobs property should be restored")
 
@@ -41,13 +43,13 @@ class SuiteCleanup(unittest.TestCase):
         # Ensure a collection exists
         thumbnail_manager.get_preview_collection("test_leak")
         self.assertIn("test_leak", thumbnail_manager.preview_collections)
-        
+
         # Unregister
         baketool.unregister()
-        
+
         # Check collections are gone
         self.assertEqual(len(thumbnail_manager.preview_collections), 0, "All preview collections should be cleared on unregister")
-        
+
         # Restore for other tests
         baketool.register()
 

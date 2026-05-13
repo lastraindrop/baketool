@@ -1,3 +1,4 @@
+"""Multi-version Blender test runner for cross-version compatibility."""
 import argparse
 import json
 import os
@@ -95,6 +96,7 @@ def load_blender_paths(extra_paths=None, paths_file=None, env=None):
 
 
 def get_blender_version(path):
+    """Return the version string from a Blender executable."""
     try:
         res = subprocess.run(
             [path, "--version"], capture_output=True, text=True, check=True
@@ -242,6 +244,7 @@ def write_summary_reports(
     category,
     json_output_path=None,
 ):
+    """Write test results to text and JSON summary reports in the report directory."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     report_dir.mkdir(parents=True, exist_ok=True)
 
@@ -276,7 +279,7 @@ def write_summary_reports(
             handle.write(f"\n[{item['status']}] {item['version']}\n")
             handle.write(f"  Path: {item['path']}\n")
             handle.write(f"  Reason: {item['failure_reason']}\n")
-            
+
             # Include error details for failed runs
             if not item.get('success', False):
                 report_summary = item.get('report_summary', {})
@@ -284,7 +287,7 @@ def write_summary_reports(
                     failures = report_summary.get('failures', 0)
                     errors = report_summary.get('errors', 0)
                     handle.write(f"  Summary: Failures={failures}, Errors={errors}\n")
-                
+
                 # Include full failure details from parsed report
                 parsed = item.get('report') or {}
                 details = parsed.get('details', {})
@@ -299,12 +302,12 @@ def write_summary_reports(
                         handle.write(f"  Errors:\n")
                         for e in error_list[:10]:
                             handle.write(f"    {e[:200]}\n")
-                
+
                 # Include stderr if available
                 stderr_text = item.get('stderr', '')
                 if stderr_text:
                     handle.write(f"  Stderr Tail: {stderr_text[-1000:]}\n")
-                
+
                 # Include last few lines of stdout for context
                 stdout_tail = item.get('stdout_tail', [])
                 if stdout_tail:
@@ -321,6 +324,7 @@ def write_summary_reports(
 
 
 def main():
+    """Entry point: discover Blender versions, run tests, collect and report results."""
     parser = argparse.ArgumentParser(description="BakeNexus Multi-Version Test Runner")
     parser.add_argument(
         "--suite",

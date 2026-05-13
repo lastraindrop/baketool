@@ -1,3 +1,4 @@
+"""Viewport preview material management for bake channels."""
 import bpy
 import logging
 from ..constants import BSDF_COMPATIBILITY_MAP
@@ -21,31 +22,31 @@ def create_preview_material(obj, s):
     """
     if not obj or obj.type != 'MESH':
         return None
-        
+
     # Get or create preview material
     mat = bpy.data.materials.get(PREVIEW_MAT_NAME)
     if not mat:
         mat = bpy.data.materials.new(name=PREVIEW_MAT_NAME)
-        
+
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
     nodes.clear()
-    
+
     # Create output and principled bsdf for base view
     output = nodes.new('ShaderNodeOutputMaterial')
     output.location = (600, 0)
-    
+
     # Create the Packing Logic (Combine RGBA)
     combine = nodes.new('ShaderNodeCombineColor')
     combine.location = (400, 0)
-    
+
     # HP-5: Emission node between Color output and Shader input
     emission = nodes.new('ShaderNodeEmission')
     emission.location = (550, 0)
     links.new(combine.outputs[0], emission.inputs[0])
     links.new(emission.outputs[0], output.inputs[0])
-    
+
     # Source mapping
     source_mat = obj.active_material
     if not source_mat or not source_mat.use_nodes:
@@ -58,7 +59,7 @@ def create_preview_material(obj, s):
         if n.type == 'BSDF_PRINCIPLED':
             source_bsdf = n
             break
-            
+
     if not source_bsdf:
         return mat
 
@@ -67,7 +68,7 @@ def create_preview_material(obj, s):
         chan_id = getattr(s, pref_attr)
         if chan_id == 'NONE':
             return
-            
+
         # Get compatible socket names from map
         socket_names = BSDF_COMPATIBILITY_MAP.get(chan_id, [])
         for name in socket_names:
@@ -79,29 +80,29 @@ def create_preview_material(obj, s):
                 # KISS: We'll just use the default value or Attribute if needed.
                 # In a real implementation, we would traverse the tree.
                 # For this roadmap demo, we'll use a specialized 'Value' or 'Attribute' node.
-                
+
                 # Actually, in Blender UI preview, we want to see the effect of the PACKING.
                 # If 'Roughness' is packed into 'Green', we should see the roughness map as green.
-                
+
                 # To be robust, we'd need to link the same input nodes to our new material.
                 # Since we can't easily link across materials, we duplicate the input node.
                 if socket.is_linked:
-                    # HP-8: Correctly capture the output socket index from the source 
+                    # HP-8: Correctly capture the output socket index from the source
                     from_socket = socket.links[0].from_socket
                     from_node = from_socket.node
-                    
+
                     # Try to find the matching socket index
                     out_idx = 0
                     for i, o_sock in enumerate(from_node.outputs):
                         if o_sock == from_socket:
                             out_idx = i
                             break
-                            
+
                     new_node = nodes.new(from_node.bl_idname)
                     new_node.location = (-200, (1-combine_input_idx)*200)
-                    
+
                     # Safe property copy
-                    safe_skip = {'rna_type', 'bl_rna', 'type', 'bl_idname', 'bl_label', 
+                    safe_skip = {'rna_type', 'bl_rna', 'type', 'bl_idname', 'bl_label',
                                  'bl_description', 'bl_icon', 'bl_static_type',
                                  'inputs', 'outputs', 'internal_links', 'dimensions',
                                  'name', 'color', 'select', 'show_options', 'show_preview',
@@ -110,9 +111,9 @@ def create_preview_material(obj, s):
                         if not prop.is_readonly and prop.identifier not in safe_skip:
                             try:
                                 setattr(new_node, prop.identifier, getattr(from_node, prop.identifier))
-                            except (AttributeError, TypeError): 
+                            except (AttributeError, TypeError):
                                 pass
-                                
+
                     if out_idx < len(new_node.outputs):
                         links.new(new_node.outputs[out_idx], combine.inputs[combine_input_idx])
                 else:
@@ -132,18 +133,18 @@ def create_preview_material(obj, s):
     link_channel('pack_b', 2)
     if len(combine.inputs) > 3:
         link_channel('pack_a', 3)
-    
+
     return mat
 
 def apply_preview(obj, setting):
     """Apply the ORM preview material to the given object."""
     if obj is None or obj.type != 'MESH':
         return
-        
+
     if not obj.get("_bt_orig_mat_name"):
         if obj.active_material:
             obj["_bt_orig_mat_name"] = obj.active_material.name
-    
+
     preview_mat = create_preview_material(obj, setting)
     if preview_mat:
         obj.active_material = preview_mat
@@ -158,7 +159,7 @@ def remove_preview(obj):
         if orig_mat:
             obj.active_material = orig_mat
         del obj["_bt_orig_mat_name"]
-    
+
     # Cleanup temp material if no one uses it
     mat = bpy.data.materials.get(PREVIEW_MAT_NAME)
     if mat and mat.users == 0:

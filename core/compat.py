@@ -147,10 +147,10 @@ def set_bake_type(scene: bpy.types.Scene, bake_type: str) -> bool:
     Returns:
         bool: True if the bake type was successfully applied.
     """
-    # V1.0.0-p3: Unified 'NORMAL' for B4.2+ and B5.0. 
+    # V1.0.0-p3: Unified 'NORMAL' for B4.2+ and B5.0.
     # Only use 'NORMALS' as fallback if 'NORMAL' fails.
     target_bake_type = BAKE_MAPPING.get(bake_type, bake_type)
-    
+
     try:
         # PRIORITY: Cycles-specific bake type property (Exists in 3.6 - 5.0+)
         if hasattr(scene, "cycles") and hasattr(scene.cycles, "bake_type"):
@@ -185,7 +185,6 @@ def set_bake_type(scene: bpy.types.Scene, bake_type: str) -> bool:
     except (AttributeError, RuntimeError) as e:
         logger.warning(f"Unexpected error setting bake type: {e}")
     return False
-
 
 
 def get_version_string() -> str:

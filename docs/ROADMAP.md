@@ -20,17 +20,28 @@
   - **上下文物联网**：`core/api.py` 支持可选的 `context` 参数，headless/API 模式安全调用。
   - 更多修复详情见 `CHANGELOG.md` 和 `STYLE_GUIDE_ANALYSIS.md`。
 
-## 2. 短期计划 (v1.1.x) - 生产力增强
-- **CI 门控优化**：添加 Blender 可执行文件缓存，减少跨版本验证时间。
+## 2. 已完成代码风格整肃 (2026-05-14) ✅
+- **Phase 1 — 自动修复与 import 清理**：196 W293 + 23 W291 + 2 W292 + 10 E111/E117 归零；40 个未使用 import 删除；发现并修复 2 个潜伏 bug (`BAKE_CHANNEL_INFO` 未导入 + `bpy.utils.previews` API 缺失降级)。
+- **Phase 2 — 命名规范与多语句**：10 E741 (ambiguous `l`) + 6 E701/E702 归零。
+- **Phase 3 — 文档补全**：34 模块 docstring + 关键类/函数 docstring 全部补全。
+- **Phase 4 — 类型标注**：公共 API 完整类型化，覆盖率 25% → 30.8%。
+- **累计效果**：pycodestyle 385 → 97 (-75%)；5 版本跨版本全部通过。
+- 更多细节见 `CHANGELOG.md` 2026-05-14 条目。
+
+## 3. 短期计划 (v1.1.x) - 生产力增强
+- **CI 门控优化**：添加 Blender 可执行文件缓存，减少跨版本验证时间；逐步启用 `ruff` 替代 `pycodestyle`。
+- **剩余风格债务清理**：继续推进 Phase 5（函数拆分：`BakeStepRunner.run` 129行→拆分）和 Phase 6（CI 集成：`isort` + `ruff`）。
+- **类型覆盖率提升**：目标 50%+，重点覆盖 `core/common.py`（`Any` 45+ 处）和 `core/engine.py` 私有方法。
 - **预设库扩展**：内置更多行业标准的 PBR 导出预设（UE5, Unity, Substance 风格）。
-- **崩溃恢复 Schema 验证**：为 `ui.py` 加载的 JSON 崩溃日志添加 Schema 校验，防止因旧版本日志损坏导致启动崩溃。
+- **崩溃恢复 Schema 验证**：为 `ui.py` 加载的 JSON 崩溃日志添加 Schema 校验。
 - **API 响应性提升**：`core/api.py` 添加异步回调接口，支持外部脚本实时监听烘焙进度。
 - **资源利用率优化**：为 `ModelExporter` 的 USD 导出参数添加更严谨的属性存在性检查。
 
-## 3. 长期愿景 (v2.x) - 智能烘焙生态
+## 4. 长期愿景 (v2.x) - 智能烘焙生态
 - **异步像素回传**：研究 B5.0 下的高性能像素拷贝方案。
 - **全自动化资产处理**：从原始高模到优化后的 LOD 资产实现一键全流程自动化。
 - **数据驱动参数系统**：将通道元数据、UI 布局、保存格式约束和执行参数逐步统一为可校验 schema。
+- **完整 Google Python Style 合规**：目标 pycodestyle 违规数降至 15 以下，类型覆盖率 ≥80%。
 
 
 ---

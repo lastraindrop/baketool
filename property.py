@@ -1,3 +1,5 @@
+"""Blender RNA PropertyGroup definitions for bake jobs, channels, and results."""
+
 import bpy
 from bpy import props
 import os
@@ -15,10 +17,8 @@ from .constants import (
     COLOR_SPACES,
     EXR_CODECS,
     TIFF_CODECS,
-    DENOISE_METHODS,
     NAMING_MODES,
     CUSTOM_CHANNEL_SEP,
-    ATLAS_PACK_METHODS,
     FORMAT_SETTINGS,
 )
 
@@ -424,6 +424,8 @@ class BakedImageResult(bpy.types.PropertyGroup):
 
 
 class BakeJobSetting(bpy.types.PropertyGroup):
+    """Core settings container for a single bake job: targets, channels, output."""
+
     save_and_quit: props.BoolProperty(default=False, name="Save And Quit")
     apply_to_scene: props.BoolProperty(default=False, name="Apply Bake")
 
@@ -701,6 +703,8 @@ def get_library_preset_items(self, context):
 
 
 class BakeJobs(bpy.types.PropertyGroup):
+    """Root scene-level manager for all BakeNexus jobs and shared settings."""
+
     debug_mode: props.BoolProperty(
         name="Debug Mode", default=False, update=update_debug_mode
     )

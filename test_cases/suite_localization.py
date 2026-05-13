@@ -1,3 +1,5 @@
+
+"""Translation extraction and audit tool tests."""
 import ast
 import textwrap
 import unittest

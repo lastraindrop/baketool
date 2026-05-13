@@ -1,493 +1,457 @@
 # BakeNexus Code Style Analysis Report
 ## Based on Google Python Style Guide
 
-**Date:** 2026-04-17
-**Status:** Remediation In Progress - HIGH Priority Fixes Complete
+**Date:** 2026-05-13
+**Status:** Fresh Comprehensive Audit
 
 ---
 
 ## Executive Summary
 
-The BakeNexus codebase was analyzed against Google Python Style Guide. The analysis revealed several categories of issues ranging from critical (bare except clauses) to minor (import organization).
+The BakeNexus codebase was analyzed against Google Python Style Guide using AST analysis, pycodestyle, and manual review. **Bare except clauses have been eliminated** since the previous audit, but substantial documentation, type annotation, and formatting debt remains.
 
-**Overall Health Score:** 6.5/10
+**Overall Health Score:** 4.5/10
 
-| Category | Score | Priority |
-|----------|-------|----------|
-| Exception Handling | 4/10 | HIGH |
-| Code Documentation | 5/10 | HIGH |
-| Function Complexity | 5/10 | HIGH |
-| Type Safety | 6/10 | MEDIUM |
-| Naming Conventions | 7/10 | LOW |
-| Whitespace/Formatting | 7/10 | LOW |
-| Import Organization | 7/10 | LOW |
-
----
-
-## 1. EXCEPTION HANDLING (Priority: HIGH)
-
-### 1.1 Bare Except Clauses Found
-
-| File | Line | Issue | Status |
-|------|------|-------|--------|
-| `state_manager.py` | 66 | `except Exception: pass` | Fixed |
-| `state_manager.py` | 91 | `except Exception: pass` | Fixed |
-| `state_manager.py` | 102 | `except Exception: pass` | Fixed |
-| `core/cleanup.py` | 83 | `except Exception: pass` | Fixed |
-| `core/cleanup.py` | 93 | `except Exception: pass` | Fixed |
-| `core/cleanup.py` | 104 | `except Exception: pass` | Fixed |
-| `core/engine.py` | 178 | `except Exception: pass` | Fixed |
-| `core/engine.py` | 252 | `except Exception: pass` | Fixed |
-| `core/engine.py` | 341 | `except Exception as e` | Fixed |
-| `core/engine.py` | 985 | `except Exception as e` | Fixed |
-| `core/engine.py` | 1006 | `except Exception as e` | Fixed |
-| `core/engine.py` | 1106 | `except Exception: pass` | Fixed |
-| `core/engine.py` | 1120 | `except Exception: pass` | Fixed |
-| `core/engine.py` | 1122 | `except Exception: pass` | Fixed |
-| `ops.py` | 450 | `except Exception as e` | Fixed |
-| `ops.py` | 477 | `except Exception as e` | Fixed |
-| `ops.py` | 503 | `except Exception: pass` | Fixed |
-
-### 1.2 Recommendation
-
-Replace bare `except:` with specific exceptions:
-
-```python
-# BAD
-try:
-    os.remove(self.log_file)
-except Exception:
-    pass
-
-# GOOD
-try:
-    os.remove(self.log_file)
-except (OSError, FileNotFoundError):
-    pass  # File doesn't exist, which is fine
-except PermissionError:
-    _LOG.warning("Could not remove log file: %s", self.log_file)
-```
+| Category | Score | Severity | Total Count |
+|----------|-------|----------|-------------|
+| Exception Handling | 8/10 | HIGH | 0 bare excepts (fixed) |
+| Import Organization | 5/10 | MEDIUM | 28 E402 + 40 unused imports |
+| Code Documentation | 3/10 | HIGH | 34 missing module + 170 missing class/func docstrings |
+| Function Complexity | 4/10 | HIGH | 18 functions > 80 lines |
+| Type Safety | 3/10 | MEDIUM | 29.5% typed (161/546 functions) |
+| Naming Conventions | 5/10 | LOW | 10 ambiguous `l` names, Blender names OK |
+| Whitespace/Formatting | 5/10 | LOW | 385 pycodestyle violations |
+| Global State | 6/10 | MEDIUM | 2 mutable module-level globals |
 
 ---
 
-## 2. DOCUMENTATION (Priority: HIGH)
+## 1. EXCEPTION HANDLING (Score: 8/10)
 
-### 2.1 Missing Docstrings
+### Status: Substantially Improved
 
-#### Files Without Module Docstrings:
-- `core/__init__.py` Fixed - Added module docstring
+The previous audit (April 2026) documented 17 bare `except:` clauses. **Current count: 0** — all have been narrowed to specific exception types.
 
-#### Classes Without Docstrings (Major):
+### Remaining Issues
+
+| File | Line | Issue | Severity |
+|------|------|-------|----------|
+| `core/engine.py` | 211, 1168, 1570 | `except Exception as e` — too broad | MEDIUM |
+| `core/execution.py` | 132, 224 | Same | MEDIUM |
+| `core/common.py` | 482, 497 | Same | MEDIUM |
+| `core/image_manager.py` | 56 | Same | MEDIUM |
+| `core/math_utils.py` | 408 | Same | MEDIUM |
+| `preset_handler.py` | 250 | Same | MEDIUM |
+| `ops.py` | 753, 833 | Same | MEDIUM |
+| `automation/*.py` | multiple | Same | MEDIUM |
+
+These should be narrowed to the specific exceptions actually expected (e.g., `AttributeError`, `RuntimeError`, `ReferenceError`).
+
+---
+
+## 2. IMPORT ORGANIZATION (Score: 5/10)
+
+### §3.13.2 of Google Style: Three Groups
+
+**Violations: 28 × E402 + 40 unused imports**
+
+### 2.1 E402 — Imports Not at Top of File
+
+| File | Lines |
+|------|-------|
+| `__init__.py` | 15-37 (13 imports buried inside `get_classes`) |
+| `test_cases/helpers.py` | 265 |
+| `test_cases/suite_cleanup.py` | 11-12 |
+| `test_cases/suite_context_lifecycle.py` | 11-14 |
+| `test_cases/suite_denoise.py` | 11-13 |
+| `test_cases/suite_export.py` | 11-12 |
+| `test_cases/suite_udim_advanced.py` | 12-13 |
+
+### 2.2 Unused Imports (40 instances)
+
+Significant examples that should be cleaned:
+
+| File | Unused Import |
+|------|---------------|
+| `ops.py` | `traceback`, `List`, `apply_baked_result`, `safe_context_override`, `check_objects_uv` |
+| `core/engine.py` | `reset_channels_logic`, `DEFAULT_BAKE_TARGET` |
+| `core/common.py` | `SOCKET_DEFAULT_TYPE` |
+| `core/math_utils.py` | `List` |
+| `core/node_manager.py` | `Dict`, `Tuple` |
+| `property.py` | `DENOISE_METHODS`, `ATLAS_PACK_METHODS` |
+| `headless_bake.py` | `os`, `logging` |
+| `cli_runner.py` | `os` |
+| `thumbnail_manager.py` | `os` |
+
+Many test files also import setup-only utilities (`ensure_cycles`, `MockSetting`, `assert_no_leak`, etc.) that are never referenced in the test body.
+
+### 2.3 Import Order Convention
+
+Google Style mandates: `stdlib → third-party → local`. Several files mix these:
+
+- `core/execution.py` imports `os` (stdlib) after `state_manager` (local)
+- `ui.py` imports `bpy` (third-party) after `os` (stdlib)
+- `ops.py` imports `bpy` (third-party) after `json`, `Path` (stdlib) — correct order, but interspersed with local imports
+
+**Recommendation:** Use `isort` with black-compatible config.
+
+---
+
+## 3. CODE DOCUMENTATION (Score: 3/10)
+
+### §3.8 of Google Style: Docstrings Required
+
+### 3.1 Module Docstrings — 34 Missing
+
+Automation modules without docstrings:
+- `cli_runner.py`, `multi_version_test.py`, `dev_tools/extract_translations.py`
+
+All test suite files:
+- `suite_api.py` through `suite_verification.py` (21 files total)
+
+Core modules without docstrings:
+- `constants.py`, `preset_handler.py`, `property.py`
+- `core/cage_analyzer.py`, `core/common.py`, `core/engine.py`, `core/math_utils.py`, `core/shading.py`, `core/thumbnail_manager.py`, `core/uv_manager.py`
+
+### 3.2 Class/Function Docstrings — 170 Missing
+
+Key classes without docstrings:
 
 | File | Class | Lines |
 |------|-------|-------|
-| `ops.py` | `BAKETOOL_OT_BakeOperator` | 100 |
-| `ops.py` | `BAKETOOL_OT_OneClickPBR` | 300 |
-| `ops.py` | `BAKETOOL_OT_LoadSetting` | 340 |
-| `ops.py` | `BAKETOOL_OT_SaveSetting` | 380 |
-| `core/engine.py` | `BakePostProcessor` | 80 |
-| `core/engine.py` | `BakeStepRunner` | 120 |
-| `core/engine.py` | `ModelExporter` | 970 |
-| `core/node_manager.py` | `BakeNodeBuilder` | 84 |
-| `core/shading.py` | All classes | - |
-| `ui.py` | `BAKE_PT_BakePanel` | 401 |
-| `ui.py` | `BAKE_PT_NodePanel` | 367 |
+| `__init__.py` | `BakeNexusPreferences` | 32 |
+| `execution.py` | `BakeModalOperator` | 180 |
+| `cli_runner.py` | Top-level functions | 131 |
+| `multi_version_test.py` | Top-level functions | 170 |
+| `extract_translations.py` | `TranslationExtractor` | 130 |
 
-### 2.2 Recommendation
+Key functions:
 
-Add docstrings following Google Style:
+| File | Function | Lines |
+|------|----------|-------|
+| `core/engine.py` | `apply_denoise` | 121 |
+| `core/engine.py` | `BakeStepRunner.run` | 129 |
+| `core/engine.py` | `TaskBuilder.build` | 94 |
+| `core/image_manager.py` | `set_image` | 84 |
+| `core/image_manager.py` | `save_image` | 125 |
+| `core/node_manager.py` | `bake_node_to_image` | 88 |
+| `ui.py` | `BAKE_PT_BakePanel.draw` | 101 |
+| `ops.py` | `_run_isolated_test_suite` | 87 |
 
+### 3.3 Google Style Docstring Format
+
+All docstrings should follow the Google format:
 ```python
-# BAD
-class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
-    bl_label = "Bake"
-    bl_idname = "bake.bake_operator"
+"""One-line summary.
 
-# GOOD
-class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
-    """Executes the texture baking process for selected objects.
+Args:
+    param_name: Description.
 
-    This operator handles the complete baking pipeline including
-    UV preparation, cage generation, and image output.
-
-    Args:
-        context: Blender context with selected objects.
-
-    Returns:
-        set: {'FINISHED'} on success, {'CANCELLED'} on failure.
-    """
-    bl_label = "Bake"
-    bl_idname = "bake.bake_operator"
+Returns:
+    Description of return value.
+"""
 ```
+
+Current docstrings use a mix of reStructuredText, Google, and blank. `SUITE_UNIT.py` tests reference tests via `# Comment` rather than docstrings.
 
 ---
 
-## 3. FUNCTION COMPLEXITY (Priority: HIGH)
+## 4. FUNCTION COMPLEXITY (Score: 4/10)
 
-### 3.1 Functions Exceeding 40 Lines (Recommended Max)
+### §3.5 of Google Style: Functions Should Be Small
 
-| File | Function | Lines | Complexity |
-|------|----------|-------|------------|
-| `core/engine.py` | `BakeStepRunner.run` | 152 | HIGH |
-| `core/engine.py` | `ModelExporter.export` | 152 | HIGH |
-| `core/node_manager.py` | `BakeNodeBuilder` class | 387 | HIGH |
-| `ui.py` | `BAKE_PT_BakePanel.draw` | 89 | MEDIUM |
-| `core/common.py` | `create_simple_baked_material` | 72 | MEDIUM |
-| `core/node_manager.py` | `cleanup` | 70 | MEDIUM |
-| `core/node_manager.py` | `_create_extension_logic` | 73 | MEDIUM |
+### 4.1 Functions > 80 Lines (18 detected)
 
-### 3.2 Recommendation
+| File | Function | Lines |
+|------|----------|-------|
+| `ui.py` | `BAKE_PT_BakePanel.draw` | 101 |
+| `ui.py` | `draw_saves` | 94 |
+| `ui.py` | `draw_inputs` | 81 |
+| `core/engine.py` | `apply_denoise` | 121 |
+| `core/engine.py` | `BakeStepRunner.run` | 129 |
+| `core/engine.py` | `TaskBuilder.build` | 94 |
+| `core/image_manager.py` | `set_image` | 84 |
+| `core/image_manager.py` | `save_image` | 125 |
+| `core/node_manager.py` | `bake_node_to_image` | 88 |
+| `core/shading.py` | `create_preview_material` | 128 |
+| `core/cage_analyzer.py` | `run_raycast_analysis` | 143 |
+| `core/common.py` | `apply_baked_result` | 81 |
+| `automation/cli_runner.py` | `main` | 131 |
+| `automation/multi_version_test.py` | `main` | 169 |
+| `automation/multi_version_test.py` | `write_summary_reports` | 84 |
+| `ops.py` | `_run_isolated_test_suite` | 87 |
+| `test_cases/suite_production_workflow.py` | `test_full_pipeline_execution` | 81 |
 
-Break long functions into smaller, focused helpers:
+### 4.2 Refactoring Priority
 
-```python
-# Example: Break up ModelExporter.export()
-class ModelExporter:
-    """Handles exporting meshes for baking."""
+**High:** `BakeStepRunner.run` (129 lines) has 5+ levels of nesting inside a single `with ExitStack()` block. The denoise scene lifecycle, channel loop, packing, and post-bake could be separate methods.
 
-    def export(self, context, obj, setting, file_name):
-        """Main export entry point."""
-        mesh = self._prepare_mesh(obj)
-        self._apply_transforms(mesh, obj)
-        self._write_to_file(mesh, file_name, setting)
-
-    def _prepare_mesh(self, obj):
-        """Extract and prepare mesh data."""
-        pass
-
-    def _apply_transforms(self, mesh, obj):
-        """Apply object transforms to mesh."""
-        pass
-
-    def _write_to_file(self, mesh, file_name, setting):
-        """Write mesh to temporary file."""
-        pass
-```
+**Medium:** `BAKE_PT_BakePanel.draw` (101 lines) drives all sub-sections; could delegate to `draw_inputs`, etc. (which exist).
 
 ---
 
-## 4. TYPE ANNOTATIONS (Priority: MEDIUM)
+## 5. TYPE ANNOTATIONS (Score: 3/10)
 
-### 4.1 Functions Missing Type Hints
+### §3.19 of Google Style: Use Type Hints
 
-Key functions that would benefit from type annotations:
+| Metric | Value |
+|--------|-------|
+| Total functions | 546 |
+| Functions with ANY type annotation | 161 (29.5%) |
+| Functions with return type | ~80 (15%) |
+| Functions with arg types | ~150 (27%) |
 
-| File | Function | Current |
-|------|----------|---------|
-| `core/common.py` | `reset_channels_logic()` | No types |
-| `core/common.py` | `manage_objects_logic()` | No types |
-| `core/engine.py` | `_physical_clear_pixels()` | No types |
-| `core/image_manager.py` | `set_image()` | Partial types |
-| `ops.py` | `execute()` (most operators) | No types |
+### 5.1 Key Public APIs Missing Types
 
-### 4.2 Recommendation
+| File | Function |
+|------|----------|
+| `core/common.py` | `reset_channels_logic`, `manage_objects_logic` |
+| `core/image_manager.py` | `set_image` (partial — `basiccolor`, `tile_resolutions` missing) |
+| `core/engine.py` | `_execute_blender_bake_op` |
+| `ops.py` | Most `execute()` methods |
 
-Add type annotations gradually, starting with public APIs:
+### 5.2 'Any' Abused
 
-```python
-# GOOD
-from typing import List, Optional, Tuple
+`Any` is used extensively as an escape hatch (e.g., `setting: Any`). Most of these should be `Protocol` classes or at minimum `bpy.types.PropertyGroup`:
 
-def set_image(
-    name: str,
-    x: int,
-    y: int,
-    alpha: bool = True,
-    context: Optional[bpy.types.Context] = None,
-) -> bpy.types.Image:
-    """Get or create an image with specified settings."""
-    pass
-```
+- `core/common.py` — 45 occurrences of `Any`
+- `core/engine.py` — 10 occurrences
+- `core/image_manager.py` — 6 occurrences
 
 ---
 
-## 5. NAMING CONVENTIONS (Priority: LOW)
+## 6. NAMING CONVENTIONS (Score: 5/10)
 
-### 5.1 Minor Issues
+### §3.16 of Google Style
 
-| Issue | Location | Recommendation |
-|-------|----------|----------------|
-| `_DummyEvent` class prefix | `ops.py:40` | Rename to `DummyEvent` (internal use) |
-| Mixed `self.report()` vs `logger` | Multiple | Standardize on logger for debug, report for user |
+### 6.1 Ambiguous Names — 10 × E741
 
-### 5.2 Blender-Specific Naming
+`l` used as variable name (confusable with `1`):
 
-The following naming patterns are **acceptable** due to Blender requirements:
-- `BAKETOOL_OT_*` - Operator classes
-- `BAKE_PT_*` - Panel classes
-- `BAKETOOL_UL_*` - UIList classes
+| File | Lines |
+|------|-------|
+| `ui.py` | 504, 508, 520, 636, 647, 718, 729, 755, 766, 850, 861 |
+| `core/node_manager.py` | 147-148 |
+| `core/uv_manager.py` | 191 |
+| `test_cases/suite_api.py` | 26-27 |
+| `test_cases/suite_code_review.py` | 134 |
+| `test_cases/suite_memory.py` | 179-180 |
 
----
+### 6.2 Blender-Specific Naming (Acceptable)
 
-## 6. IMPORT ORGANIZATION (Priority: LOW)
+The following patterns are **required by Blender** and should be ignored:
+- `BAKETOOL_OT_*` — Operator classes
+- `BAKE_PT_*` — Panel classes  
+- `BAKETOOL_UL_*` — UIList classes
+- `Suite*` — unittest classes
 
-### 6.1 Current State
+### 6.3 Module-Level Constants
 
-```python
-# __init__.py - Current order (mixed)
-import logging
-import bpy  # Third-party
-from bpy import props, types  # Third-party
-from .core import cleanup  # Local
-from . import ops  # Local
-from .constants import CHANNEL_BAKE_INFO  # Local
-```
+Google Style: `ALL_CAPS`. The following are uppercase correctly:
+- `constants.py` — all OK
 
-### 6.2 Recommendation
-
-Organize imports in three groups:
-
-```python
-# 1. Standard library
-import logging
-from pathlib import Path
-
-# 2. Third-party (Blender)
-import bpy
-from bpy import props, types
-from bpy.app.handlers import persistent
-from bpy.props import IntProperty, CollectionProperty, StringProperty
-from bpy.types import AddonPreferences
-
-# 3. Local application
-from .core import cleanup
-from . import ops
-from . import preset_handler
-from . import translations
-from . import ui
-from . import property as prop_module
-from .constants import CHANNEL_BAKE_INFO
-```
+But some internal constants in modules use mixed case (e.g., `_LEGACY_DEPTH_MAP` in `property.py`). These should be `_LEGACY_DEPTH_MAP` (already correct with underscore prefix).
 
 ---
 
-## 7. CODE COMPLEXITY HOTSPOTS (Priority: MEDIUM)
+## 7. WHITESPACE & FORMATTING (Score: 5/10)
 
-### 7.1 Deep Nesting Issues
+### 7.1 Total pycodestyle Counts (385 violations)
 
-**File:** `core/common.py` - `manage_objects_logic()`
+| Code | Count | Meaning |
+|------|-------|---------|
+| W293 | 196 | Blank line contains whitespace |
+| W503 | 27 | Line break before binary operator |
+| W291 | 23 | Trailing whitespace |
+| E302 | 22 | Expected 2 blank lines (found 1) |
+| E305 | 16 | Expected 2 blank lines after class/func |
+| E402 | 28 | Module level import not at top |
+| E261 | 13 | At least 2 spaces before inline comment |
+| E501 | 11 | Line too long (> 120) |
+| E701 | 5 | Multiple statements on one line (colon) |
+| E111/E117 | 7/3 | Indentation not multiple of 4 / over-indented |
+| E741 | 10 | Ambiguous variable name `l` |
+| E226 | 11 | Missing whitespace around operator |
+| W292 | 2 | No newline at EOF |
+| E231 | 2 | Missing whitespace after `,` |
 
-```python
-# Current structure (5+ levels of nesting)
-def manage_objects_logic(s, action, sel, act):
-    if action == "SET":
-        s.bake_objects.clear()
-        targets = sel
-        if s.bake_mode == "SELECT_ACTIVE" and act and act in targets:
-            s.active_object = act
-            targets = [o for o in targets if o != act]
-        for o in targets:
-            if not any(i.bakeobject == o for i in s.bake_objects):
-                # ... more logic
-```
+### 7.2 Worst Offenders
 
-### 7.2 Recommendation
+| File | Count | Main Issues |
+|------|-------|-------------|
+| `test_cases/suite_production_workflow.py` | ~90 | W293 (blank line whitespace) |
+| `test_cases/suite_context_lifecycle.py` | ~50 | W293 |
+| `core/execution.py` | ~45 | W293, W291, E111 |
+| `core/shading.py` | ~35 | W293, W291 |
+| `core/engine.py` | ~15 | W293, W291, W503, E501 |
+| `ui.py` | ~15 | E741, W293, W503 |
 
-Use early returns and dispatch patterns:
+### 7.3 Google Style Line Length
 
-```python
-def manage_objects_logic(s, action, sel, act):
-    """Handle object list management based on action type."""
-    if action == "REMOVE":
-        _remove_objects(s, sel)
-        return
+Set at 120 chars (above Google's 80, but consistent with the project's `pyproject.toml` target). 11 lines exceed even 120:
 
-    if action == "CLEAR":
-        _clear_objects(s)
-        return
-
-    targets = _get_targets(s, action, sel, act)
-    _add_objects(s, targets)
-
-
-def _get_targets(s, action, sel, act):
-    """Determine which objects to add based on mode."""
-    if action == "SET":
-        s.bake_objects.clear()
-        return sel
-    elif action == "ADD":
-        return [o for o in sel if o != s.active_object]
-    return []
-```
+- `core/engine.py:1499` (126 chars)
+- `core/execution.py:141` (130 chars)
+- `test_cases/suite_denoise.py:40-41` (134, 122 chars)
+- `test_cases/suite_production_workflow.py:88,171,326-327` (131, 124, 124, 148 chars)
+- `test_cases/suite_negative.py:125,149` (130, 121 chars)
+- `test_cases/suite_cleanup.py:49` (130 chars)
 
 ---
 
-## 8. WHITESPACE ISSUES (Priority: LOW)
+## 8. GLOBAL STATE (Score: 6/10)
 
-### 8.1 Issues Found
-
-| File | Line | Issue |
-|------|------|-------|
-| `ui.py` | 155 | `scene.baked_image_results_index>=0` |
-| `core/uv_manager.py` | 13 | `!= 'MESH' or not` |
-| `ops.py` | 39 | Long line with operators |
-
-### 8.2 Recommendation
-
-```python
-# BAD
-if scene.baked_image_results_index>=0:
-
-# GOOD
-if scene.baked_image_results_index >= 0:
-```
-
----
-
-## 9. GLOBAL STATE (Priority: MEDIUM)
-
-### 9.1 Current Globals
+### §3.13.3 of Google Style: Avoid Module-Level State
 
 ```python
 # __init__.py
-classes_to_register = []  # Mutable global
-addon_keymaps = []      # Mutable global
-HAS_TESTS = False       # Constant
+classes_to_register = []  # mutable global
+addon_keymaps = []        # mutable global
 ```
 
-### 9.2 Recommendation
-
-Encapsulate in a class or use module-level initialization:
+These are mutated in `register()` and `unregister()`. They are scoped to the module and not exported, but they could be:
 
 ```python
-# Option 1: Use a class
-class BakeNexusState:
-    """Manages addon registration state."""
-    _classes = []
-    _keymaps = []
-
-    @classmethod
-    def register(cls, cls_to_add):
-        cls._classes.append(cls_to_add)
-
-# Option 2: Add underscore prefix to indicate private
-_classes_to_register = []
-_addon_keymaps = []
+class _RegistryState:
+    _classes: list = []
+    _keymaps: list = []
 ```
 
 ---
 
-## 10. REMEDIATION PLAN
+## 9. COMPREHENSIVE REMEDIATION PLAN
 
-### Phase 1: Critical Fixes (1-2 weeks) - Completed
-1. Replace all bare `except:` with specific exceptions (17 fixes applied)
-2. Add docstrings to operator classes (deferred)
-3. Fix whitespace issues (verified - already fixed)
+### Phase 1: Clean-Up (1-2 hours, no behavior change)
 
-### Phase 1.5: Code Review Critical Fixes (2026-04-17) - Completed
-1. Fix `ui.py` undefined variables (draw_header, draw_file_path, draw_template_list_ops, draw_image_format_options, draw_crash_report)
-2. Fix `core/node_manager.py` NodeGraphHandler.__init__ syntax error (missing `self.materials = [`)
-3. Fix `core/common.py` SceneSettingsContext.__init__ not storing parameters
-4. Fix `core/engine.py` BakeStepRunner.__init__ not storing parameters
-5. Fix `core/uv_manager.py` UVLayoutManager.__init__ not storing parameters
-6. Fix `state_manager.py` read_log duplicate dead code
-7. Fix `core/engine.py` apply_denoise duplicate method definition
-8. Fix `ops.py` DeleteResult duplicate removal logic
-9. Sync blender_manifest.toml version (1.0.0)
-10. Fix suite_code_review.py version assertion
-11. Expand test_cases/__init__.py to import all 16 suites
-12. Add UTF-8 encoding to SaveSetting/LoadSetting
-13. Add typing.Any import to ui.py
-14. Add comprehensive tests for all fixes
+1. Remove **40 unused imports** across 25 files.
+2. Fix **196 blank line whitespace** (W293) — `find . -name '*.py' -exec sed -i 's/[[:space:]]*$//' {} +`
+3. Fix **23 trailing whitespace** (W291) — same command.
+4. Add missing **newlines at EOF** in `core/math_utils.py` and `core/thumbnail_manager.py`.
+5. Fix **7 indentation issues** (E111/E117) in `core/execution.py:110-115, 210-211`.
 
-### Phase 2: Documentation (2-4 weeks) - COMPLETED
-1. Add module docstrings (`core/__init__.py`) ✓
-2. DEVELOPER_GUIDE.md updated with atomic context manager and temp node isolation docs ✓
-3. ROADMAP.md technical principles section rewritten ✓
+### Phase 2: Imports & Naming (2-3 hours)
 
-### Phase 2.5: Pre-release Critical Fixes (2026-05-08) - COMPLETED
-1. `core/node_manager.py` `_find_socket_source` — is_bt_temp filtering for temp Emission nodes ✓
-2. `core/engine.py` `BakeContextManager` — ExitStack.pop_all() atomic context pattern ✓
-3. Project-wide LF line ending standardization (68 files) ✓
-4. `automation/headless_bake.py` — bool return + sys.exit for CI/CD ✓
-5. `ops.py` unused import cleanup ✓
-6. CHANGELOG.md and ROADMAP.md sync ✓
+1. Reconcile 28 E402 violations:
+   - `__init__.py`: move all imports above `bl_info` (Google Style allows `bl_info` as the only exception before imports; alternatively move `get_classes` below imports).
+   - Test files: use `from baketool.test_cases.helpers import ...` at top-level.
+2. Rename 10+ occurrences of `l` → `_layout` or `col` in `ui.py`, `node_manager.py`, `uv_manager.py`, test files.
+3. Add `isort` to CI pipeline with `--profile black` config.
 
-### Phase 3: Refactoring (4-8 weeks)
-1. Break up long functions (>100 lines)
-2. Add type annotations to public functions
-3. Standardize logging
+### Phase 3: Documentation (4-6 hours)
 
-### Phase 4: Maintenance (Ongoing)
-1. Add lint checks to CI/CD
-2. Use `pylint` or `ruff` for automated checks
-3. Code review checklist
+1. Add **34 module docstrings** — focus on `core/*.py`, `automation/*.py`, and all test suite files.
+2. Add **170 missing class/function docstrings** — priority on `BakeStepRunner`, `BakePostProcessor`, `BakePassExecutor`, `ModelExporter`, and operator classes.
+3. Standardize on Google docstring format.
+
+### Phase 4: Type Annotations (6-8 hours)
+
+Goal: raise from 29.5% to 50%+ coverage.
+
+1. Add return types to all public functions in `core/*.py`.
+2. Replace `Any` with `bpy.types.PropertyGroup`, `Protocol`, or `TypeVar` in:
+   - `PropertyIO.from_dict/to_dict`
+   - `SceneSettingsContext`
+   - All `setting: Any` parameters.
+3. Add `-> Set[str]` return type to all operator `execute()` and `invoke()` methods.
+
+### Phase 5: Function Complexity (4-6 hours)
+
+1. Break `BakeStepRunner.run` (129 lines): extract channel loop → `_process_channel()`, packing → `_pack_channels()`.
+2. Break `BAKE_PT_BakePanel.draw` (101 lines): sub-sections already exist as methods — ensure they are the only draw paths.
+3. Break `clr.py:main` (131 lines) and `multi_version_test.py:main` (169 lines): extract report building and path discovery.
+
+### Phase 6: CI Integration (1 hour)
+
+1. Remove all suppression codes from the CI pycodestyle ignore list gradually.
+2. Enable `ruff` with selected rules (I, N, W, E sections except suppressed).
+3. Add `mypy --strict` on `core/api.py` as a starting point for type checking.
+
+---
+
+## 10. FILE-BY-FILE PRIORITY
+
+### Production Code (Highest Priority)
+
+| File | Score | Key Issues | Est. Fix |
+|------|-------|------------|----------|
+| `core/engine.py` | 4/10 | ~15 format, 2 long funcs, missing docstrings | 4h |
+| `core/execution.py` | 3/10 | ~45 format, 7 indent errors, missing class doc | 1h |
+| `ui.py` | 5/10 | 10 ambiguous names, ~15 format | 2h |
+| `core/image_manager.py` | 5/10 | 2 long funcs, missing docstrings | 2h |
+| `core/common.py` | 5/10 | 1 long func, Any abuse | 2h |
+| `core/node_manager.py` | 5/10 | format, ambiguous name, missing doc | 1h |
+| `ops.py` | 6/10 | unused imports, format | 1h |
+| `__init__.py` | 6/10 | 13 E402, mutable globals | 1h |
+| `preset_handler.py` | 7/10 | missing module doc | 30min |
+| `property.py` | 7/10 | 2 unused imports, missing module doc | 30min |
+
+### Test Code (Lower Priority)
+
+| File | Count | Main Issues |
+|------|-------|-------------|
+| `suite_production_workflow.py` | ~90 | W293, E501 |
+| `suite_context_lifecycle.py` | ~50 | W293 |
+| `suite_negative.py` | ~20 | W293, E501 |
+| `suite_shading.py` | ~20 | W293, W291 |
+| `helpers.py` | 1 | E402 |
+
+### Build/Automation
+
+| File | Issues |
+|------|--------|
+| `automation/cli_runner.py` | missing module doc, 1 unused import, 1 long func |
+| `automation/multi_version_test.py` | missing module doc, 2 long funcs |
+| `dev_tools/extract_translations.py` | missing module doc, missing class doc |
 
 ---
 
 ## 11. TOOLS RECOMMENDATION
 
-### 11.1 Linting Configuration (.pylintrc)
+### Immediate
 
-```ini
-[MASTER]
-load-plugins=pylint.extensions.docparams
-max-line-length=120
-max-args=8
-max-returns=8
-max-branches=15
+```bash
+# Fix all whitespace in one pass:
+find . -name "*.py" -not -path "./.venv/*" -not -path "./.git/*" \
+  -exec sed -i 's/[[:space:]]*$//' {} +
 
-[MESSAGES CONTROL]
-disable=C0111,  # missing-docstring (defer)
-         C0103,  # invalid-name (Blender naming)
-         R0903,  # too-few-public-methods
-         R0913,  # too-many-arguments
+# Install isort + black (style enforcement):
+pip install isort black mypy ruff
+isort --profile black .
+black --line-length 120 .
 ```
 
-### 11.2 Ruff Configuration (pyproject.toml)
+### CI Configuration
 
-```toml
-[tool.ruff]
-line-length = 120
-target-version = "py310"
-
-[tool.ruff.lint]
-select = [
-    "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings
-    "F",   # pyflakes
-    "I",   # isort
-    "UP",  # pyupgrade
-    "N",   # pep8-naming
-]
-ignore = [
-    "N818",  # exception naming (Blender convention)
-]
+```yaml
+- name: Style Enforcement
+  run: |
+    isort --check-only --profile black --line-length 120 .
+    ruff check --select=I,N,W,E .
 ```
+
+### Long-Term
+
+- Switch from `pycodestyle` to `ruff` for 10-100x faster linting.
+- Enable `mypy` incrementally: start with `core/api.py`, then `core/compat.py`, then `preset_handler.py`.
+- Use `pydocstyle` with Google convention for docstring enforcement.
 
 ---
 
-## 12. APPENDIX: FILE-BY-FILE SUMMARY
+## 12. OVERALL ASSESSMENT
 
-### High Priority Files (Need Immediate Attention)
+The codebase has **good structural architecture** (clear separation into `core/`, `ops.py`, `ui.py`, `property.py`) and **strong test coverage** (158 tests across 22 suites, cross-version verified). The practical functionality is solid.
 
-| File | Issues | Est. Fix Time |
-|------|--------|---------------|
-| `core/cleanup.py` | 4 bare excepts | 30 min |
-| `state_manager.py` | 2 bare excepts | 15 min |
-| `ops.py` | Missing docstrings | 2 hours |
-| `core/engine.py` | Long functions | 4 hours |
+The style debt is concentrated in:
 
-### Medium Priority Files
+1. **Test files** — bulk of formatting issues (W293, W291). Test files were written for coverage, not style.
+2. **Docstrings** — 34/48 modules lack docstrings; 170 missing class/func docstrings.
+3. **Type annotations** — only 29.5% coverage, heavy use of `Any`.
+4. **Unused imports** — 40 instances, mostly accumulated during refactors.
 
-| File | Issues | Est. Fix Time |
-|------|--------|---------------|
-| `core/common.py` | Complex logic | 2 hours |
-| `core/node_manager.py` | Long class | 3 hours |
-| `ui.py` | Whitespace | 30 min |
+**None of these issues represent an immediate release blocker.** The previous bare-except problem (which was a correctness risk) has been fully resolved. The remaining issues are maintainability concerns: they will slow down future development and make onboarding harder.
 
-### Low Priority Files
+**Recommended order:**
+1. Fix Phase 1 (whitespace, unused imports) — automated, low risk, can be done before any further feature work.
+2. Fix Phase 3 (docstrings) — as you touch each file for other changes, add the module docstring and class docstring.
+3. Fix Phase 4 (types) — incrementally, one file at a time.
 
-| File | Issues | Est. Fix Time |
-|------|--------|---------------|
-| `__init__.py` | Import order | 15 min |
-| `translations.py` | OK | - |
-| `constants.py` | OK | - |
-
----
-
-## References
-
-- [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)
-- [Blender Python API Style Guide](https://wiki.blender.org/wiki/Style_Guide/Python)
-- [Real Python: Docstring Guide](https://realpython.com/documenting-python-code/)
+Setting a hard deadline for full Google Style compliance is not realistic for a solo-maintainer project; instead, integrate automated checks (isort, ruff, `py_compile`) into CI so new contributions don't add new style debt.

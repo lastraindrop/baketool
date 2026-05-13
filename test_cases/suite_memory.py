@@ -12,8 +12,6 @@ from .helpers import (
     JobBuilder,
     ensure_cycles,
     MockSetting,
-    assert_no_leak,
-    selective_cleanup,
     DataLeakChecker,
 )
 from ..core import image_manager
@@ -176,8 +174,8 @@ class SuiteMemory(unittest.TestCase):
 
         leaks = checker.check()
 
-        report_leaks = [l for l in leaks if "ReportThis" in l]
-        keep_leaks = [l for l in leaks if "KeepThis" in l]
+        report_leaks = [entry for entry in leaks if "ReportThis" in entry]
+        keep_leaks = [entry for entry in leaks if "KeepThis" in entry]
 
         self.assertGreater(len(report_leaks), 0)
         self.assertEqual(len(keep_leaks), 0)

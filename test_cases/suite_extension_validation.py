@@ -1,7 +1,6 @@
+
+"""Blender Extensions manifest compliance tests."""
 import unittest
-import bpy
-import os
-import re
 from pathlib import Path
 
 class SuiteExtensionValidation(unittest.TestCase):
@@ -34,7 +33,7 @@ class SuiteExtensionValidation(unittest.TestCase):
         """Verify that mandatory fields for Extensions are present and correct."""
         if self._tomllib is None:
             self.skipTest("tomllib not available in Blender < 4.2")
-        
+
         with open(self.manifest_path, "rb") as f:
             data = self._tomllib.load(f)
 
@@ -51,9 +50,9 @@ class SuiteExtensionValidation(unittest.TestCase):
         """Verify that version and metadata are synced between bl_info and manifest."""
         if self._tomllib is None:
             self.skipTest("tomllib not available in Blender < 4.2")
-        
+
         from baketool import bl_info
-        
+
         with open(self.manifest_path, "rb") as f:
             manifest = self._tomllib.load(f)
 
@@ -69,10 +68,10 @@ class SuiteExtensionValidation(unittest.TestCase):
         """Verify that file permissions are declared for baking operations."""
         if self._tomllib is None:
             self.skipTest("tomllib not available in Blender < 4.2")
-        
+
         with open(self.manifest_path, "rb") as f:
             data = self._tomllib.load(f)
-        
+
         permissions = data.get("permissions")
         self.assertIsNotNone(permissions, "BakeNexus requires [permissions] to save textures")
         self.assertIn("files", permissions, "Missing 'files' permission for texture output")
@@ -81,10 +80,10 @@ class SuiteExtensionValidation(unittest.TestCase):
         """Verify that recommended fields for better marketplace visibility are present."""
         if self._tomllib is None:
             self.skipTest("tomllib not available in Blender < 4.2")
-        
+
         with open(self.manifest_path, "rb") as f:
             manifest = self._tomllib.load(f)
-        
+
         recommended = ["tagline", "website", "tags", "maintainer"]
         for field in recommended:
             self.assertIn(field, manifest, f"Missing recommended field: {field}")

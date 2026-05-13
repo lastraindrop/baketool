@@ -13,14 +13,11 @@ import tempfile
 import traceback
 import json
 from pathlib import Path
-from typing import Optional, List, Set, Any, Dict
+from typing import Optional, Set, Any, Dict
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from .core.common import (
-    apply_baked_result,
-    safe_context_override,
     reset_channels_logic,
-    check_objects_uv,
     log_error,
     manage_channels_logic,
     manage_objects_logic,
@@ -743,7 +740,7 @@ class BAKETOOL_OT_ExportResult(bpy.types.Operator):
         # H-06: Save original state to restore later
         old_path = img.filepath_raw
         old_fmt = img.file_format
-        
+
         try:
             # Save the image to the selected filepath
             img.filepath_raw = self.filepath
@@ -820,11 +817,11 @@ class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):
             img = res.image
             filename = f"{bpy.path.clean_name(img.name)}{ext}"
             filepath = os.path.join(export_dir, filename)
-            
+
             # H-06: Save original state
             old_path = img.filepath_raw
             old_fmt = img.file_format
-            
+
             try:
                 img.filepath_raw = filepath
                 img.file_format = target_fmt
