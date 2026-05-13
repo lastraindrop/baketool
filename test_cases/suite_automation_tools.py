@@ -1,6 +1,7 @@
 
 """Automation tool integration tests."""
 import os
+import sys
 import tempfile
 import unittest
 
@@ -10,33 +11,46 @@ from ..automation import multi_version_test
 class SuiteAutomationTools(unittest.TestCase):
     """Tests for CLI and cross-version automation helpers."""
 
+    def _plat(self, *paths):
+        """Return platform-appropriate paths (Unix-style on Linux)."""
+        if sys.platform == "win32":
+            return list(paths)
+        return ["/" + p.split(":")[-1].lstrip("\\").replace("\\", "/") for p in paths]
+
     def test_load_blender_paths_merges_sources_and_dedupes(self):
         with tempfile.NamedTemporaryFile(
             "w", suffix=".txt", delete=False, encoding="utf-8"
         ) as handle:
-            handle.write("D:\\B\\blender.exe\nE:\\C\\blender.exe\n")
+            handle.write("\n".join(self._plat(
+                r"D:\B\blender.exe",
+                r"E:\C\blender.exe",
+            )))
             paths_file = handle.name
 
         try:
             sep = os.pathsep
+            expected = self._plat(
+                r"C:\A\blender.exe",
+                r"Z:\Extra\blender.exe",
+                r"D:\B\blender.exe",
+                r"E:\C\blender.exe",
+            )
             env = {
-                "BLENDER_PATHS": sep.join(["C:\\A\\blender.exe", "D:\\B\\blender.exe"]),
+                "BLENDER_PATHS": sep.join(self._plat(
+                    r"C:\A\blender.exe",
+                    r"D:\B\blender.exe",
+                )),
                 "BLENDER_PATHS_FILE": "",
             }
             paths = multi_version_test.load_blender_paths(
-                extra_paths=["C:\\A\\blender.exe", "Z:\\Extra\\blender.exe"],
+                extra_paths=self._plat(
+                    r"C:\A\blender.exe",
+                    r"Z:\Extra\blender.exe",
+                ),
                 paths_file=paths_file,
                 env=env,
             )
-            self.assertEqual(
-                paths[:4],
-                [
-                    "C:\\A\\blender.exe",
-                    "Z:\\Extra\\blender.exe",
-                    "D:\\B\\blender.exe",
-                    "E:\\C\\blender.exe",
-                ],
-            )
+            self.assertEqual(paths[:4], expected)
         finally:
             os.remove(paths_file)
 
