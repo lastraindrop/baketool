@@ -513,7 +513,7 @@ class SuiteUnit(unittest.TestCase):
         self.assertIn(val_node, tree.nodes.values())
 
         # Execute actual cleanup operator
-        res = bpy.ops.bake.emergency_cleanup()
+        res = bpy.ops.baketool.emergency_cleanup()
         self.assertEqual(res, {"FINISHED"})
 
         # Verify removal
