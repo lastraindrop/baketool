@@ -28,7 +28,9 @@ class BakeStateManager:
 
     def __init__(self):
         """Initialize state manager with system temp paths."""
-        self.log_dir = Path(bpy.app.tempdir)
+        import os
+        temp_dir = bpy.app.tempdir or os.environ.get("TEMP", "/tmp")
+        self.log_dir = Path(temp_dir)
         self.log_file = self.log_dir / "sbt_last_session.json"
 
     def start_session(self, total_steps: int, job_name: str) -> None:

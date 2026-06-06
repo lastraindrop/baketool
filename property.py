@@ -275,6 +275,15 @@ def update_preview(self, context):
                 area.tag_redraw()
 
 
+def update_save_path_validity(self, context):
+    """Validate external save path and cache result in path_valid property."""
+    import os
+
+    path = bpy.path.abspath(self.external_save_path)
+    is_valid = bool(path) and os.path.exists(path)
+    self.path_valid = is_valid
+
+
 # --- Sub-Setting Groups ---
 
 
@@ -309,8 +318,8 @@ class BakeMeshSettings(bpy.types.PropertyGroup):
     """Generic settings for Mesh Analysis maps (AO, Bevel, Curvature, etc.)"""
 
     samples: props.IntProperty(name="Samples", default=8, min=1, max=128)
-    radius: props.FloatProperty(name="Radius", default=0.1)
-    distance: props.FloatProperty(name="Distance", default=1.0)
+    radius: props.FloatProperty(name="Radius", default=0.1, min=0.0)
+    distance: props.FloatProperty(name="Distance", default=1.0, min=0.0)
     contrast: props.FloatProperty(name="Contrast", default=1.0)
     inside: props.BoolProperty(name="Inside", default=False)
     local_only: props.BoolProperty(name="Only Local", default=False)
@@ -318,7 +327,7 @@ class BakeMeshSettings(bpy.types.PropertyGroup):
     invert_g: props.BoolProperty(name="Invert G", default=True)
     direction: props.EnumProperty(items=DIRECTIONS, name="Direction", default="Z")
     invert: props.BoolProperty(name="Invert", default=False)
-    id_count: props.IntProperty(name="ID Map Count", default=5)
+    id_count: props.IntProperty(name="ID Map Count", default=5, min=0)
 
 
 class BakeExtensionSettings(bpy.types.PropertyGroup):
@@ -407,7 +416,7 @@ class CustomBakeChannel(bpy.types.PropertyGroup):
 
 class BakedImageResult(bpy.types.PropertyGroup):
     image: props.PointerProperty(type=bpy.types.Image)
-    filepath: props.StringProperty()
+    filepath: props.StringProperty(subtype="FILE_PATH")
     object_name: props.StringProperty()
     channel_type: props.StringProperty()
 
@@ -438,8 +447,8 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     active_object: props.PointerProperty(type=bpy.types.Object, name="Active")
     cage_object: props.PointerProperty(type=bpy.types.Object, name="Cage")
 
-    res_x: props.IntProperty(name="X", default=1024, min=32)
-    res_y: props.IntProperty(name="Y", default=1024, min=32)
+    res_x: props.IntProperty(name="X", default=1024, min=1)
+    res_y: props.IntProperty(name="Y", default=1024, min=1)
     sample: props.IntProperty(name="Sampling", default=1, min=1)
     margin: props.IntProperty(name="Margin", default=8, min=0)
     device: props.EnumProperty(name="Device", items=DEVICES, default="GPU")
@@ -472,7 +481,9 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     use_alpha: props.BoolProperty(default=True, name="Use Alpha")
 
     use_external_save: props.BoolProperty(default=False, name="External Save")
-    external_save_path: props.StringProperty(subtype="DIR_PATH", name="Save Path")
+    external_save_path: props.StringProperty(
+        subtype="DIR_PATH", name="Save Path", update=update_save_path_validity
+    )
     external_save_format: props.EnumProperty(
         items=BASIC_FORMATS,
         name="Format",
@@ -485,7 +496,7 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     color_mode: props.EnumProperty(
         items=get_valid_modes, name="Color Mode", default=0
     )
-    quality: props.IntProperty(name="Quality", default=85)
+    quality: props.IntProperty(name="Quality", default=85, min=0, max=100)
     exr_code: props.EnumProperty(items=EXR_CODECS, name="EXR Codec", default="ZIP")
     tiff_codec: props.EnumProperty(
         items=TIFF_CODECS, name="TIFF Codec", default="DEFLATE"
@@ -500,10 +511,10 @@ class BakeJobSetting(bpy.types.PropertyGroup):
 
     bake_motion: props.BoolProperty(default=False, name="Animation")
     bake_motion_use_custom: props.BoolProperty(default=False, name="Custom Frames")
-    bake_motion_start: props.IntProperty(name="Start", default=1)
-    bake_motion_last: props.IntProperty(name="Duration", default=250)
-    bake_motion_startindex: props.IntProperty(name="Start Index", default=1)
-    bake_motion_digit: props.IntProperty(name="Frame Digits", default=4)
+    bake_motion_start: props.IntProperty(name="Start", default=1, min=0)
+    bake_motion_last: props.IntProperty(name="Duration", default=250, min=1)
+    bake_motion_startindex: props.IntProperty(name="Start Index", default=1, min=0)
+    bake_motion_digit: props.IntProperty(name="Frame Digits", default=4, min=1, max=10)
     bake_motion_separator: props.StringProperty(name="Separator", default="_")
 
     export_model: props.BoolProperty(name="Export Model", default=False)

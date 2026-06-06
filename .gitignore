@@ -146,3 +146,9 @@ translation_audit_report.json
 translation_clean_audit.json
 # .github/ - now tracked in version control
 # code_review.md - now tracked in version control
+
+# OpenCode IDE
+.omo/
+
+# Test artifacts
+test_report.json

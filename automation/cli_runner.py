@@ -196,11 +196,21 @@ def _load_category(category, loader):
     parent_dir = str(addon_root.parent)
 
     category_map = {
-        "core": ["suite_unit.py", "suite_negative.py", "suite_api.py", "suite_code_review.py"],
+        "core": [
+            "suite_unit.py", "suite_negative.py", "suite_api.py",
+            "suite_code_review.py", "suite_extension_validation.py",
+        ],
         "memory": ["suite_memory.py"],
         "export": ["suite_export.py"],
         "ui": ["suite_ui_logic.py"],
-        "integration": ["suite_production_workflow.py", "suite_context_lifecycle.py"],
+        "integration": [
+            "suite_production_workflow.py", "suite_context_lifecycle.py",
+            "suite_shading.py", "suite_compat.py", "suite_cleanup.py",
+            "suite_custom_channel_hardened.py", "suite_denoise.py",
+            "suite_localization.py", "suite_parameter_matrix.py",
+            "suite_preset.py", "suite_udim_advanced.py",
+            "suite_verification.py",
+        ],
     }
 
     patterns = category_map.get(category, ["suite_*.py"])

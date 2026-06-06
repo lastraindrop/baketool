@@ -330,6 +330,33 @@ class SuiteProductionWorkflow(unittest.TestCase):
 
             cleanup_scene()
 
+    def test_combine_objects_2_objs_e2e(self):
+        """[E2E] Verify COMBINE_OBJECT mode with 2 objects generates combined queue."""
+        with assert_no_leak(self):
+            cleanup_scene()
+            obj1 = create_test_object("CombineObj1", location=(0, 0, 0))
+            obj2 = create_test_object("CombineObj2", location=(0, 1, 0))
+            builder = JobBuilder("CombineJob")
+            builder.mode('COMBINE_OBJECT').resolution(16)
+            builder.add_objects([obj1, obj2])
+            builder.save_to(self.temp_dir)
+            builder.enable_channel('diff')
+            job = builder.build()
+
+            queue = JobPreparer.prepare_execution_queue(bpy.context, [job])
+            # COMBINE_OBJECT merges objects into one bake pass per channel
+            self.assertGreater(len(queue), 0, "Preparation failed for COMBINE_OBJECT")
+
+            runner = BakeStepRunner(bpy.context)
+            for i, step in enumerate(queue):
+                runner.run(step, queue_idx=i)
+
+            files = os.listdir(self.temp_dir)
+            self.assertTrue(any('CombineObj1' in f or 'CombineObj2' in f for f in files),
+                          f"No output files found for combined objects: {files}")
+
+            cleanup_scene()
+
     def test_library_material_protection_skip(self):
         """Verify that objects with Library materials handle protection setup safely."""
         with assert_no_leak(self):

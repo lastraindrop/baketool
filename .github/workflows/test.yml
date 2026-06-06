@@ -48,7 +48,8 @@ jobs:
         run: |
           wget -q ${{ matrix.blender-repo }} -O blender.tar.xz
           tar xf blender.tar.xz
-          echo "BLENDER_DIR=$(pwd)" >> $GITHUB_ENV
+          BLENDER_BIN="$(find "$(pwd)" -name 'blender' -type f -path '*/blender-*/blender' | head -1)"
+          echo "BLENDER_DIR=$(dirname "$BLENDER_BIN")" >> $GITHUB_ENV
 
       - name: Setup Virtual Display and Audio
         run: |
@@ -63,7 +64,7 @@ jobs:
         run: |
           export DISPLAY=:99
           pip install numpy || true
-          ${{ env.BLENDER_DIR }}/blender-*/blender -b --python automation/cli_runner.py -- --json test_report.json --suite all
+          $BLENDER_DIR/blender -b --python automation/cli_runner.py -- --json test_report.json --suite all
 
       - name: Upload Report
         if: always()

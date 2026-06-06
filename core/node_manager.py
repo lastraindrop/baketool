@@ -43,6 +43,7 @@ def bake_node_to_image(
         return None
 
     img = set_image(f"{material.name}_{node.name}", settings.res_x, settings.res_y)
+    img_existed_before = img is not None and bpy.data.images.get(img.name) is not None
 
     from .common import SceneSettingsContext
 
@@ -96,9 +97,21 @@ def bake_node_to_image(
             return img
     except (AttributeError, KeyError, ReferenceError) as e:
         logger.exception(f"Node baking failed: {e}")
+        # Cleanup: remove newly created image to avoid resource leak
+        if img and not img_existed_before:
+            try:
+                bpy.data.images.remove(img, do_unlink=True)
+            except (ReferenceError, RuntimeError):
+                pass
         return None
     except RuntimeError as e:
         logger.error(f"Bake operation failed: {e}")
+        # Cleanup: remove newly created image to avoid resource leak
+        if img and not img_existed_before:
+            try:
+                bpy.data.images.remove(img, do_unlink=True)
+            except (ReferenceError, RuntimeError):
+                pass
         return None
 
 

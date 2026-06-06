@@ -43,6 +43,7 @@ AUTOMATION_FILES = [
     "automation/__init__.py",
     "automation/cli_runner.py",
     "automation/headless_bake.py",
+    "automation/multi_version_test.py",
 ]
 
 DOC_FILES = [

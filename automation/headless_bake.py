@@ -9,8 +9,9 @@ from pathlib import Path
 
 addon_dir = str(Path(__file__).resolve().parent.parent)
 addon_parent = str(Path(__file__).resolve().parent.parent.parent)
+import os
 for path in (addon_parent, addon_dir):
-    if path not in sys.path:
+    if path not in sys.path and os.path.isdir(path):
         sys.path.append(path)
 
 try:
@@ -29,12 +30,10 @@ def ensure_addon_registered():
 
     try:
         baketool.register()
-    except ValueError:
-        # Already registered but Blender state was partially initialized.
-        pass
     except (ValueError, RuntimeError) as exc:
-        print(f"Error: Failed to register BakeNexus addon: {exc}")
-        return False
+        # Already registered or partial state — non-fatal
+        logger_msg = f"Note: register() raised {type(exc).__name__}: {exc}"
+        print(logger_msg)
 
     return hasattr(bpy.context.scene, "BakeJobs")
 

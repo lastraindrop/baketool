@@ -111,20 +111,6 @@ class SuiteNegative(unittest.TestCase):
         finally:
             shutil.rmtree(tmp_dir)
 
-    def test_context_manager_exception_restores_state(self):
-        """Verify that BakeContextManager performs cleanup even if an exception occurs."""
-        from ..core.engine import BakeContextManager
-        orig_engine = bpy.context.scene.render.engine
-
-        try:
-            with BakeContextManager(bpy.context, MockSetting()):
-                bpy.context.scene.render.engine = 'CYCLES'
-                raise RuntimeError("Simulated crash")
-        except RuntimeError:
-            pass
-
-        self.assertEqual(bpy.context.scene.render.engine, orig_engine, "Context manager failed to restore engine after exception")
-
     def test_node_handler_cleanup_restores_links(self):
         """Verify that NodeGraphHandler restores original links even on early exit."""
         mat = self.obj.data.materials[0]

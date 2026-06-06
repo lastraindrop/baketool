@@ -2,6 +2,43 @@
 
 本文件记录 BakeNexus 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
+## 1.0.0 - 2026-06-06
+### 发布前最终审计与加固 / Pre-release Final Audit & Hardening
+
+#### Phase 6: 关键缺陷修复 / Critical Bug Fixes
+- **UNDO 支持 (C-1)**：为 12 个修改场景的 Operator 添加 `bl_options = {"REGISTER", "UNDO"}`，6 个文件/导出/只读操作保持不加。
+- **Draw 性能 (C-2)**：将 `draw_env_status()` 中每帧 `os.path.exists()` 移出到 `update_save_path_validity` 属性回调，消除 UI 绘制中的文件 I/O。
+- **Headless 安全 (C-3)**：为 `preset_handler.py` 中 `load_default_preset()` 和 `update_crash_cache()` 添加 `bpy.context` 空值守卫。
+- **图像泄漏 (C-4)**：`bake_node_to_image` 烘焙失败时自动清理已创建的 Image datablock。
+- **属性边界 (H-1)**：`quality` 添加 min=0/max=100；`res_x/res_y` min 降至 1；`radius`/`distance`/`id_count` 添加 min 边界；7 个 `bake_motion_*` 属性添加 min/max 约束。
+
+#### Phase 7: 基础设施修复 / Infrastructure Fixes
+- **CI 路径 (H-8)**：`test.yml` 中 BLENDER_DIR 使用 `find` 精确定位 Blender 二进制文件。
+- **构建打包 (H-9)**：`build_release_zip.py` 的 AUTOMATION_FILES 添加 `multi_version_test.py`。
+- **跨版本测试**：`multi_version_test.py` 添加 `BAKE_TOOL_BLENDER_PATHS` 环境变量支持。
+- **临时目录容错**：`state_manager.py` 中 `bpy.app.tempdir` 为空时回退至 `$TEMP` 或 `/tmp`。
+- **路径安全**：`headless_bake.py` 中 `sys.path` 修改前添加 `os.path.isdir()` 验证。
+
+#### Phase 8: 代码质量强化 / Code Quality Hardening
+- **异常处理**：`DeleteResult`/`DeleteAllResults` 静默异常改为 logger.warning。
+- **注册/注销安全**：`__init__.py` 中 `register()`/`unregister()` 循环添加 try/except。
+- **Handler 注册**：AutoLoadHandler/UpdateCrashCacheHandler/RestorePreviewMaterialsHandler 注册添加独立错误处理。
+- **属性完整性**：`BakedImageResult.filepath` 添加 `subtype="FILE_PATH"`。
+- **代码风格**：`ui.py` 中 `import json` 从函数内部提升至模块顶层。
+
+#### Phase 9: 测试套件优化 / Test Suite Optimization
+- **去重**：移除 `suite_negative.py` 中与 `suite_unit.py` 重复的 `test_context_manager_exception_restores_state`。
+- **MockSetting 对齐**：添加 27 个新属性（udim_mode、auto_cage_mode、extrusion、texel_density、use_*_map、name_setting 等），与 UI 引用的属性保持一致。
+- **category_map 完善**：`cli_runner.py` 的 `_load_category` 覆盖全部 22 个 suite。
+- **新增 COMBINE_OBJECT E2E 测试**：`suite_production_workflow.py` 添加 `test_combine_objects_2_objs_e2e`，补齐唯一未测试的架构模式。
+
+#### 验证结果 / Verification
+- **158/158 测试通过**（Blender 4.2.14，0 失败）。
+- 全部 16 个修改文件的 `lsp_diagnostics` 通过。
+- 5/5 BAKE_MODES 全覆盖，MockSetting 缺口缩减 43%。
+
+---
+
 ## 1.0.0 - 2026-05-14
 ### 正式发布前代码风格系统整肃 / Pre-release Code Style Overhaul
 
@@ -71,13 +108,6 @@
 - **完善技术指南**：新增上下文注入模式、Depsgraph 优化实践、错误日志治理、CI 有效性规则章节。
 - **更新路线图**：同步 v1.0.0 最终修复记录，调整短期计划反映已完成优化。
 - **更新开发者指南**：新增上下文注入模式、Compat Layer 函数表、API 上下文约定。
-
----
-
-## 1.0.0 - 2026-05-09
-
-## 1.0.0 - 2026-05-08
-
 
 ---
 

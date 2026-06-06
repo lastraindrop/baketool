@@ -21,6 +21,17 @@ DEFAULT_BLENDER_PATHS = [
     r"C:\Program Files\Blender Foundation\Blender 5.0\blender.exe",
 ]
 
+def _resolve_blender_paths():
+    """Resolve Blender paths from env var or defaults.
+    
+    Set BAKE_TOOL_BLENDER_PATHS env var (semicolon-separated on Windows,
+    colon-separated on Linux/macOS) to override the default paths.
+    """
+    env_paths = os.environ.get("BAKE_TOOL_BLENDER_PATHS", "")
+    if env_paths:
+        return _split_paths(env_paths)
+    return DEFAULT_BLENDER_PATHS
+
 SUCCESS_MARKERS = ("CONSOLIDATED SUITES PASSED", "ALL TESTS PASSED")
 current_dir = Path(__file__).resolve().parent
 runner_script = str(current_dir / "cli_runner.py")
@@ -91,7 +102,7 @@ def load_blender_paths(extra_paths=None, paths_file=None, env=None):
         collected.extend(_load_paths_file(paths_file))
 
     if not extra_paths and not paths_file and not env_paths_file:
-        collected.extend(DEFAULT_BLENDER_PATHS)
+        collected.extend(_resolve_blender_paths())
     return _dedupe_preserve_order(collected)
 
 

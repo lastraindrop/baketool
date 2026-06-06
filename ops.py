@@ -64,6 +64,7 @@ class BAKETOOL_OT_RunDevTests(bpy.types.Operator):
 
     bl_idname = "baketool.run_dev_tests"
     bl_label = "Run Development Tests"
+    bl_options = {"REGISTER", "UNDO"}
 
     _SUBPROCESS_TIMEOUT_SECONDS = 1800
 
@@ -204,6 +205,7 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
 
     bl_label = "Bake"
     bl_idname = "baketool.execute"
+    bl_options = {"REGISTER"}
 
     is_resume: props.BoolProperty(default=False)
 
@@ -271,6 +273,7 @@ class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
 
     bl_idname = "baketool.quick_bake"
     bl_label = "Quick Bake Selected"
+    bl_options = {"REGISTER"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         """Support non-interactive execution.
@@ -339,6 +342,7 @@ class BAKETOOL_OT_ResetChannels(bpy.types.Operator):
 
     bl_idname = "baketool.reset_channels"
     bl_label = "Reset"
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         bj = context.scene.BakeJobs
@@ -355,6 +359,7 @@ class BAKETOOL_OT_SetSaveLocal(bpy.types.Operator):
 
     bl_idname = "baketool.set_save_local"
     bl_label = "Use Local Path"
+    bl_options = {"REGISTER", "UNDO"}
 
     save_location: props.IntProperty(default=0)
 
@@ -394,6 +399,7 @@ class BAKETOOL_OT_SelectedNodeBake(bpy.types.Operator):
 
     bl_idname = "baketool.selected_node_bake"
     bl_label = "Bake Selected Node"
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         if not hasattr(context.scene, "BakeJobs"):
@@ -454,6 +460,7 @@ class BAKETOOL_OT_RefreshUDIMLocations(bpy.types.Operator):
 
     bl_idname = "baketool.refresh_udim_locations"
     bl_label = "Refresh UDIM Tiles"
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         bj = context.scene.BakeJobs
@@ -481,6 +488,7 @@ class BAKETOOL_OT_TogglePreview(bpy.types.Operator):
 
     bl_idname = "baketool.toggle_preview"
     bl_label = "Toggle Preview"
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         bj = context.scene.BakeJobs
@@ -520,6 +528,7 @@ class BAKETOOL_OT_AnalyzeCage(bpy.types.Operator):
 
     bl_idname = "baketool.analyze_cage"
     bl_label = "Analyze Cage Overlap"
+    bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
     def poll(cls, context: bpy.types.Context) -> bool:
@@ -649,6 +658,7 @@ class BAKETOOL_OT_DeleteResult(bpy.types.Operator):
 
     bl_idname = "baketool.delete_result"
     bl_label = "Delete"
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         results = context.scene.baked_image_results
@@ -668,7 +678,7 @@ class BAKETOOL_OT_DeleteResult(bpy.types.Operator):
                 try:
                     bpy.data.images.remove(img, do_unlink=True)
                 except (ReferenceError, RuntimeError) as e:
-                    logger.debug(f"Failed to remove image: {e}")
+                    logger.warning(f"Failed to remove image: {e}")
         return {"FINISHED"}
 
 
@@ -677,6 +687,7 @@ class BAKETOOL_OT_DeleteAllResults(bpy.types.Operator):
 
     bl_idname = "baketool.delete_all_results"
     bl_label = "Delete All"
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         results = context.scene.baked_image_results
@@ -688,8 +699,8 @@ class BAKETOOL_OT_DeleteAllResults(bpy.types.Operator):
             if img.users == 0:
                 try:
                     bpy.data.images.remove(img, do_unlink=True)
-                except (ReferenceError, RuntimeError):
-                    pass
+                except (ReferenceError, RuntimeError) as e:
+                    logger.warning(f"Failed to remove image: {e}")
             else:
                 img.use_fake_user = False
 
@@ -847,6 +858,7 @@ class BAKETOOL_OT_ManageObjects(bpy.types.Operator):
 
     bl_idname = "baketool.manage_objects"
     bl_label = "Manage Objects"
+    bl_options = {"REGISTER", "UNDO"}
 
     action: props.StringProperty()
 
@@ -928,6 +940,7 @@ class BAKETOOL_OT_GenericChannelOperator(bpy.types.Operator):
 
     bl_idname = "baketool.generic_channel_op"
     bl_label = "Channel Op"
+    bl_options = {"REGISTER", "UNDO"}
 
     action_type: props.EnumProperty(
         name="Action",
@@ -972,6 +985,7 @@ class BAKETOOL_OT_ClearCrashLog(bpy.types.Operator):
 
     bl_idname = "baketool.clear_crash_log"
     bl_label = "Clear Crash Log"
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         scene = context.scene

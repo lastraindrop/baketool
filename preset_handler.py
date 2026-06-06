@@ -370,12 +370,18 @@ class AutoLoadHandler:
     @persistent
     def load_default_preset(dummy):
         """Handler to load default preset on file load if enabled."""
-        addon = bpy.context.preferences.addons.get(__package__)
+        # Guard: bpy.context may be unavailable in headless/background mode
+        ctx = bpy.context
+        if not ctx:
+            return
+
+        prefs_addons = ctx.preferences.addons
+        addon = prefs_addons.get(__package__)
         if not addon:
             addon = next(
                 (
-                    bpy.context.preferences.addons.get(key)
-                    for key in bpy.context.preferences.addons.keys()
+                    prefs_addons.get(key)
+                    for key in prefs_addons.keys()
                     if key.endswith(f".{__package__}")
                 ),
                 None,
@@ -393,7 +399,7 @@ class AutoLoadHandler:
         if not os.path.exists(filepath):
             return
 
-        scene = bpy.context.scene
+        scene = getattr(ctx, "scene", None)
         if not scene:
             return
 
@@ -435,7 +441,12 @@ class UpdateCrashCacheHandler:
         except ImportError:
             return
 
-        scene = bpy.context.scene
+        # Guard: bpy.context may be unavailable in headless/background mode
+        ctx = bpy.context
+        if not ctx:
+            return
+
+        scene = getattr(ctx, "scene", None)
         if not scene:
             return
 

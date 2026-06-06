@@ -37,7 +37,15 @@
 - **命名一致性**：`cleanup.py` operator 前缀统一为 `baketool.`。
 - **代码清理**：重复 import 删除、CHANGELOG 格式修复、translations.py 模块 docstring 补全、constants.py license 占位符替换。
 
-## 3. 短期计划 (v1.1.x) - 生产力增强
+## 4. 已完成发布前审计与测试优化 (2026-06-06) ✅
+- **Phase 6 — 关键缺陷修复**：C-1 至 C-4 全部修复（UNDO 支持、Draw 性能、Headless 安全、图像泄漏），H-1/H-8/H-9 全部修复（属性边界、CI 路径、构建打包）。
+- **Phase 7 — 基础设施修复**：CI BLENDER_DIR 精确定位、跨版本测试环境变量支持、state_manager 临时目录容错、headless_bake 路径安全验证。
+- **Phase 8 — 代码质量强化**：异常处理从静默改为 logger.warning、register/unregister 添加 try/except、Handler 注册独立错误处理、属性完整性补充。
+- **Phase 9 — 测试套件优化**：去重 1 个重复测试、MockSetting 新增 27 个属性、category_map 覆盖全部 22 个 suite、新增 COMBINE_OBJECT E2E 测试。
+- **验证结果**：158/158 测试通过（Blender 4.2.14）、全部 16 个修改文件 lsp_diagnostics 通过、5/5 BAKE_MODES 全覆盖。
+- 更多细节见 `CHANGELOG.md` 2026-06-06 条目。
+
+## 5. 短期计划 (v1.1.x) - 生产力增强
 - **CI 门控优化**：添加 Blender 可执行文件缓存，减少跨版本验证时间；逐步启用 `ruff` 替代 `pycodestyle`。
 - **剩余风格债务清理**：继续推进 Phase 5（函数拆分：`BakeStepRunner.run` 129行→拆分）和 Phase 6（CI 集成：`isort` + `ruff`）。
 - **类型覆盖率提升**：目标 50%+，重点覆盖 `core/common.py`（`Any` 45+ 处）和 `core/engine.py` 私有方法。
@@ -46,7 +54,7 @@
 - **API 响应性提升**：`core/api.py` 添加异步回调接口，支持外部脚本实时监听烘焙进度。
 - **资源利用率优化**：为 `ModelExporter` 的 USD 导出参数添加更严谨的属性存在性检查。
 
-## 4. 长期愿景 (v2.x) - 智能烘焙生态
+## 6. 长期愿景 (v2.x) - 智能烘焙生态
 - **异步像素回传**：研究 B5.0 下的高性能像素拷贝方案。
 - **全自动化资产处理**：从原始高模到优化后的 LOD 资产实现一键全流程自动化。
 - **数据驱动参数系统**：将通道元数据、UI 布局、保存格式约束和执行参数逐步统一为可校验 schema。

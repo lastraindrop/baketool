@@ -161,7 +161,10 @@ def register():
     registry.classes_to_register = get_classes()
 
     for cls in registry.classes_to_register:
-        bpy.utils.register_class(cls)
+        try:
+            bpy.utils.register_class(cls)
+        except Exception as e:
+            logger.error(f"Failed to register class {cls.__name__}: {e}")
 
     bpy.types.Object.bake_map_index = props.IntProperty(
         default=0, min=0, name="Texture set index"
@@ -206,9 +209,15 @@ def register():
     bpy.types.VIEW3D_MT_object_context_menu.append(menu_func_quick_bake)
 
     # Register Auto Load Handler
-    preset_handler.AutoLoadHandler.register()
-    preset_handler.UpdateCrashCacheHandler.register()
-    preset_handler.RestorePreviewMaterialsHandler.register()
+    for handler_cls in (
+        preset_handler.AutoLoadHandler,
+        preset_handler.UpdateCrashCacheHandler,
+        preset_handler.RestorePreviewMaterialsHandler,
+    ):
+        try:
+            handler_cls.register()
+        except Exception as e:
+            logger.error(f"Failed to register handler {handler_cls.__name__}: {e}")
 
     # 制作 keymap // Create keymap
     wm = bpy.context.window_manager
@@ -271,12 +280,18 @@ def unregister():
 
     # 6. Classes (Registered first, unregister last)
     for cls in reversed(registry.classes_to_register):
-        bpy.utils.unregister_class(cls)
+        try:
+            bpy.utils.unregister_class(cls)
+        except Exception as e:
+            logger.error(f"Failed to unregister class {cls.__name__}: {e}")
 
     # Cleanup Previews (Side effect)
-    from .core import thumbnail_manager
+    try:
+        from .core import thumbnail_manager
 
-    thumbnail_manager.clear_all_previews()
+        thumbnail_manager.clear_all_previews()
+    except Exception as e:
+        logger.warning(f"Failed to clear previews during unregister: {e}")
 
 
 if __name__ == "__main__":

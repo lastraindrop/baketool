@@ -6,6 +6,7 @@ job management, target selection, channel configuration, and result inspection.
 
 import bpy
 import os
+import json
 from typing import Any, Tuple
 from bpy.app.translations import pgettext
 from .constants import (
@@ -464,14 +465,8 @@ def draw_env_status(layout: bpy.types.UILayout, setting: Any) -> None:
             row.operator("baketool.open_addon_prefs", text=pgettext("Fix"), icon="SETTINGS")
             any_issue = True
 
-    # 2. Check Path Validity (Cached in RNA property)
+    # 2. Check Path Validity (Cached in RNA property, updated via update callback)
     if setting.use_external_save or setting.export_model:
-        path = bpy.path.abspath(setting.external_save_path)
-        # Standardize check (RNA properties are safer than Python-level injection)
-        is_valid = bool(path) and os.path.exists(path)
-        if setting.path_valid != is_valid:
-            setting.path_valid = is_valid
-
         if not setting.path_valid:
             box = layout.box()
             box.alert = True

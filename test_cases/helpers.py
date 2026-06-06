@@ -334,10 +334,19 @@ class MockSetting:
         self.color_mode = "RGB"
         self.quality = 50
         self.use_motion = False
+        self.bake_motion = False
+        self.bake_motion_use_custom = False
+        self.bake_motion_start = 1
+        self.bake_motion_last = 250
+        self.bake_motion_startindex = 1
+        self.bake_motion_digit = 4
+        self.bake_motion_separator = "_"
         self.frame = 1
         self.exr_code = "ZIP"
-        self.tiff_code = "NONE"
+        self.tiff_codec = "NONE"
+        self.tiff_code = "NONE"  # deprecated alias
         self.use_clear = True
+        self.use_clear_image = True
         self.color_base = (0.0, 0.0, 0.0)
         self.use_external_save = False
         self.external_save_path = "//"
@@ -345,6 +354,38 @@ class MockSetting:
         self.create_new_folder = False
         self.folder_name = "baked"
         self.channels = []
+        self.path_valid = True
+        self.use_preview = False
+        self.export_model = False
+        self.export_format = "FBX"
+        # Bake mode / cage / UDIM
+        self.udim_mode = "DETECT"
+        self.auto_cage_mode = "UNIFORM"
+        self.auto_cage_margin = 0.1
+        self.extrusion = 0.01
+        self.texel_density = 10.24
+        self.auto_switch_vertex_paint = False
+        # Map category toggles
+        self.use_light_map = False
+        self.use_mesh_map = False
+        self.use_extension_map = False
+        self.use_custom_map = False
+        # Naming / Output
+        self.name_setting = "CUSTOM"
+        self.custom_name = ""
+        # Object references (typically None in mocks)
+        self.active_object = None
+        self.cage_object = None
+        # Image settings
+        self.use_alpha = True
+        self.use_antialiasing = True
+        self.use_float32 = False
+        # Auto-UV
+        self.auto_uv_name = "Smart_UV"
+        self.auto_uv_angle = 1.15192
+        self.auto_uv_margin = 0.001
+        # Note: apply_to_scene intentionally left out — see
+        # _needs_persistent_reference priority order in image_manager.py
         self.id_start_color = (1.0, 0.0, 0.0, 1.0)
         self.id_manual_start_color = True
         self.id_seed = 0

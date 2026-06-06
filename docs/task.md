@@ -33,6 +33,14 @@
 - [x] **Phase 4**: 公共 API 类型化 + operator 返回类型验证。
 - [x] pycodestyle 385 → 97（-75%）；跨版本 5/5 全部通过。
 
+### 5. 发布前审计与测试优化 (2026-06-06) ✅
+- [x] **Phase 6 关键修复**: UNDO 支持 (12 operator)、draw_env_status 性能优化、headless context 安全、图像泄漏修复、属性边界约束。
+- [x] **Phase 7 基础设施**: CI BLENDER_DIR 修复、multi_version_test 环境变量、state_manager 回退、headless_bake 路径验证。
+- [x] **Phase 8 代码质量**: 异常处理升级、register/unregister 安全、Handler 独立错误处理、属性完整性、代码风格。
+- [x] **Phase 9 测试优化**: 去重 1 测试、MockSetting +27 属性、category_map 覆盖 22 suite、新增 COMBINE_OBJECT E2E。
+- [x] **验证**: 158/158 测试通过、16 文件 lsp_diagnostics 通过、5/5 BAKE_MODES 全覆盖。
+- [x] `CHANGELOG.md` 更新 2026-06-06 条目、`ROADMAP.md` 更新 Phase 6-9、`.gitignore` 增强。
+
 ## [v1.1.x] 后续排队功能
 - [ ] Phase 5: 函数拆分（`BakeStepRunner.run` 129 行、`BakePassExecutor._run_blender_bake_pipeline`）。
 - [ ] Phase 6: CI 集成（`isort` + `ruff` + `mypy` incremental）。

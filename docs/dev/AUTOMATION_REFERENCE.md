@@ -95,7 +95,7 @@ blender -b --factory-startup --python automation/cli_runner.py -- --list
 
 ### 2.7 交互式 Safety Audit 按钮
 
-`ops.py` 中的 `bake.run_dev_tests` 不是在当前 Blender 会话里原地跑整套测试，而是会：
+`ops.py` 中的 `baketool.run_dev_tests` 不是在当前 Blender 会话里原地跑整套测试，而是会：
 
 1. 启动一个独立的后台 Blender 进程
 2. 复用 `automation/cli_runner.py --discover`
@@ -163,11 +163,12 @@ python automation/multi_version_test.py --list
 脚本优先读取环境变量：
 
 ```text
+BAKE_TOOL_BLENDER_PATHS
 BLENDER_PATHS
 BLENDER_PATHS_FILE
 ```
 
-`BLENDER_PATHS` 使用分号分隔。`BLENDER_PATHS_FILE` 或 `--paths-file` 可以指向：
+`BAKE_TOOL_BLENDER_PATHS` 或 `BLENDER_PATHS` 使用分号分隔。`BLENDER_PATHS_FILE` 或 `--paths-file` 可以指向：
 
 - 纯文本路径列表
 - 或包含 `paths` 数组的 JSON 文件
