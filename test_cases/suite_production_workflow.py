@@ -352,8 +352,10 @@ class SuiteProductionWorkflow(unittest.TestCase):
                 runner.run(step, queue_idx=i)
 
             files = os.listdir(self.temp_dir)
-            self.assertTrue(any('CombineObj1' in f or 'CombineObj2' in f for f in files),
-                          f"No output files found for combined objects: {files}")
+            self.assertTrue(
+                any('CombineObj1' in f or 'CombineObj2' in f for f in files),
+                f"No output files found for combined objects: {files}",
+            )
 
             cleanup_scene()
 
