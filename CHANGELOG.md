@@ -2,6 +2,31 @@
 
 本文件记录 BakeNexus 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
+## 1.0.0 - 2026-06-15
+### 发布前最终审查、加固与收尾 / Pre-release Final Review, Hardening & Wrap-up
+
+#### 审查与报告 / Review & Report
+- **全维度代码审查**：架构、代码质量、Blender API、测试覆盖、安全性、发布配置 6 个维度全面审计，无阻断性缺陷。
+- **审查报告**：`docs/PRE_RELEASE_REVIEW.md` 记录完整审查结果与 8 项人工验证清单。
+
+#### 代码质量加固 / Code Quality Hardening
+- **重复异常合并**：`core/node_manager.py` 中 `bake_node_to_image()` 两个连续 except 块（`AttributeError/KeyError/ReferenceError` 与 `RuntimeError`）合并为单一块，消除冗余代码。
+- **I/O 性能优化**：`state_manager.py` 中 `BakeStateManager` 引入 `_cached_data` 内存缓存机制，`update_step()` 不再每次从磁盘读取 JSON，大批量烘焙时显著减少磁盘 I/O。
+- **finish_session/clear_state**：增加 `_cached_data = None` 重置，确保缓存生命周期与磁盘状态同步。
+
+#### 发布打包完善 / Release Packaging
+- **文档完整**：`build_release_zip.py` 的 DOC_FILES 添加 `docs/dev/TECHNICAL_GUIDE.md`，确保技术指南随发布包分发。
+
+#### 一致性验证 / Consistency Verification
+- **全项目 py_compile**：所有源文件通过 Python 语法编译检查（0 错误）。
+- **打包验证**：`build_release_zip.py` 成功生成 `dist/bakenexus-1.0.0.zip`（63 文件）。
+
+#### 文档同步 / Documentation Sync
+- **CHANGELOG**：补充 2026-06-15 发布前收尾记录。
+- **ROADMAP**：将 engine.py 拆分推迟至 v1.1，更新短期计划反映当前状态。
+- **TECHNICAL_GUIDE**：新增崩溃恢复与状态缓存章节，修复章节编号跳空与重复问题。
+- **PRE_RELEASE_REVIEW**：新增完整发布前审查报告文档。
+
 ## 1.0.0 - 2026-06-06
 ### 发布前最终审计与加固 / Pre-release Final Audit & Hardening
 

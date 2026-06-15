@@ -95,17 +95,11 @@ def bake_node_to_image(
                             img.pack()
 
             return img
-    except (AttributeError, KeyError, ReferenceError) as e:
-        logger.exception(f"Node baking failed: {e}")
-        # Cleanup: remove newly created image to avoid resource leak
-        if img and not img_existed_before:
-            try:
-                bpy.data.images.remove(img, do_unlink=True)
-            except (ReferenceError, RuntimeError):
-                pass
-        return None
-    except RuntimeError as e:
-        logger.error(f"Bake operation failed: {e}")
+    except (AttributeError, KeyError, ReferenceError, RuntimeError) as e:
+        if isinstance(e, RuntimeError):
+            logger.error(f"Bake operation failed: {e}")
+        else:
+            logger.exception(f"Node baking failed: {e}")
         # Cleanup: remove newly created image to avoid resource leak
         if img and not img_existed_before:
             try:

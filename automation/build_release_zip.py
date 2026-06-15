@@ -55,6 +55,7 @@ DOC_FILES = [
     "docs/dev/AUTOMATION_REFERENCE.md",
     "docs/dev/ECOSYSTEM_GUIDE.md",
     "docs/dev/STANDARDIZATION_GUIDE.md",
+    "docs/dev/TECHNICAL_GUIDE.md",
 ]
 
 

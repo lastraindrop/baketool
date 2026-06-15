@@ -45,8 +45,15 @@
 - **验证结果**：158/158 测试通过（Blender 4.2.14）、全部 16 个修改文件 lsp_diagnostics 通过、5/5 BAKE_MODES 全覆盖。
 - 更多细节见 `CHANGELOG.md` 2026-06-06 条目。
 
-## 5. 短期计划 (v1.1.x) - 生产力增强
-- **CI 门控优化**：添加 Blender 可执行文件缓存，减少跨版本验证时间；逐步启用 `ruff` 替代 `pycodestyle`。
+## 5. 已完成最终审查与收尾 (2026-06-15) ✅
+- **全维度代码审查**：6 维度审计（架构/代码质量/Blender API/测试/安全/发布配置），无阻断性缺陷，详见 `docs/PRE_RELEASE_REVIEW.md`。
+- **代码加固**：`node_manager.py` 合并重复异常块；`state_manager.py` 引入内存缓存，消除 `update_step()` 的重复磁盘读取。
+- **文档同步**：`TECHNICAL_GUIDE.md` 补充崩溃恢复与状态缓存章节，修复章节编号；`build_release_zip.py` 收录技术指南。
+- **打包验证**：`py_compile` 全项目通过（0 错误），`build_release_zip.py` 成功生成 `dist/bakenexus-1.0.0.zip`（63 文件）。
+- **路线图调整**：`engine.py` 拆分推迟至 v1.1，发布前夕优先保持代码稳定。
+
+## 6. 短期计划 (v1.1.x) - 生产力增强
+- **架构拆分**：`core/engine.py`（1583 行）拆分为 `model_export.py` + `task_builder.py`，保持 `engine.py` 为对外 facade，降低单文件维护风险（原定 1.0 延期以保稳定）。
 - **剩余风格债务清理**：继续推进 Phase 5（函数拆分：`BakeStepRunner.run` 129行→拆分）和 Phase 6（CI 集成：`isort` + `ruff`）。
 - **类型覆盖率提升**：目标 50%+，重点覆盖 `core/common.py`（`Any` 45+ 处）和 `core/engine.py` 私有方法。
 - **预设库扩展**：内置更多行业标准的 PBR 导出预设（UE5, Unity, Substance 风格）。
@@ -54,7 +61,7 @@
 - **API 响应性提升**：`core/api.py` 添加异步回调接口，支持外部脚本实时监听烘焙进度。
 - **资源利用率优化**：为 `ModelExporter` 的 USD 导出参数添加更严谨的属性存在性检查。
 
-## 6. 长期愿景 (v2.x) - 智能烘焙生态
+## 7. 长期愿景 (v2.x) - 智能烘焙生态
 - **异步像素回传**：研究 B5.0 下的高性能像素拷贝方案。
 - **全自动化资产处理**：从原始高模到优化后的 LOD 资产实现一键全流程自动化。
 - **数据驱动参数系统**：将通道元数据、UI 布局、保存格式约束和执行参数逐步统一为可校验 schema。

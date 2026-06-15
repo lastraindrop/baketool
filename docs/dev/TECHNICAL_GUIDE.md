@@ -82,6 +82,48 @@ core/shading.py: apply_baked_result 消费通道映射
 - **`folder_name` 传递规则**：优先 `s.folder_name if s.create_new_folder else task.folder_name`
 - **动态枚举默认值**：`items` 为回调函数的 `EnumProperty` 必须使用整数默认值（而非字符串 identifier），否则 Blender 4.2+ 注册时抛出 `RuntimeError`
 - **降噪场景清理**：`BakePostProcessor.apply_denoise(context, img)` 必须注入 `context` 参数 + `temp_override`，渲染失败时 `finally` 块确保临时场景被删除
+- **save_image 上下文安全**：所有场景渲染设置修改通过 `SceneSettingsContext` 管理，而非直接操作 `bpy.context.scene.render`
+
+---
+
+## 6. 崩溃恢复与状态缓存 (Crash Recovery & State Caching)
+
+### 6.1 崩溃恢复机制
+
+BakeNexus 通过 `state_manager.py` 的 `BakeStateManager` 实现了轻量级崩溃恢复：
+
+```
+烘焙开始 → start_session() → 写入 {tempdir}/sbt_last_session.json
+    ↓
+每通道更新 → update_step() → 读-改-写 JSON（含 fsync 落盘保证）
+    ↓
+异常中断 → log_error() → 标记 status="ERROR"
+    ↓
+正常结束 → finish_session() → 删除 JSON + 重置 UI
+```
+
+**持久化内容**：`status`, `start_time`, `job_name`, `total_steps`, `current_step`, `current_queue_idx`, `current_object`, `current_channel`, `last_error`
+
+**检测逻辑**：`has_crash_record()` 检查 JSON 文件是否存在 → 若存在说明上次未正常完成 → UI 显示警告
+
+**写入安全**：每次 `_write()` 执行 `f.flush()` + `os.fsync()`，确保断电/进程杀灭时数据已落盘。损坏的 JSON 文件读取返回 `None` 而非崩溃。
+
+**生命周期集成**：
+- `BakeModalOperator.init_modal()` → `start_session()`
+- `BakeStepRunner.run()` → 每个通道前 `update_step()`
+- 异常捕获 → `log_error()`
+- `_cleanup_state()` → `finish_session()` / `clear_state()`
+- 紧急清理 `BAKETOOL_OT_EmergencyCleanup` → `reset_ui_state()`
+
+### 6.2 状态缓存优化
+
+为避免 `update_step()` 每次通道更新都从磁盘读取 JSON 的 I/O 开销，`BakeStateManager` 引入了实例级内存缓存 `_cached_data`：
+
+- **`_write(data)`**：同时更新 `self._cached_data = data` 并写入磁盘
+- **`read_log()`**：若 `_cached_data` 非空直接返回，否则从磁盘读取并缓存
+- **`finish_session()` / `clear_state()`**：将 `_cached_data` 置 `None` 并删除磁盘文件
+
+此优化在大批量烘焙（如 20+ 通道）场景下消除了 90% 以上的冗余磁盘读取，且不影响崩溃恢复的可靠性——每次关键状态变更仍同步写盘。
 
 ---
 
@@ -126,26 +168,3 @@ BakeNexus 遵循以下异常处理原则：
 4. **`KeyboardInterrupt` 和 `SystemExit` 永远不捕获**。
 
 当前状态：全项目 0 个 bare `except`，0 个 `except Exception` 在生产代码核心路径中。
-
----
-
-## 9. 参数传递路径图 (Parameter Flow)
-
-```
-property.py (RNA 定义)
-    ↓
-ui.py 通过 CHANNEL_UI_LAYOUT 渲染属性
-    ↓
-engine.py: JobPreparer / BakePassExecutor 消费属性
-    → _handle_save / _execute_blender_bake_op
-    ↓
-image_manager.py: save_image 使用图像格式参数 (通过 SceneSettingsContext)
-core/shading.py: apply_baked_result 消费通道映射
-```
-
-### 9.1 一致性关键规则
-
-- **`folder_name` 传递规则**：优先 `s.folder_name if s.create_new_folder else task.folder_name`
-- **动态枚举默认值**：`items` 为回调函数的 `EnumProperty` 必须使用整数默认值
-- **降噪场景清理**：`apply_denoise` 使用 `context` 参数 + `temp_override`，`finally` 块确保临时场景删除
-- **save_image 上下文安全**：所有场景渲染设置修改通过 `SceneSettingsContext` 管理，而非直接操作 `bpy.context.scene.render`

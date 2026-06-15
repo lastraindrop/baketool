@@ -32,6 +32,7 @@ class BakeStateManager:
         temp_dir = bpy.app.tempdir or os.environ.get("TEMP", "/tmp")
         self.log_dir = Path(temp_dir)
         self.log_file = self.log_dir / "sbt_last_session.json"
+        self._cached_data: Optional[Dict[str, Any]] = None
 
     def start_session(self, total_steps: int, job_name: str) -> None:
         """Initialize a new bake session record.
@@ -101,6 +102,7 @@ class BakeStateManager:
             context: Optional Blender context to trigger UI reset.
             status: Final status message for the UI.
         """
+        self._cached_data = None
         if self.log_file.exists():
             try:
                 os.remove(self.log_file)
@@ -112,6 +114,7 @@ class BakeStateManager:
 
     def clear_state(self) -> None:
         """Delete crash record file without touching scene UI state."""
+        self._cached_data = None
         if self.log_file.exists():
             try:
                 os.remove(self.log_file)
@@ -136,6 +139,7 @@ class BakeStateManager:
         Args:
             data: Dictionary of session state data.
         """
+        self._cached_data = data
         try:
             if not self.log_dir.exists():
                 self.log_dir.mkdir(parents=True, exist_ok=True)
@@ -156,11 +160,15 @@ class BakeStateManager:
         Returns:
             Dictionary of session data, or None if file missing or invalid.
         """
+        if self._cached_data is not None:
+            return self._cached_data
+
         if not self.log_file.exists():
             return None
         try:
             with open(self.log_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+                self._cached_data = json.load(f)
+                return self._cached_data
         except (json.JSONDecodeError, OSError, IOError):
             return None
 
