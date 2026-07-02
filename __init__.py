@@ -17,14 +17,6 @@ import logging
 # Third-party (Blender)
 import bpy
 from bpy import props
-from bpy import types
-from bpy.app.handlers import persistent
-from bpy.props import (
-    IntProperty,
-    CollectionProperty,
-    StringProperty,
-    PointerProperty,
-)
 from bpy.types import AddonPreferences
 
 # Local application
@@ -34,7 +26,6 @@ from . import preset_handler
 from . import translations
 from . import ui
 from . import property as prop_module
-from .constants import CHANNEL_BAKE_INFO
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +34,7 @@ logger = logging.getLogger(__name__)
 class BakeNexusPreferences(AddonPreferences):
     bl_idname = __package__
 
-    default_preset_path: StringProperty(
+    default_preset_path: props.StringProperty(
         name="Default Preset",
         description="Path to the JSON preset file to load on new scenes",
         subtype="FILE_PATH",
@@ -55,7 +46,7 @@ class BakeNexusPreferences(AddonPreferences):
         default=False,
     )
 
-    library_path: StringProperty(
+    library_path: props.StringProperty(
         name="Preset Library Path",
         description="Directory containing .json presets and matching .png thumbnails",
         subtype="DIR_PATH",
@@ -172,12 +163,12 @@ def register():
 
     bpy.types.Scene.BakeJobs = props.PointerProperty(type=prop_module.BakeJobs)
 
-    bpy.types.Scene.baked_image_results = CollectionProperty(
+    bpy.types.Scene.baked_image_results = props.CollectionProperty(
         type=prop_module.BakedImageResult,
         name="Baked Image Results",
         description="List of baked image results with metadata",
     )
-    bpy.types.Scene.baked_image_results_index = IntProperty(
+    bpy.types.Scene.baked_image_results_index = props.IntProperty(
         name="Index for baked image results",
         default=-1,
         description="Currently selected index in the baked image results list",

@@ -22,7 +22,7 @@ from .constants import (
     FORMAT_SETTINGS,
 )
 
-from .core.common import reset_channels_logic
+from .core.common import get_active_job, reset_channels_logic, tag_redraw_view3d
 import logging
 
 logger = logging.getLogger(__name__)
@@ -88,13 +88,12 @@ def get_channel_source_items(self, context):
         return [("NONE", "None", "No enabled channels available", "NONE", 0)]
 
     bj = scene.BakeJobs
-    job_index = getattr(bj, "job_index", 0)
+    job = get_active_job(bj, sync_index=False)
 
-    if job_index < 0 or job_index >= len(bj.jobs):
+    if job is None:
         return [("NONE", "None", "No enabled channels available", "NONE", 0)]
 
     try:
-        job = bj.jobs[job_index]
         setting = job.setting
 
         items = []
@@ -269,10 +268,7 @@ def update_preview(self, context):
         else:
             shading.remove_preview(obj)
 
-    if context and context.screen:
-        for area in context.screen.areas:
-            if area.type == "VIEW_3D":
-                area.tag_redraw()
+    tag_redraw_view3d(context)
 
 
 def update_save_path_validity(self, context):
@@ -600,7 +596,6 @@ class BakeJobSetting(bpy.types.PropertyGroup):
         name="ID Start Color", default=(1.0, 0.0, 0.0, 1.0), subtype="COLOR", size=4
     )
     # Quality settings
-    use_antialiasing: props.BoolProperty(name="Anti-Aliasing", default=True)
     id_seed: props.IntProperty(name="Random Seed", default=0, min=0)
 
     # Texel Density

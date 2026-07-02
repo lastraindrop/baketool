@@ -5,10 +5,9 @@ job management, target selection, channel configuration, and result inspection.
 """
 
 import bpy
-import os
-import json
 from typing import Any, Tuple
 from bpy.app.translations import pgettext
+from .core.common import get_active_job
 from .constants import (
     FORMAT_SETTINGS,
     CAT_MESH,
@@ -593,11 +592,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             return
 
         # --- 4. Detailed Configuration (Active Job) ---
-        job_index = bj.job_index
-        if job_index < 0 or job_index >= len(bj.jobs):
-            job_index = 0
-            bj.job_index = 0
-        job = bj.jobs[job_index]
+        job = get_active_job(bj, sync_index=True)
         # s is already defined above, but we ensure it matches the active job
         s = job.setting
 
@@ -854,10 +849,7 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             return
 
         col = layout.column(align=True)
-        job_index = bj.job_index
-        if job_index < 0 or job_index >= len(bj.jobs):
-            job_index = 0
-        j = bj.jobs[job_index]
+        j = get_active_job(bj, sync_index=True)
 
         col.prop(
             s,

@@ -10,17 +10,18 @@ import logging
 import os
 import subprocess
 import tempfile
-import traceback
 import json
 from pathlib import Path
 from typing import Optional, Set, Any, Dict
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from .core.common import (
+    get_active_job,
     reset_channels_logic,
     log_error,
     manage_channels_logic,
     manage_objects_logic,
+    tag_redraw_view3d,
 )
 from .core.uv_manager import detect_object_udim_tile
 from .core.engine import JobPreparer
@@ -300,13 +301,9 @@ class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
             self.report({"ERROR"}, "BakeNexus properties not initialized.")
             return {"CANCELLED"}
 
-        bj = context.scene.BakeJobs
-        if not bj.jobs:
+        job = get_active_job(context.scene.BakeJobs)
+        if job is None:
             return {"CANCELLED"}
-        job_index = bj.job_index
-        if job_index < 0 or job_index >= len(bj.jobs):
-            job_index = 0
-        job = bj.jobs[job_index]
 
         sel_objs = [o for o in context.selected_objects if o.type == "MESH"]
         act_obj = (
@@ -345,10 +342,9 @@ class BAKETOOL_OT_ResetChannels(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        bj = context.scene.BakeJobs
-        if bj.job_index < 0 or bj.job_index >= len(bj.jobs):
+        job = get_active_job(context.scene.BakeJobs)
+        if job is None:
             return {"CANCELLED"}
-        job = bj.jobs[bj.job_index]
         reset_channels_logic(job.setting)
         self.report({"INFO"}, "Channels reset to default for current bake type.")
         return {"FINISHED"}
@@ -371,6 +367,7 @@ class BAKETOOL_OT_SetSaveLocal(bpy.types.Operator):
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         if not hasattr(context.scene, "BakeJobs"):
+            self.report({"ERROR"}, "BakeNexus properties not initialized.")
             return {"CANCELLED"}
 
         bj = context.scene.BakeJobs
@@ -463,13 +460,10 @@ class BAKETOOL_OT_RefreshUDIMLocations(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        bj = context.scene.BakeJobs
-        if not bj.jobs:
+        job = get_active_job(context.scene.BakeJobs)
+        if job is None:
+            self.report({"WARNING"}, "No bake jobs configured.")
             return {"CANCELLED"}
-        job_index = bj.job_index
-        if job_index < 0 or job_index >= len(bj.jobs):
-            job_index = 0
-        job = bj.jobs[job_index]
         synced = 0
 
         for bake_obj in job.setting.bake_objects:
@@ -491,34 +485,19 @@ class BAKETOOL_OT_TogglePreview(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        bj = context.scene.BakeJobs
-        if not bj.jobs:
+        job = get_active_job(context.scene.BakeJobs)
+        if job is None:
+            self.report({"WARNING"}, "No bake jobs configured.")
             return {"CANCELLED"}
-        job_index = bj.job_index
-        if job_index < 0 or job_index >= len(bj.jobs):
-            job_index = 0
-        job = bj.jobs[job_index]
         s = job.setting
 
-        from .core import shading
-
-        s.use_preview = not s.use_preview
-        objs = [o.bakeobject for o in s.bake_objects if o.bakeobject]
-
-        if not objs:
+        if not [o for o in s.bake_objects if o.bakeobject]:
             self.report({"WARNING"}, "No objects to preview")
-            s.use_preview = False
             return {"CANCELLED"}
 
-        for obj in objs:
-            if s.use_preview:
-                shading.apply_preview(obj, s)
-            else:
-                shading.remove_preview(obj)
-
-        for area in context.screen.areas:
-            if area.type == "VIEW_3D":
-                area.tag_redraw()
+        # Toggling use_preview triggers the update_preview callback
+        # which handles apply/remove + redraw via property.py
+        s.use_preview = not s.use_preview
 
         return {"FINISHED"}
 
@@ -551,14 +530,13 @@ class BAKETOOL_OT_AnalyzeCage(bpy.types.Operator):
             Set[str]: {'FINISHED'} or {'CANCELLED'}.
         """
         if not hasattr(context.scene, "BakeJobs"):
+            self.report({"ERROR"}, "BakeNexus properties not initialized.")
             return {"CANCELLED"}
         bj = context.scene.BakeJobs
-        if not bj.jobs:
+        job = get_active_job(bj)
+        if job is None:
+            self.report({"WARNING"}, "No bake jobs configured.")
             return {"CANCELLED"}
-        job_index = bj.job_index
-        if job_index < 0 or job_index >= len(bj.jobs):
-            job_index = 0
-        job = bj.jobs[job_index]
         s = job.setting
         act_obj = (
             context.active_object
@@ -619,10 +597,10 @@ class BAKETOOL_OT_OneClickPBR(bpy.types.Operator):
         Returns:
             Set[str]: {'FINISHED'} or {'CANCELLED'}.
         """
-        bj = context.scene.BakeJobs
-        if bj.job_index < 0 or bj.job_index >= len(bj.jobs):
+        job = get_active_job(context.scene.BakeJobs)
+        if job is None:
+            self.report({"WARNING"}, "No valid bake job selected.")
             return {"CANCELLED"}
-        job = bj.jobs[bj.job_index]
         s = job.setting
 
         standards = {"color", "rough", "normal"}
@@ -754,8 +732,10 @@ class BAKETOOL_OT_ExportResult(bpy.types.Operator):
 
         try:
             # Save the image to the selected filepath
+            from .constants import EXTENSION_TO_FORMAT
+
             img.filepath_raw = self.filepath
-            img.file_format = self._get_format_from_path(self.filepath)
+            img.file_format = EXTENSION_TO_FORMAT.get(os.path.splitext(self.filepath)[1].lower(), "PNG")
             img.save()
             self.report({"INFO"}, f"Exported {img.name} to {self.filepath}")
         except (RuntimeError, OSError) as e:
@@ -767,21 +747,6 @@ class BAKETOOL_OT_ExportResult(bpy.types.Operator):
             img.file_format = old_fmt
 
         return {"FINISHED"}
-
-    def _get_format_from_path(self, path: str) -> str:
-        ext = os.path.splitext(path)[1].lower()
-        format_map = {
-            ".png": "PNG",
-            ".jpg": "JPEG",
-            ".jpeg": "JPEG",
-            ".exr": "OPEN_EXR",
-            ".tif": "TIFF",
-            ".tiff": "TIFF",
-            ".bmp": "BMP",
-            ".tga": "TARGA",
-            ".hdr": "HDR",
-        }
-        return format_map.get(ext, "PNG")
 
 
 class BAKETOOL_OT_ExportAllResults(bpy.types.Operator):
@@ -863,10 +828,10 @@ class BAKETOOL_OT_ManageObjects(bpy.types.Operator):
     action: props.StringProperty()
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        bj = context.scene.BakeJobs
-        if not bj.jobs or bj.job_index < 0 or bj.job_index >= len(bj.jobs):
+        job = get_active_job(context.scene.BakeJobs)
+        if job is None:
+            self.report({"WARNING"}, "No valid bake job selected.")
             return {"CANCELLED"}
-        job = bj.jobs[bj.job_index]
 
         sel = [o for o in context.selected_objects if o.type == "MESH"]
         act = (
@@ -888,10 +853,10 @@ class BAKETOOL_OT_SaveSetting(bpy.types.Operator, ExportHelper):
     filter_glob: props.StringProperty(default="*.json", options={"HIDDEN"})
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        bj = context.scene.BakeJobs
-        if not bj.jobs or bj.job_index < 0 or bj.job_index >= len(bj.jobs):
+        job = get_active_job(context.scene.BakeJobs)
+        if job is None:
+            self.report({"WARNING"}, "No valid bake job selected.")
             return {"CANCELLED"}
-        job = bj.jobs[bj.job_index]
 
         data = preset_handler.PropertyIO().to_dict(job)
         try:
@@ -915,6 +880,7 @@ class BAKETOOL_OT_LoadSetting(bpy.types.Operator, ImportHelper):
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         if not hasattr(context.scene, "BakeJobs"):
+            self.report({"ERROR"}, "BakeNexus properties not initialized.")
             return {"CANCELLED"}
 
         bj = context.scene.BakeJobs
@@ -975,8 +941,7 @@ class BAKETOOL_OT_RefreshPresets(bpy.types.Operator):
         from .core import thumbnail_manager
 
         thumbnail_manager.clear_all_previews()
-        for area in context.screen.areas:
-            area.tag_redraw()
+        tag_redraw_view3d(context)
         return {"FINISHED"}
 
 

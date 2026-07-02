@@ -147,7 +147,7 @@ class BakePostProcessor:
             return
 
         # 1. Ensure temporary scene exists
-        tmp_scene = reuse_scene or bpy.data.scenes.new(name="BT_Denoise_Temp")
+        tmp_scene = reuse_scene or bpy.data.scenes.new(name=SYSTEM_NAMES["DENOISE_SCENE"])
         is_temp = reuse_scene is None
         try:
             tmp_scene.render.engine = "CYCLES"
@@ -185,8 +185,8 @@ class BakePostProcessor:
             links.new(n_denoise.outputs[0], n_viewer.inputs[0])
 
             if tmp_scene.camera is None:
-                cam_data = bpy.data.cameras.new("BT_Denoise_Camera")
-                cam_obj = bpy.data.objects.new("BT_Denoise_Camera", cam_data)
+                cam_data = bpy.data.cameras.new(SYSTEM_NAMES["DENOISE_CAMERA"])
+                cam_obj = bpy.data.objects.new(SYSTEM_NAMES["DENOISE_CAMERA"], cam_data)
                 tmp_scene.collection.objects.link(cam_obj)
                 tmp_scene.camera = cam_obj
 
@@ -227,7 +227,7 @@ class BakePostProcessor:
             if is_temp:
                 # 强力清理所有 BT_Denoise_Temp 前缀的辅助场景
                 for s in list(bpy.data.scenes):
-                    if s.name.startswith("BT_Denoise_Temp"):
+                    if s.name.startswith(SYSTEM_NAMES["DENOISE_SCENE"]):
                         try:
                             # 1. 解除节点引用的像素数据
                             if s.use_nodes:
@@ -305,7 +305,7 @@ class BakeStepRunner:
             # Persistent denoise scene for the duration of this step
             denoise_scene = None
             if job.setting.use_denoise:
-                denoise_scene = bpy.data.scenes.new(name="BT_Denoise_Temp")
+                denoise_scene = bpy.data.scenes.new(name=SYSTEM_NAMES["DENOISE_SCENE"])
 
                 def cleanup_denoise_scene(s):
                     if s and s.name in bpy.data.scenes:

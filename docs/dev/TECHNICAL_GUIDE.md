@@ -168,3 +168,63 @@ BakeNexus 遵循以下异常处理原则：
 4. **`KeyboardInterrupt` 和 `SystemExit` 永远不捕获**。
 
 当前状态：全项目 0 个 bare `except`，0 个 `except Exception` 在生产代码核心路径中。
+
+---
+
+## 10. DRY 基础设施与一致性机制 (DRY Infrastructure & Consistency)
+
+为消除代码库中积累的重复模式并建立单一事实源，v1.0 发布前引入了以下集中式辅助机制：
+
+### 10.1 `get_active_job()` — 活动 Job 索引钳制
+
+位于 `core/common.py`，封装了全项目最频繁的重复模式——从 `BakeJobs` 集合中按索引获取活动 Job，同时处理越界回退：
+
+```python
+def get_active_job(bj, sync_index=True):
+    """返回活动 BakeJob，或 None。钳制 job_index 并可选同步回写。"""
+    if not bj.jobs:
+        return None
+    idx = bj.job_index
+    if idx < 0 or idx >= len(bj.jobs):
+        idx = 0
+        if sync_index:
+            bj.job_index = idx
+    return bj.jobs[idx]
+```
+
+统一了之前分散在 `ops.py`（8 处）、`ui.py`（2 处）、`property.py`（1 处）、`core/common.py`（1 处）的 12 处重复索引钳制逻辑，同时修正了部分调用点缺少空 Job 集检查的潜在 `IndexError`。
+
+### 10.2 `tag_redraw_view3d()` — View3D 区域刷新
+
+位于 `core/common.py`，统一了 `ops.py` 和 `property.py` 之间 3 处重复的 View3D 区域标记重绘循环：
+
+```python
+def tag_redraw_view3d(context):
+    """标记所有 VIEW_3D 区域重绘，含 context/screen 空值保护。"""
+    if context and context.screen:
+        for area in context.screen.areas:
+            if area.type == "VIEW_3D":
+                area.tag_redraw()
+```
+
+### 10.3 `EXTENSION_TO_FORMAT` — 文件扩展名反向映射
+
+位于 `constants.py`，从 `FORMAT_SETTINGS` **自动计算** 生成扩展名→格式名的反向映射，消除了 `ops.py` 的 `_get_format_from_path` 硬编码副本（双重事实源）。新增格式时仅需更新 `FORMAT_SETTINGS`，反向映射自动同步：
+
+```python
+EXTENSION_TO_FORMAT = {}
+for _fmt, _cfg in FORMAT_SETTINGS.items():
+    for _ext in _cfg.get("extensions", []):
+        EXTENSION_TO_FORMAT[_ext] = _fmt
+```
+
+### 10.4 `SYSTEM_NAMES` — Blender 命名集中管理
+
+所有插件创建的 Blender 数据块名称（临时场景、相机、预览材质）均从 `constants.py` 的 `SYSTEM_NAMES` 字典引用，禁止在各模块中硬编码字符串字面量。v1.0 新增了 `DENOISE_SCENE`、`DENOISE_CAMERA`、`PREVIEW_MAT` 三个键。
+
+### 10.5 测试验证
+
+以上辅助函数和映射的一致性由以下测试套件保障：
+- `suite_code_review`：验证 UI 标签与内部键的一致性。
+- `suite_unit`：MockSetting 属性完整性检查。
+- `suite_production_workflow`：端到端烘焙管道验证。

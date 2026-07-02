@@ -4,11 +4,6 @@
 
 # --- UI Enum Definitions (Used in property.py) ---
 
-JOB_TYPES = [
-    ("S", "Simple", "Simple Jobs Setting", 1),
-    ("A", "Accurate", "Accurate Jobs Setting", 2),
-]
-
 CUSTOM_CHANNEL_SEP = [
     ("R", "Red", "Use Red channel", 1),
     ("G", "Green", "Use Green channel", 2),
@@ -52,18 +47,12 @@ BASIC_FORMATS = [
 ]
 
 DEVICES = [("GPU", "GPU", "Use GPU"), ("CPU", "CPU", "Use CPU")]
-ATLAS_PACK_METHODS = [
-    ("REPACK", "Smart Project", "Use Smart UV Project repack UV"),
-    ("ISLAND", "Pack Island", "Pack UV island for current UV"),
-]
 DIRECTIONS = [("X", "X", "X"), ("Y", "Y", "Y"), ("Z", "Z", "Z")]
 NORMAL_TYPES = [
     ("OPENGL", "OPENGL", "Use OPENGL Standard"),
     ("DIRECTX", "DIRECTX", "Use DIRECTX Standard"),
     ("CUSTOM", "Custom", "Use Custom Standard"),
 ]
-
-DEFAULT_BAKE_TARGET = "IMAGE_TEXTURES"
 
 NORMAL_CHANNELS = [
     ("POS_X", "+X", "+X"),
@@ -117,11 +106,6 @@ EXR_CODECS = [
     ("B44A", "B44A", "Lossy"),
     ("DWAA", "DWAA", "Lossy"),
     ("DWAB", "DWAB", "Lossy"),
-]
-DENOISE_METHODS = [
-    ("NONE", "No", "No Prefilter"),
-    ("FAST", "Fast", "Fast"),
-    ("ACCURATE", "Accurate", "Accurate"),
 ]
 NAMING_MODES = [
     ("OBJECT", "Object", "Object"),
@@ -218,6 +202,12 @@ FORMAT_SETTINGS = {
         "extensions": [".webp"],
     },
 }
+
+# Reverse mapping: file extension → Blender format identifier
+EXTENSION_TO_FORMAT = {}
+for _fmt, _cfg in FORMAT_SETTINGS.items():
+    for _ext in _cfg.get("extensions", []):
+        EXTENSION_TO_FORMAT[_ext] = _fmt
 
 # --- Bake Channel Categories ---
 
@@ -560,6 +550,9 @@ SYSTEM_NAMES = {
     "ATTR_PREFIX": "BT_ATTR_",
     "TEMP_IMG_PREFIX": "BT_TEMP_",
     "VIEWER_IMG": "Viewer Node",
+    "DENOISE_SCENE": "BT_Denoise_Temp",
+    "DENOISE_CAMERA": "BT_Denoise_Camera",
+    "PREVIEW_MAT": "BT_Packing_Preview",
 }
 
 BAKE_CHANNEL_INFO = {
@@ -1016,17 +1009,3 @@ UI_MESSAGES = {
     "VALIDATION_ERROR": "Validation failed: {}",
     "B5_SYNC_NOTICE": "BakeNexus v1.0.0 optimized for Blender 5.0 rendering pipeline.",
 }
-
-# --- API & Versioning ---
-API_VERSION = "1.0.0"
-SYSTEM_ID = "BAKETOOL_CORE"
-
-# --- Magic Numbers / Constants ---
-UDIM_DEFAULT_TILE = 1001
-UDIM_TILE_RANGE = 10
-GOLDEN_RATIO = 0.618033988749895
-MIN_THRESHOLD = 1e-5
-
-# Smart UV default angle: 66 degrees in radians (approximately)
-DEFAULT_SMART_UV_ANGLE = 1.15192
-DEFAULT_SMART_UV_MARGIN = 0.001

@@ -378,7 +378,6 @@ class MockSetting:
         self.cage_object = None
         # Image settings
         self.use_alpha = True
-        self.use_antialiasing = True
         self.use_float32 = False
         # Auto-UV
         self.auto_uv_name = "Smart_UV"

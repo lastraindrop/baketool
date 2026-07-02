@@ -1,11 +1,11 @@
 """Viewport preview material management for bake channels."""
 import bpy
 import logging
-from ..constants import BSDF_COMPATIBILITY_MAP
+from ..constants import BSDF_COMPATIBILITY_MAP, SYSTEM_NAMES
 
 logger = logging.getLogger(__name__)
 
-PREVIEW_MAT_NAME = "BT_Packing_Preview"
+PREVIEW_MAT_NAME = SYSTEM_NAMES["PREVIEW_MAT"]
 
 def create_preview_material(obj, s):
     """Creates or updates a temporary preview material for the object.

@@ -52,6 +52,38 @@ def log_error(
             logger.debug(f"Failed to persist state error: {e}")
 
 
+def get_active_job(bj: Any, sync_index: bool = True) -> Optional[Any]:
+    """Return the active BakeJob from a BakeJobs collection, or None.
+
+    Clamps the job_index into valid range and optionally syncs it back
+    to the collection. This eliminates repetitive index-clamping code
+    across operators, UI draw methods, and property callbacks.
+
+    Args:
+        bj: The BakeJobs collection (typically context.scene.BakeJobs).
+        sync_index: If True, write the clamped index back to bj.job_index.
+
+    Returns:
+        The active BakeJob, or None if no jobs exist.
+    """
+    if not bj.jobs:
+        return None
+    idx = bj.job_index
+    if idx < 0 or idx >= len(bj.jobs):
+        idx = 0
+        if sync_index:
+            bj.job_index = idx
+    return bj.jobs[idx]
+
+
+def tag_redraw_view3d(context: bpy.types.Context) -> None:
+    """Tag all VIEW_3D areas for redraw, if context and screen are available."""
+    if context and context.screen:
+        for area in context.screen.areas:
+            if area.type == "VIEW_3D":
+                area.tag_redraw()
+
+
 def get_safe_base_name(
     setting: Any,
     obj: bpy.types.Object,
@@ -229,12 +261,7 @@ def manage_channels_logic(
     Returns:
         Tuple of (success: bool, error_message: str).
     """
-    job_index = bj.job_index if bj.jobs else -1
-    if job_index < 0 or job_index >= len(bj.jobs):
-        job_index = 0 if bj.jobs else -1
-        # M-05: Update the actual property to stay in sync
-        bj.job_index = job_index
-    job = bj.jobs[job_index] if 0 <= job_index < len(bj.jobs) else None
+    job = get_active_job(bj, sync_index=True)
 
     dispatch = {
         "jobs_channel": (bj.jobs, "job_index", bj),

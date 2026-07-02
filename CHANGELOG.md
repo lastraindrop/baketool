@@ -2,6 +2,29 @@
 
 本文件记录 BakeNexus 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
+## 1.0.0 - 2026-07-02
+### 发布前最终清理与 DRY 重构 / Pre-release Final Cleanup & DRY Refactoring
+
+#### 死代码与死导入清理 / Dead Code Removal
+- **constants.py**：删除 12 个零引用常量（JOB_TYPES, ATLAS_PACK_METHODS, DENOISE_METHODS, DEFAULT_BAKE_TARGET, API_VERSION, SYSTEM_ID, UDIM_DEFAULT_TILE, UDIM_TILE_RANGE, GOLDEN_RATIO, MIN_THRESHOLD, DEFAULT_SMART_UV_ANGLE, DEFAULT_SMART_UV_MARGIN）。
+- **property.py**：删除 `use_antialiasing` 死属性（声明但烘焙管线从未读取）。
+- **死导入清理**：__init__.py（types, persistent, bpy.props.*, CHANNEL_BAKE_INFO）、ops.py（traceback）、ui.py（os, json）——共计 7 个未用导入删除。
+- **MANIFEST.in**：删除——与 build_release_zip.py 冲突的死文档，打包已有独立的显式文件列表。
+
+#### UX 修复 / UX Fixes
+- **ops.py 静默 CANCELLED 修复**：全部 9 处无 `self.report()` 的 `return {"CANCELLED"}` 添加用户反馈（SetSaveLocal, RefreshUDIMLocations, TogglePreview, AnalyzeCage ×2, OneClickPBR, ManageObjects, SaveSetting, LoadSetting）。
+
+#### DRY 重构 / DRY Refactoring
+- **`get_active_job()` 辅助函数**（`core/common.py`）：消除 ops.py/ui.py/property.py/common.py 之间 12 处重复的 BakeJob 索引钳制模式，同时修正了缺少空 Job 集检查的潜在 IndexError。
+- **`tag_redraw_view3d()` 辅助函数**（`core/common.py`）：消除 ops.py/property.py 之间 3 处重复的 View3D area redraw 循环。
+- **`EXTENSION_TO_FORMAT` 映射**（`constants.py`）：从 FORMAT_SETTINGS 自动计算，消除 `ops.py` 的 `_get_format_from_path` 双重事实源。
+- **预览路径统一**：TogglePreview.execute 简化为仅翻转标志，`update_preview` RNA 回调成为预览应用/移除/redraw 的唯一执行路径。
+- **魔法字符串集中化**：`BT_Denoise_Temp/camera`、`BT_Packing_Preview` 纳入 `SYSTEM_NAMES`。
+
+#### 文档修正 / Documentation Fixes
+- **task.md / ROADMAP.md**：更正"BakeTool 残留为 0"为如实描述（bl_idname 已统一，类名保留 BAKETOOL 前缀）。
+- **ROADMAP.md / task.md**：新增 Phase 10-14 完成记录。
+
 ## 1.0.0 - 2026-06-15
 ### 发布前最终审查、加固与收尾 / Pre-release Final Review, Hardening & Wrap-up
 

@@ -3,7 +3,7 @@
 ## 1. 当前版本 (v1.0.0) - 稳定发布 ✅
 - **核心定位**：从实验性脚本转向工业级稳定的 Blender 插件。
 - **完成项**：
-  - 全面品牌重塑 (BakeTool -> BakeNexus)。
+  - 全面品牌重塑 (BakeTool -> BakeNexus：bl_idname、文档、Manifest、README 已完成)。
   - 完善的自动化验证套件（158 测试用例，12 个 Blender 版本 100% 通过）。
   - 支持 UDIM、Selected-to-Active、自定义通道打包、ORM 打包。
   - 修复了渲染参数透传、可见性污染和内存泄露问题。
@@ -52,16 +52,25 @@
 - **打包验证**：`py_compile` 全项目通过（0 错误），`build_release_zip.py` 成功生成 `dist/bakenexus-1.0.0.zip`（63 文件）。
 - **路线图调整**：`engine.py` 拆分推迟至 v1.1，发布前夕优先保持代码稳定。
 
-## 6. 短期计划 (v1.1.x) - 生产力增强
-- **架构拆分**：`core/engine.py`（1583 行）拆分为 `model_export.py` + `task_builder.py`，保持 `engine.py` 为对外 facade，降低单文件维护风险（原定 1.0 延期以保稳定）。
-- **剩余风格债务清理**：继续推进 Phase 5（函数拆分：`BakeStepRunner.run` 129行→拆分）和 Phase 6（CI 集成：`isort` + `ruff`）。
-- **类型覆盖率提升**：目标 50%+，重点覆盖 `core/common.py`（`Any` 45+ 处）和 `core/engine.py` 私有方法。
-- **预设库扩展**：内置更多行业标准的 PBR 导出预设（UE5, Unity, Substance 风格）。
-- **崩溃恢复 Schema 验证**：为 `ui.py` 加载的 JSON 崩溃日志添加 Schema 校验。
-- **API 响应性提升**：`core/api.py` 添加异步回调接口，支持外部脚本实时监听烘焙进度。
-- **资源利用率优化**：为 `ModelExporter` 的 USD 导出参数添加更严谨的属性存在性检查。
+## 6. 已完成发布前最终清理与 DRY 重构 (2026-07-02) ✅
+- **死代码清理**：删除 12 个零引用常量（JOB_TYPES, ATLAS_PACK_METHODS, DENOISE_METHODS 等）、7 个未用导入（types/persistent/traceback/os/json）、死属性 `use_antialiasing`、冲突死文档 `MANIFEST.in`——净删除 ~60 行。
+- **UX 修复**：ops.py 全部 9 处静默 CANCELLED 返回添加 `self.report()`，用户操作无响应问题修复。
+- **DRY 重构 — get_active_job()**：`core/common.py` 新增辅助函数，消除 ops/ui/property/common 之间 12 处重复的索引钳制模式，同时修正了缺少空 Job 集检查的潜在 IndexError。
+- **DRY 重构 — 双重事实源消除**：`constants.py` 新增 `EXTENSION_TO_FORMAT` 自动映射（从 FORMAT_SETTINGS 计算），删除 `ops.py` 的 `_get_format_from_path` 硬编码副本。
+- **DRY 重构 — 预览路径统一**：TogglePreview.execute 简化为仅翻转标志，`update_preview` RNA 回调成为预览应用/移除/redraw 的唯一执行路径。
+- **DRY 重构 — tag_redraw_view3d()**：ops/ui/property 之间 3 处重复的 View3D redraw 循环统一为单函数。
+- **魔法字符串集中化**：`BT_Denoise_Temp`、`BT_Denoise_Camera`、`BT_Packing_Preview` 纳入 `SYSTEM_NAMES`。
+- **品牌文档修正**：task.md 和 ROADMAP.md 更正品牌残留表述为如实描述。
+- **验证**：22/22 运行时源文件 py_compile 全过，0 lsp error。
 
-## 7. 长期愿景 (v2.x) - 智能烘焙生态
+## 7. 短期计划 (v1.1.x) - 生产力增强
+- **架构拆分**：`core/engine.py`（1583 行）拆分为 `model_export.py` + `task_builder.py`，保持 `engine.py` 为对外 facade。
+- **i18n 全量覆盖**：`ops.py` self.report 与 `ui.py` 面板标签走 `pgettext` 或 `UI_MESSAGES`。
+- **继续 DRY 清理**：`draw_collapsible_header()` UI 辅助函数（4 处重复）、`report_cancel` 装饰器（26 处重复模式）。
+- **剩余风格债务清理**：继续推进 Phase 5（函数拆分）和 Phase 6（CI 集成：`isort` + `ruff`）。
+- **类型覆盖率提升**：目标 50%+，重点覆盖 `core/common.py` 和 `core/engine.py`。
+
+## 8. 长期愿景 (v2.x) - 智能烘焙生态
 - **异步像素回传**：研究 B5.0 下的高性能像素拷贝方案。
 - **全自动化资产处理**：从原始高模到优化后的 LOD 资产实现一键全流程自动化。
 - **数据驱动参数系统**：将通道元数据、UI 布局、保存格式约束和执行参数逐步统一为可校验 schema。
