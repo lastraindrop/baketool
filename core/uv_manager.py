@@ -4,57 +4,10 @@ import numpy as np
 import logging
 from typing import Any, Dict, List, Set
 from .common import safe_context_override
+from .udim_utils import detect_object_udim_tile
 from ..constants import SYSTEM_NAMES
 
 logger = logging.getLogger(__name__)
-
-
-def detect_object_udim_tile(obj: bpy.types.Object) -> int:
-    """Detect the dominant UDIM tile number for an object.
-
-    Analyzes the active UV layer using NumPy to find the most common
-    UDIM tile based on UV coordinates.
-
-    Args:
-        obj: Mesh object to analyze.
-
-    Returns:
-        UDIM tile number (1001-1999), defaults to 1001 if no valid tiles found.
-    """
-    if obj.type != "MESH" or not obj.data.uv_layers:
-        return 1001
-
-    try:
-        uv_layer = obj.data.uv_layers.active
-        n_loops = len(obj.data.loops)
-        if n_loops == 0:
-            return 1001
-
-        uvs = np.zeros(n_loops * 2, dtype=np.float32)
-        uv_layer.data.foreach_get("uv", uvs)
-        uvs = uvs.reshape(-1, 2)
-
-        u_indices = np.floor(uvs[:, 0]).astype(int)
-        v_indices = np.floor(uvs[:, 1]).astype(int)
-
-        # Valid UDIM range is 0-9 for both U and V (Standard 10x10)
-        valid = (
-            (u_indices >= 0) & (u_indices < 10) & (v_indices >= 0) & (v_indices < 10)
-        )
-
-        if not np.any(valid):
-            logger.debug(
-                f"No valid UDIM tiles found for {obj.name}, defaulting to 1001"
-            )
-            return 1001
-
-        # Filter only valid indices before counting
-        tiles = 1001 + u_indices[valid] + (v_indices[valid] * 10)
-        vals, counts = np.unique(tiles, return_counts=True)
-        return int(vals[np.argmax(counts)])
-    except (ValueError, AttributeError, IndexError) as e:
-        logger.warning(f"UV Detect Failed for {obj.name}: {e}")
-        return 1001
 
 
 def detect_object_udim_tiles(obj: bpy.types.Object) -> Set[int]:
@@ -159,7 +112,12 @@ class UVLayoutManager:
         # Original UV state is restored automatically
     """
 
-    def __init__(self, objects: List[bpy.types.Object], settings: Any):
+    def __init__(
+        self,
+        objects: List[bpy.types.Object],
+        settings: Any,
+        context: bpy.types.Context = None,
+    ):
         """Initialize UV layout manager.
 
         Args:
@@ -168,6 +126,7 @@ class UVLayoutManager:
         """
         self.objects = objects
         self.settings = settings
+        self.context = context
         self.original_states = {}
         self.temp_layer_name = SYSTEM_NAMES["TEMP_UV"]
         self.created_layers = []
@@ -258,12 +217,13 @@ class UVLayoutManager:
             uv_layer.data.foreach_set("uv", uvs_2d.flatten())
 
     def _apply_smart_uv(self):
-        if bpy.context.object and bpy.context.object.mode != "OBJECT":
+        context = self.context if self.context is not None else bpy.context
+        if context.object and context.object.mode != "OBJECT":
             bpy.ops.object.mode_set(mode="OBJECT")
 
         # HP-6: Record original selection state to prevent pollution
-        prev_sel = bpy.context.selected_objects[:]
-        prev_act = bpy.context.view_layer.objects.active
+        prev_sel = context.selected_objects[:]
+        prev_act = context.view_layer.objects.active
 
         try:
             if not self.objects:
@@ -272,9 +232,9 @@ class UVLayoutManager:
             bpy.ops.object.select_all(action="DESELECT")
             for o in self.objects:
                 o.select_set(True)
-            bpy.context.view_layer.objects.active = self.objects[0]
+            context.view_layer.objects.active = self.objects[0]
 
-            with safe_context_override(bpy.context, self.objects[0], self.objects):
+            with safe_context_override(context, self.objects[0], self.objects):
                 bpy.ops.object.mode_set(mode="EDIT")
                 bpy.ops.mesh.select_all(action="SELECT")
                 bpy.ops.uv.smart_project(
@@ -291,7 +251,7 @@ class UVLayoutManager:
                     if o and o.name in bpy.data.objects:
                         o.select_set(True)
                 if prev_act and prev_act.name in bpy.data.objects:
-                    bpy.context.view_layer.objects.active = prev_act
+                    context.view_layer.objects.active = prev_act
             except (AttributeError, RuntimeError, ReferenceError) as e:
                 logger.debug(
                     f"BakeNexus: Failed to restore selection in UV manager: {e}"

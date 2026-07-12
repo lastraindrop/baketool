@@ -1,4 +1,4 @@
-"""Shared utilities for baking: context management, material creation, validation."""
+"""Shared utilities for baking: context management, collection helpers, validation."""
 import bpy
 import logging
 import traceback
@@ -7,13 +7,12 @@ from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Tuple
 from ..constants import (
     BAKE_CHANNEL_INFO,
-    CHANNEL_BAKE_INFO,
-    BSDF_COMPATIBILITY_MAP,
-    APPLY_RESULT_CHANNEL_MAP,
-    SYSTEM_NAMES,
 )
 
 logger = logging.getLogger(__name__)
+
+# ---- Re-exports (CM.2: material functions moved to core.shading) ----
+from .shading import apply_baked_result, create_simple_baked_material  # noqa: E402, F401
 
 ValidationResult = namedtuple("ValidationResult", ["success", "message", "job_name"])
 
@@ -74,6 +73,14 @@ def get_active_job(bj: Any, sync_index: bool = True) -> Optional[Any]:
         if sync_index:
             bj.job_index = idx
     return bj.jobs[idx]
+
+
+def get_active_job_or_report(operator: Any, context: bpy.types.Context) -> Optional[Any]:
+    """Return the active job or give a consistent operator warning."""
+    job = get_active_job(context.scene.BakeJobs)
+    if job is None:
+        operator.report({"WARNING"}, "No valid bake job selected.")
+    return job
 
 
 def tag_redraw_view3d(context: bpy.types.Context) -> None:
@@ -210,7 +217,7 @@ def manage_objects_logic(
 
     def add(o):
         if not any(i.bakeobject == o for i in s.bake_objects):
-            from .uv_manager import detect_object_udim_tile
+            from .udim_utils import detect_object_udim_tile
 
             new = s.bake_objects.add()
             new.bakeobject = o
@@ -473,164 +480,3 @@ class SceneSettingsContext:
                 setattr(target, k, v)
             except (AttributeError, TypeError, ValueError, RuntimeError) as e:
                 logger.debug(f"Restore failed for {k}: {e}")
-
-
-def apply_baked_result(
-    context: bpy.types.Context,
-    original_obj: bpy.types.Object,
-    task_images: Dict[str, bpy.types.Image],
-    setting: Any,
-    task_base_name: str,
-) -> Optional[bpy.types.Object]:
-    """Create or update a baked result object with applied textures.
-
-    Creates a new object with baked materials applied, reusing existing
-    result objects when possible to save memory.
-
-    Args:
-        context: Blender context.
-        original_obj: Source object that was baked.
-        task_images: Dict mapping channel IDs to baked images.
-        setting: BakeJobSetting with apply configuration.
-        task_base_name: Base name for the result object.
-
-    Returns:
-        The created or updated result object, or None on failure.
-    """
-    if not task_images:
-        logger.warning("apply_baked_result: No images found to apply.")
-        return None
-    scene = context.scene
-    col = bpy.data.collections.get(
-        SYSTEM_NAMES["RESULT_COLLECTION"]
-    ) or bpy.data.collections.new(SYSTEM_NAMES["RESULT_COLLECTION"])
-    if col.name not in scene.collection.children:
-        try:
-            scene.collection.children.link(col)
-        except (ReferenceError, RuntimeError, AttributeError) as e:
-            logger.debug(
-                f"BakeNexus: Result collection linkage failed (likely already linked): {e}"
-            )
-
-    # 1. Reuse existing baked object if possible to save memory
-    target_name = f"{task_base_name}_Baked"
-    new_obj = bpy.data.objects.get(target_name)
-
-    if new_obj:
-        old_data = new_obj.data
-        new_obj.data = original_obj.data.copy()
-        if old_data and old_data.users == 0:
-            try:
-                bpy.data.meshes.remove(old_data, do_unlink=True)
-            except (ReferenceError, RuntimeError) as e:
-                logger.debug(
-                    f"BakeNexus: Failed to remove old baked mesh data {old_data.name}: {e}"
-                )
-        if col and new_obj.name not in {o.name for o in col.objects}:
-            for c in new_obj.users_collection:
-                c.objects.unlink(new_obj)
-            col.objects.link(new_obj)
-    else:
-        new_obj = original_obj.copy()
-        new_obj.data = original_obj.data.copy()
-        new_obj.name = target_name
-        for c in new_obj.users_collection:
-            c.objects.unlink(new_obj)
-        col.objects.link(new_obj)
-
-    first_val = next(iter(task_images.values()))
-    if isinstance(first_val, dict):
-        orig_mats = [s.material for s in original_obj.material_slots if s.material]
-        new_obj.data.materials.clear()
-        for i, om in enumerate(orig_mats):
-            mat_textures = {}
-            for chan_id, mat_dict in task_images.items():
-                if om.name in mat_dict:
-                    mat_textures[chan_id] = mat_dict[om.name]
-            mat = create_simple_baked_material(
-                f"{task_base_name}_{om.name}_Baked", mat_textures
-            )
-            new_obj.data.materials.append(mat)
-    else:
-        mat = create_simple_baked_material(f"{task_base_name}_Mat", task_images)
-        new_obj.data.materials.clear()
-        new_obj.data.materials.append(mat)
-    return new_obj
-
-
-def create_simple_baked_material(
-    name: str, texture_map: Dict[str, bpy.types.Image]
-) -> bpy.types.Material:
-    """Create a simple PBR material from baked texture maps.
-
-    Args:
-        name: Base name for the material.
-        texture_map: Dict mapping channel IDs to image textures.
-
-    Returns:
-        Created Principled BSDF material with applied textures.
-    """
-    import uuid
-
-    unique_name = f"{name}_{uuid.uuid4().hex[:8]}"
-    mat = bpy.data.materials.new(name=unique_name)
-    mat.use_nodes = True
-    tree = mat.node_tree
-    tree.nodes.clear()
-    bsdf = tree.nodes.new("ShaderNodeBsdfPrincipled")
-    out = tree.nodes.new("ShaderNodeOutputMaterial")
-    out.location = (300, 0)
-    tree.links.new(bsdf.outputs[0], out.inputs[0])
-    y_pos = 0
-
-    from ..constants import CHANNEL_BAKE_INFO
-    non_color_channels = {
-        k for k, v in CHANNEL_BAKE_INFO.items() if v.get("def_cs") == "Non-Color"
-    }
-
-    for chan_id, image in texture_map.items():
-        if not image:
-            continue
-        target_socket = None
-        compat_key = APPLY_RESULT_CHANNEL_MAP.get(chan_id)
-        if compat_key:
-            for p_name in BSDF_COMPATIBILITY_MAP.get(compat_key, []):
-                if p_name in bsdf.inputs:
-                    target_socket = bsdf.inputs[p_name]
-                    break
-
-        if not target_socket and not (chan_id == "normal"):
-            continue
-
-        tex = tree.nodes.new("ShaderNodeTexImage")
-        tex.image = image
-        tex.location = (-600 if chan_id == "normal" else -300, y_pos)
-        y_pos -= 280
-
-        if chan_id in non_color_channels:
-            try:
-                tex.image.colorspace_settings.name = "Non-Color"
-            except (AttributeError, RuntimeError) as e:
-                logger.debug(
-                    f"BakeNexus: Failed to set non-color space on {tex.image.name}: {e}"
-                )
-
-        if chan_id == "normal":
-            nor = tree.nodes.new("ShaderNodeNormalMap")
-            nor.location = (-300, tex.location.y)
-            tree.links.new(tex.outputs[0], nor.inputs["Color"])
-            if "Normal" in bsdf.inputs:
-                tree.links.new(nor.outputs["Normal"], bsdf.inputs["Normal"])
-        elif chan_id == "gloss":
-            # Invert Gloss to Roughness proxy
-            inv = tree.nodes.new("ShaderNodeInvert")
-            inv.location = (-150, tex.location.y)
-            tree.links.new(tex.outputs[0], inv.inputs[1])
-            if target_socket:
-                tree.links.new(inv.outputs[0], target_socket)
-        elif target_socket:
-            tree.links.new(tex.outputs[0], target_socket)
-
-        if chan_id == "alpha" and hasattr(mat, "blend_method"):
-            mat.blend_method = "BLEND"
-    return mat

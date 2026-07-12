@@ -3,7 +3,6 @@ import bpy
 import logging
 import time
 import numpy as np
-from collections import namedtuple
 from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -13,6 +12,7 @@ from .common import (
     check_objects_uv,
     safe_context_override,
     SceneSettingsContext,
+    ValidationResult,
     apply_baked_result,
 )
 from .image_manager import set_image, save_image
@@ -26,8 +26,9 @@ from .uv_manager import (
     get_active_uv_udim_tiles,
     UDIMPacker,
     UVLayoutManager,
-    detect_object_udim_tile,
 )
+from .bake_types import BakeStep, BakeTask
+from .udim_utils import detect_object_udim_tile
 from .node_manager import NodeGraphHandler
 from ..constants import (
     UI_MESSAGES,
@@ -39,13 +40,6 @@ from ..constants import (
 from . import compat
 
 logger = logging.getLogger(__name__)
-
-# --- Data Structures ---
-BakeStep = namedtuple("BakeStep", ["job", "task", "channels", "frame_info"])
-BakeTask = namedtuple(
-    "BakeTask", ["objects", "materials", "active_obj", "base_name", "folder_name"]
-)
-
 
 # --- Runtime Proxies (For Quick Bake) ---
 class RuntimeBakeObject:
@@ -293,7 +287,7 @@ class BakeStepRunner:
             stack.enter_context(
                 safe_context_override(self.context, task.active_obj, task.objects)
             )
-            stack.enter_context(UVLayoutManager(task.objects, job.setting))
+            stack.enter_context(UVLayoutManager(task.objects, job.setting, self.context))
 
             udim_tiles = BakePassExecutor.get_udim_configuration(
                 job.setting, task.objects
@@ -708,8 +702,6 @@ class JobPreparer:
         Returns:
             ValidationResult with success flag and message.
         """
-        from .common import ValidationResult
-
         s = job.setting
         objs = [o.bakeobject for o in s.bake_objects if o.bakeobject]
 
