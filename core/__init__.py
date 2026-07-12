@@ -21,6 +21,7 @@ Submodules:
 """
 
 from . import api
+from . import bake_types
 from . import cage_analyzer
 from . import cleanup
 from . import common
@@ -32,10 +33,12 @@ from . import math_utils
 from . import node_manager
 from . import shading
 from . import thumbnail_manager
+from . import udim_utils
 from . import uv_manager
 
 __all__ = [
     "api",
+    "bake_types",
     "cage_analyzer",
     "cleanup",
     "common",
@@ -47,5 +50,6 @@ __all__ = [
     "node_manager",
     "shading",
     "thumbnail_manager",
+    "udim_utils",
     "uv_manager",
 ]

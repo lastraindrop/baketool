@@ -8,7 +8,8 @@ import bpy
 import logging
 from typing import Any, Optional, List
 from .engine import JobPreparer, BakeStepRunner
-from .uv_manager import detect_object_udim_tile
+from .udim_utils import detect_object_udim_tile
+from .common import ValidationResult
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,5 @@ def validate_settings(
     job: Any, context: Optional[bpy.types.Context] = None
 ) -> "ValidationResult":
     """Programmatically validate a BakeJob's settings."""
-    from .common import ValidationResult
     ctx = context if context is not None else bpy.context
     return JobPreparer.validate_job(job, ctx.scene, ctx.view_layer)
