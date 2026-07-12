@@ -17,6 +17,7 @@ from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from .core.common import (
     get_active_job,
+    get_active_job_or_report,
     reset_channels_logic,
     log_error,
     manage_channels_logic,
@@ -301,7 +302,7 @@ class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
             self.report({"ERROR"}, "BakeNexus properties not initialized.")
             return {"CANCELLED"}
 
-        job = get_active_job(context.scene.BakeJobs)
+        job = get_active_job_or_report(self, context)
         if job is None:
             return {"CANCELLED"}
 
@@ -342,7 +343,7 @@ class BAKETOOL_OT_ResetChannels(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        job = get_active_job(context.scene.BakeJobs)
+        job = get_active_job_or_report(self, context)
         if job is None:
             return {"CANCELLED"}
         reset_channels_logic(job.setting)
@@ -460,9 +461,8 @@ class BAKETOOL_OT_RefreshUDIMLocations(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        job = get_active_job(context.scene.BakeJobs)
+        job = get_active_job_or_report(self, context)
         if job is None:
-            self.report({"WARNING"}, "No bake jobs configured.")
             return {"CANCELLED"}
         synced = 0
 
@@ -485,9 +485,8 @@ class BAKETOOL_OT_TogglePreview(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        job = get_active_job(context.scene.BakeJobs)
+        job = get_active_job_or_report(self, context)
         if job is None:
-            self.report({"WARNING"}, "No bake jobs configured.")
             return {"CANCELLED"}
         s = job.setting
 
@@ -597,9 +596,8 @@ class BAKETOOL_OT_OneClickPBR(bpy.types.Operator):
         Returns:
             Set[str]: {'FINISHED'} or {'CANCELLED'}.
         """
-        job = get_active_job(context.scene.BakeJobs)
+        job = get_active_job_or_report(self, context)
         if job is None:
-            self.report({"WARNING"}, "No valid bake job selected.")
             return {"CANCELLED"}
         s = job.setting
 
@@ -696,10 +694,12 @@ class BAKETOOL_OT_ExportResult(bpy.types.Operator):
         results = context.scene.baked_image_results
         idx = context.scene.baked_image_results_index
         if not (0 <= idx < len(results)):
+            self.report({"WARNING"}, "No result selected to export.")
             return {"CANCELLED"}
 
         res = results[idx]
         if not res.image:
+            self.report({"WARNING"}, "Selected result has no image to export.")
             return {"CANCELLED"}
 
         img = res.image
@@ -828,9 +828,8 @@ class BAKETOOL_OT_ManageObjects(bpy.types.Operator):
     action: props.StringProperty()
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        job = get_active_job(context.scene.BakeJobs)
+        job = get_active_job_or_report(self, context)
         if job is None:
-            self.report({"WARNING"}, "No valid bake job selected.")
             return {"CANCELLED"}
 
         sel = [o for o in context.selected_objects if o.type == "MESH"]
@@ -848,14 +847,13 @@ class BAKETOOL_OT_SaveSetting(bpy.types.Operator, ExportHelper):
     """Export current bake job settings to a JSON file."""
 
     bl_idname = "baketool.save_setting"
-    bl_label = "Export Bake Nexus Settings"
+    bl_label = "Export BakeNexus Settings"
     filename_ext = ".json"
     filter_glob: props.StringProperty(default="*.json", options={"HIDDEN"})
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
-        job = get_active_job(context.scene.BakeJobs)
+        job = get_active_job_or_report(self, context)
         if job is None:
-            self.report({"WARNING"}, "No valid bake job selected.")
             return {"CANCELLED"}
 
         data = preset_handler.PropertyIO().to_dict(job)
@@ -874,7 +872,7 @@ class BAKETOOL_OT_LoadSetting(bpy.types.Operator, ImportHelper):
     """Import bake job settings from a JSON file."""
 
     bl_idname = "baketool.load_setting"
-    bl_label = "Import Bake Nexus Settings"
+    bl_label = "Import BakeNexus Settings"
     filename_ext = ".json"
     filter_glob: props.StringProperty(default="*.json", options={"HIDDEN"})
 

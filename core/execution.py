@@ -134,10 +134,14 @@ class BakeModalOperator:
                     self.cancel(context)
                     return {'CANCELLED'}
 
+                if self.current_step_idx >= len(self.bake_queue):
+                    raise IndexError(
+                        "Bake queue changed while the modal bake was running."
+                    )
                 step = self.bake_queue[self.current_step_idx]
                 self._process_single_step(context, step)
 
-            except (AttributeError, RuntimeError, TypeError, ValueError) as e:
+            except (AttributeError, IndexError, RuntimeError, TypeError, ValueError) as e:
                 self._handle_step_error(context, e)
 
             self.current_step_idx += 1

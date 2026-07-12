@@ -133,6 +133,7 @@ class CageAnalyzer:
         if auto_switch_vp:
             prev_act = context.active_object
             prev_mode = prev_act.mode if prev_act else "OBJECT"
+            prev_selected = list(context.selected_objects)
 
             bpy.ops.object.select_all(action="DESELECT")
             low_obj.select_set(True)
@@ -150,10 +151,16 @@ class CageAnalyzer:
             except (RuntimeError, AttributeError) as e:
                 logger.warning(f"Failed to switch Viewport to Vertex Paint: {e}")
                 try:
+                    bpy.ops.object.select_all(action="DESELECT")
+                    for obj in prev_selected:
+                        obj.select_set(True)
                     context.view_layer.objects.active = prev_act
-                    bpy.ops.object.mode_set(mode=prev_mode)
-                except (ReferenceError, RuntimeError, AttributeError):
-                    pass
+                    if prev_act and prev_mode != "OBJECT":
+                        bpy.ops.object.mode_set(mode=prev_mode)
+                except (ReferenceError, RuntimeError, AttributeError) as restore_error:
+                    logger.debug(
+                        f"Failed to restore viewport state after cage analysis: {restore_error}"
+                    )
 
         return (
             True,
