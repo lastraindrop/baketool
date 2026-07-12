@@ -392,6 +392,7 @@ blender -b scene.blend -P automation/headless_bake.py -- --job "PBR_Job" --outpu
 - 数据图尽量统一颜色空间和命名规则。
 - 对动画、UDIM、多对象合并这类高成本流程，先做小样验证。
 - 对关键项目保留 `.blend` 备份和中间输出，不要把“插件能恢复”当成主保险。
+- 若操作被取消，先查看状态栏反馈；BakeNexus 会对未选择 Job、未选择结果或结果缺少图像等常见前置条件给出明确提示，而不是静默执行。
 
 ## 12. 已知限制与实战风险 (Critical Limitations)
 由于本项目目前由 **单人维护** 且深度使用了 **vibecode (AI) 开发流**，用户在使用时必须知晓以下边界：

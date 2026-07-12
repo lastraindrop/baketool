@@ -136,7 +136,7 @@ BakeNexus 的自动化并不是一个附属目录，而是项目交付的一部�
 
 - `__init__.py` 中的 `bl_info`
 - `blender_manifest.toml`
-- `MANIFEST.in`
+- `automation/build_release_zip.py`
 
 三者共同决定：
 
@@ -173,7 +173,7 @@ BakeNexus 的自动化并不是一个附属目录，而是项目交付的一部�
 
 ### 7.4 发布包依赖忽略和打包规则
 
-如果没有正确的 `MANIFEST.in` 和清理步骤，开发脚本、测试目录、历史资料或临时输出就可能混入发布物。BakeNexus 当前已经把：
+如果没有正确的 `build_release_zip.py` 显式收录规则和清理步骤，开发脚本、测试目录、历史资料或临时输出就可能混入发布物。BakeNexus 当前由该脚本决定发布包内容，而非使用已废弃的 `MANIFEST.in`。
 
 - `automation/`
 - `dev_tools/`
