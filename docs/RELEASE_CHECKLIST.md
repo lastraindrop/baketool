@@ -13,7 +13,7 @@
 ## 2. 代码规范与一致性
 
 - 确认无 bare `except:` 子句残留（应已清零）。
-- 确认全项目 `except Exception` 仅位于顶层 `main()` 入口，核心路径中已收紧为具体类型。
+- 确认核心烘焙、数据和资源路径的 `except Exception` 已收紧为具体类型；仅插件注册/注销等顶层隔离边界可保留带日志的广泛捕获，并应有明确理由。
 - 确认模块级可变状态已封装（`_RegistryState` / `_preview_collections`）。
 - 确认 `cleanup.py` operator 前缀统一为 `baketool.`。
 - 确认所有临时场景设置修改通过 `SceneSettingsContext` 管理。
@@ -115,7 +115,7 @@ python automation/multi_version_test.py --verification
 
 - 包内包含插件运行所需的 Python 源文件和必要用户文档。
 - 包内保留运行 `Run Safety Audit` 和 headless CLI 所需的最小自动化脚本与测试套件；不包含本地临时文件、虚拟环境、旧版归档和一次性调试资料。
-- `MANIFEST.in` 与当前目录结构一致。
+- `automation/build_release_zip.py` 的显式收录规则与当前目录结构一致；不得重新引入已废弃的 `MANIFEST.in`。
 - 插件目录结构在 Blender 中可直接识别。
 
 推荐直接使用仓库内脚本生成分发包，而不是手工压缩整个工作目录：

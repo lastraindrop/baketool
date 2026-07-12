@@ -52,7 +52,14 @@
 - [ ] 动态枚举专项测试扩展：覆盖默认值、5 元组返回、旧预设迁移和跨版本注册。
 - [ ] i18n 全量翻译覆盖：`ops.py` self.report 与 `ui.py` 面板标签走 `pgettext` 或 `UI_MESSAGES`。
 - [ ] CM.1: `core/engine.py` 拆分 (`ModelExporter` → `exporter.py`, `TaskBuilder+JobPreparer` → `job_prep.py`)。
-- [ ] CM.2: `core/common.py` 职责拆分 (材质函数 → `shading.py`)。
+- [x] CM.2: `core/common.py` 职责拆分（材质结果函数 → `shading.py`，保留 `common.py` facade 重导出）。
+
+### 7. 维护执行状态 (2026-07-12)
+- [x] P0: `BakeModalOperator` 对运行中队列漂移进行受控错误处理；补齐 Quick Bake、Reset、导出预检的用户反馈；统一两处 BakeNexus 品牌标签。
+- [x] 架构前置: 新建 `core/bake_types.py` 作为 `BakeStep` / `BakeTask` 的中立契约模块，避免后续 `engine.py` → `job_prep.py` 提取形成循环导入。
+- [x] 依赖清理: 新建 `core/udim_utils.py` 并使 `common.py` 依赖该叶模块，消除 `common.py` 到 `uv_manager.py` 的反向依赖；`UVLayoutManager` 支持显式 context 注入。
+- [x] DRY/KISS: 合并重复 UI 通道布局配置；统一 Operator 的活动 Job 报告守卫；清理预览材质代码中的对话式实现注释与闭包内重复常量。
+- [x] Blender 运行时门禁: Blender 3.3.21、3.6.23、4.2.14、4.5.3、5.0.1 的 `unit` 跨版本矩阵 5/5 通过；4.2 的 `verification` 6/6、注册循环和 facade 导入通过；5.0 的 `production_workflow` 10/10 通过。
 
 ### 6. 发布前最终清理与 DRY 重构 (2026-07-02) ✅
 - [x] **Phase 10 — 死代码与死导入清理**：constants.py 删除 12 个零引用常量 (JOB_TYPES, ATLAS_PACK_METHODS, DENOISE_METHODS 等)；__init__.py/ui.py/ops.py 删除 7 个未用导入；property.py 删除 `use_antialiasing` 死属性；MANIFEST.in 删除（与 build_release_zip.py 冲突的死文档）。

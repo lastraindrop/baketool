@@ -2,6 +2,15 @@
 
 本文件记录 BakeNexus 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
+## Unreleased
+### 架构一致性、运行时安全与文档同步 / Architecture Consistency, Runtime Safety & Documentation
+- **执行安全**：modal 烘焙队列长度变化转为受控错误；cage 视口切换失败时恢复选择状态；补齐 Quick Bake、Reset 与导出预检的用户反馈。
+- **依赖边界**：新增 `core/bake_types.py` 承载 `BakeStep` / `BakeTask`；新增 `core/udim_utils.py` 作为 UDIM 检测叶模块，消除 `common.py` 对 `uv_manager.py` 的反向依赖。
+- **职责分离**：将 `apply_baked_result` 与 `create_simple_baked_material` 从 `core/common.py` 移至 `core/shading.py`；旧导入路径保留 facade 重导出，避免破坏外部脚本。
+- **DRY/KISS**：合并重复的 Light Path / ID 通道 UI 配置；统一活动 Job 报告守卫；移除预览代码中的对话式注释和闭包内重复常量。
+- **验证**：跨 Blender 3.3.21、3.6.23、4.2.14、4.5.3、5.0.1 的 `unit` 矩阵 5/5 通过；4.2 的 `verification`、注册循环与公开 facade 检查通过；5.0 的 `production_workflow` 10/10 通过。
+- **文档与发布**：同步技术、开发、自动化、生态、标准化、路线图、任务板和发布清单；构建脚本生成 65 文件发布 ZIP 并确认包含新核心模块。
+
 ## 1.0.0 - 2026-07-02
 ### 发布前最终清理与 DRY 重构 / Pre-release Final Cleanup & DRY Refactoring
 

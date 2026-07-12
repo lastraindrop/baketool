@@ -64,11 +64,17 @@
 - **验证**：22/22 运行时源文件 py_compile 全过，0 lsp error。
 
 ## 7. 短期计划 (v1.1.x) - 生产力增强
-- **架构拆分**：`core/engine.py`（1583 行）拆分为 `model_export.py` + `task_builder.py`，保持 `engine.py` 为对外 facade。
+- **架构拆分（CM.1，后续）**：在 `core/bake_types.py` 共享 `BakeStep` / `BakeTask` 契约的前提下，将 `core/engine.py` 的 `ModelExporter` 提取至 `exporter.py`，并将 `TaskBuilder` / `JobPreparer` 提取至 `job_prep.py`；`engine.py` 保持 facade 重导出，避免破坏现有 API。
 - **i18n 全量覆盖**：`ops.py` self.report 与 `ui.py` 面板标签走 `pgettext` 或 `UI_MESSAGES`。
 - **继续 DRY 清理**：`draw_collapsible_header()` UI 辅助函数（4 处重复）、`report_cancel` 装饰器（26 处重复模式）。
 - **剩余风格债务清理**：继续推进 Phase 5（函数拆分）和 Phase 6（CI 集成：`isort` + `ruff`）。
 - **类型覆盖率提升**：目标 50%+，重点覆盖 `core/common.py` 和 `core/engine.py`。
+
+### 7.1 维护前置完成项 (2026-07-12)
+- `core/bake_types.py` 已承载 `BakeStep` / `BakeTask`；在提取 `TaskBuilder` / `JobPreparer` 前必须继续以此为共享契约，禁止让 `job_prep.py` 回导 `engine.py`。
+- `core/udim_utils.py` 已成为主要 UDIM tile 检测的叶模块；`common.py` 不得重新依赖 `uv_manager.py`。
+- `UVLayoutManager` 接受可选 context，调用者应优先传入显式 context，同时保留后台/交互模式的 `bpy.context` 回退。
+- 本轮已完成跨版本 `unit` 矩阵：Blender 3.3.21、3.6.23、4.2.14、4.5.3、5.0.1 共 5/5 通过；并在 4.2 通过 `verification`、注册循环和 facade 导入检查，在 5.0 通过 `production_workflow` 10/10。
 
 ## 8. 长期愿景 (v2.x) - 智能烘焙生态
 - **异步像素回传**：研究 B5.0 下的高性能像素拷贝方案。
