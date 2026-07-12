@@ -751,6 +751,21 @@ BAKE_CHANNEL_INFO = {
 
 # --- UI Layout Configuration (Data-Driven UI) ---
 
+_LIGHT_PATH_TOGGLES = {
+    "type": "TOGGLES",
+    "header": "Light Paths",
+    "icon": "LIGHT_SUN",
+    "props": [
+        ("pass_settings.use_direct", "Dir"),
+        ("pass_settings.use_indirect", "Ind"),
+        ("pass_settings.use_color", "Col"),
+    ],
+}
+_ID_COUNT_PROPS = {
+    "type": "PROPS",
+    "props": [("mesh_settings.id_count", "ID Map Count")],
+}
+
 CHANNEL_UI_LAYOUT = {
     "rough": {
         "type": "PROPS",
@@ -767,36 +782,9 @@ CHANNEL_UI_LAYOUT = {
             ("suffix", "Suffix", "NONE"),
         ],
     },
-    "diff": {
-        "type": "TOGGLES",
-        "header": "Light Paths",
-        "icon": "LIGHT_SUN",
-        "props": [
-            ("pass_settings.use_direct", "Dir"),
-            ("pass_settings.use_indirect", "Ind"),
-            ("pass_settings.use_color", "Col"),
-        ],
-    },
-    "gloss": {
-        "type": "TOGGLES",
-        "header": "Light Paths",
-        "icon": "LIGHT_SUN",
-        "props": [
-            ("pass_settings.use_direct", "Dir"),
-            ("pass_settings.use_indirect", "Ind"),
-            ("pass_settings.use_color", "Col"),
-        ],
-    },
-    "tranb": {
-        "type": "TOGGLES",
-        "header": "Light Paths",
-        "icon": "LIGHT_SUN",
-        "props": [
-            ("pass_settings.use_direct", "Dir"),
-            ("pass_settings.use_indirect", "Ind"),
-            ("pass_settings.use_color", "Col"),
-        ],
-    },
+    "diff": _LIGHT_PATH_TOGGLES,
+    "gloss": _LIGHT_PATH_TOGGLES,
+    "tranb": _LIGHT_PATH_TOGGLES,
     "combine": {
         "type": "TOGGLES",
         "header": "Combined Passes",
@@ -863,10 +851,10 @@ CHANNEL_UI_LAYOUT = {
             ("mesh_settings.contrast", "Contrast"),
         ],
     },
-    "ID_mat": {"type": "PROPS", "props": [("mesh_settings.id_count", "ID Map Count")]},
-    "ID_ele": {"type": "PROPS", "props": [("mesh_settings.id_count", "ID Map Count")]},
-    "ID_UVI": {"type": "PROPS", "props": [("mesh_settings.id_count", "ID Map Count")]},
-    "ID_seam": {"type": "PROPS", "props": [("mesh_settings.id_count", "ID Map Count")]},
+    "ID_mat": _ID_COUNT_PROPS,
+    "ID_ele": _ID_COUNT_PROPS,
+    "ID_UVI": _ID_COUNT_PROPS,
+    "ID_seam": _ID_COUNT_PROPS,
     "pbr_conv_base": {
         "type": "PROPS",
         "header": "PBR Conversion",
