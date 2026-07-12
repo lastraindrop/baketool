@@ -9,8 +9,11 @@ BakeNexus 采用模块化的分层架构，旨在解耦 UI、数据管理与执�
 - **UI 层 (`ui.py`, `translations.json`)**: 负责交互显示，通过 `constants.py` 中的配置动态生成界面。
 - **数据层 (`property.py`, `constants.py`)**: 定义 RNA 属性、默认值和通道元数据。
 - **核心引擎 (`core/`)**:
-  - `engine.py`: 执行调度的中枢，包含 `BakeStepRunner` 和 `BakePassExecutor`。
+  - `engine.py`: 执行调度 facade，包含 `BakeStepRunner`、`BakePassExecutor`、任务准备与导出逻辑。
+  - `bake_types.py`: `BakeStep` / `BakeTask` 的中立执行契约；后续拆分 `engine.py` 时，生产者与消费者必须依赖此模块而非相互导入。
+  - `udim_utils.py`: 不依赖 UI 或管理器的 UDIM tile 检测叶模块，避免 `common.py` 与 `uv_manager.py` 形成反向依赖。
   - `node_manager.py`: 负责非破坏式的材质节点操作。
+  - `shading.py`: 预览材质和烘焙结果材质创建；`common.py` 对历史导入路径保持 facade 重导出。
   - `compat.py`: 跨版本 API 适配层。
   - `math_utils.py`: 拓扑分析与高性能 NumPy 像素处理。
 
@@ -83,6 +86,19 @@ core/shading.py: apply_baked_result 消费通道映射
 - **动态枚举默认值**：`items` 为回调函数的 `EnumProperty` 必须使用整数默认值（而非字符串 identifier），否则 Blender 4.2+ 注册时抛出 `RuntimeError`
 - **降噪场景清理**：`BakePostProcessor.apply_denoise(context, img)` 必须注入 `context` 参数 + `temp_override`，渲染失败时 `finally` 块确保临时场景被删除
 - **save_image 上下文安全**：所有场景渲染设置修改通过 `SceneSettingsContext` 管理，而非直接操作 `bpy.context.scene.render`
+- **公开导入兼容**：结构迁移后，旧的 `core.common.apply_baked_result` / `create_simple_baked_material` 仍必须可用；功能实现在 `core.shading`，旧路径仅作为兼容 facade。
+- **UDIM 依赖方向**：业务层可使用 `udim_utils.detect_object_udim_tile`；`common.py` 不得重新导入 `uv_manager.py`。
+
+### 5.3 参数动态对齐的验证闭环
+
+参数一致性不是只靠文档约定，而是由以下链路共同约束：
+
+1. `property.py` 定义可持久化的 RNA 字段、默认值和 update callback。
+2. `constants.py` 提供格式约束、通道元数据及 `CHANNEL_UI_LAYOUT`；重复布局通过共享配置对象复用，避免同一参数描述分叉。
+3. `ui.py` 依据配置路径绘制属性；`engine.py` / `image_manager.py` / `shading.py` 消费同一 RNA 和通道标识。
+4. `suite_unit.test_property_group_integrity`、`suite_unit.test_ui_layout_config_integrity`、`suite_parameter_matrix.test_dynamic_enum_returns_5tuple`、`suite_code_review` 验证 RNA、布局、动态枚举和公开接口。
+
+任何新增通道、保存格式或 UI 参数都必须同时检查这四层；不能只让 UI 显示新字段，或只让引擎读取未注册字段。
 
 ---
 
@@ -167,15 +183,15 @@ BakeNexus 遵循以下异常处理原则：
 3. **`finally` 块中的异常必须捕获**（`finally` 中抛异常会覆盖原始异常）。
 4. **`KeyboardInterrupt` 和 `SystemExit` 永远不捕获**。
 
-当前状态：全项目 0 个 bare `except`，0 个 `except Exception` 在生产代码核心路径中。
+当前状态：全项目 0 个 bare `except`。生产烘焙、数据和资源管理路径不使用 `except Exception`；仅 `__init__.py` 的插件注册/注销边界保留带日志的广泛捕获，以允许其余可注册类、handler 或预览资源继续清理。任何新增广泛捕获都必须限于同类顶层隔离边界并记录原因。
 
 ---
 
-## 10. DRY 基础设施与一致性机制 (DRY Infrastructure & Consistency)
+## 9. DRY 基础设施与一致性机制 (DRY Infrastructure & Consistency)
 
 为消除代码库中积累的重复模式并建立单一事实源，v1.0 发布前引入了以下集中式辅助机制：
 
-### 10.1 `get_active_job()` — 活动 Job 索引钳制
+### 9.1 `get_active_job()` — 活动 Job 索引钳制
 
 位于 `core/common.py`，封装了全项目最频繁的重复模式——从 `BakeJobs` 集合中按索引获取活动 Job，同时处理越界回退：
 
@@ -194,7 +210,7 @@ def get_active_job(bj, sync_index=True):
 
 统一了之前分散在 `ops.py`（8 处）、`ui.py`（2 处）、`property.py`（1 处）、`core/common.py`（1 处）的 12 处重复索引钳制逻辑，同时修正了部分调用点缺少空 Job 集检查的潜在 `IndexError`。
 
-### 10.2 `tag_redraw_view3d()` — View3D 区域刷新
+### 9.2 `tag_redraw_view3d()` — View3D 区域刷新
 
 位于 `core/common.py`，统一了 `ops.py` 和 `property.py` 之间 3 处重复的 View3D 区域标记重绘循环：
 
@@ -207,7 +223,7 @@ def tag_redraw_view3d(context):
                 area.tag_redraw()
 ```
 
-### 10.3 `EXTENSION_TO_FORMAT` — 文件扩展名反向映射
+### 9.3 `EXTENSION_TO_FORMAT` — 文件扩展名反向映射
 
 位于 `constants.py`，从 `FORMAT_SETTINGS` **自动计算** 生成扩展名→格式名的反向映射，消除了 `ops.py` 的 `_get_format_from_path` 硬编码副本（双重事实源）。新增格式时仅需更新 `FORMAT_SETTINGS`，反向映射自动同步：
 
@@ -218,13 +234,20 @@ for _fmt, _cfg in FORMAT_SETTINGS.items():
         EXTENSION_TO_FORMAT[_ext] = _fmt
 ```
 
-### 10.4 `SYSTEM_NAMES` — Blender 命名集中管理
+### 9.4 `SYSTEM_NAMES` — Blender 命名集中管理
 
 所有插件创建的 Blender 数据块名称（临时场景、相机、预览材质）均从 `constants.py` 的 `SYSTEM_NAMES` 字典引用，禁止在各模块中硬编码字符串字面量。v1.0 新增了 `DENOISE_SCENE`、`DENOISE_CAMERA`、`PREVIEW_MAT` 三个键。
 
-### 10.5 测试验证
+### 9.5 测试验证
 
 以上辅助函数和映射的一致性由以下测试套件保障：
 - `suite_code_review`：验证 UI 标签与内部键的一致性。
 - `suite_unit`：MockSetting 属性完整性检查。
 - `suite_production_workflow`：端到端烘焙管道验证。
+
+### 9.6 本轮重构后的执行与验证结果
+
+- `BakeModalOperator` 对运行中的队列长度变化显式报错并由统一错误管道记录，避免未捕获 `IndexError`。
+- `UVLayoutManager` 接受可选 `context`，调用方优先传入显式上下文；仅在未提供时回退 `bpy.context`，保证 headless/API 可用。
+- `common.py` 的材质结果函数迁移至 `shading.py`，同时 re-export 旧路径，兼顾职责分离与第三方脚本兼容。
+- 通过 Blender 3.3.21、3.6.23、4.2.14、4.5.3、5.0.1 的 `unit` 跨版本矩阵（5/5）；并通过 4.2 的 `verification`、注册循环、facade 导入，以及 5.0 的 `production_workflow` 10/10。

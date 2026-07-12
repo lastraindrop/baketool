@@ -16,6 +16,13 @@ BakeNexus 采用 **"配置-验证-执行-还原"** 的四段式架构，确保�
 4. **Post-Processing**: 执行降噪（Denoise）、通道打包（Packing）或格式转换。
 5. **Restoration**: 恢复用户原始的渲染引擎、路径模式和对象可见性。
 
+### 1.2.1 模块边界与公开兼容性
+
+- `core/bake_types.py` 是 `BakeStep` / `BakeTask` 的唯一共享契约位置。后续提取任务准备模块时，禁止让新模块反向导入 `engine.py`。
+- `core/udim_utils.py` 是纯 UDIM 检测层；`uv_manager.py` 保留兼容导入，`common.py` 只依赖该叶模块，避免循环依赖。
+- 材质结果创建位于 `core/shading.py`。为兼容既有脚本，`core.common` 继续 re-export `apply_baked_result` 与 `create_simple_baked_material`；迁移时不得删除旧路径。
+- 新增模块必须同步写入 `core/__init__.py` 和 `__all__`，并通过 register/unregister 循环与 facade 导入检查。
+
 ### 1.3 BakeContextManager 原子上下文 (Atomic Context Manager)
 `BakeContextManager` (`core/engine.py:932`) 负责在烘焙期间临时修改渲染引擎、采样数、输出格式、色彩空间等多组场景设置，结束后必须完整还原。采用 `ExitStack.pop_all()` 原子模式避免部分失败导致的场景泄露：
 
