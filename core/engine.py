@@ -186,9 +186,7 @@ class BakePostProcessor:
 
             # 3. Execute "render" to process pixels
             # Safety: use provided context override
-            override = context.copy()
-            override["scene"] = tmp_scene
-            with context.temp_override(**override):
+            with context.temp_override(scene=tmp_scene):
                 bpy.ops.render.render(scene=tmp_scene.name)
 
             viewer_img = bpy.data.images.get(SYSTEM_NAMES["VIEWER_IMG"])
@@ -1196,7 +1194,6 @@ class BakePassExecutor:
         is_float = setting.use_float32 or chan_id in {
             "position",
             "normal",
-            "displacement",
         }
         return target_cs, is_float
 

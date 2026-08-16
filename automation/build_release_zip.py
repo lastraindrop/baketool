@@ -37,6 +37,9 @@ ROOT_FILES = [
 RECURSIVE_DIRS = {
     "core": "*.py",
     "test_cases": "*.py",
+    # Required by test_cases/suite_localization.py so the packaged
+    # "Run Safety Audit" can discover every suite without import errors.
+    "dev_tools": "*.py",
 }
 
 AUTOMATION_FILES = [

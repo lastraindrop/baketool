@@ -41,7 +41,22 @@
 - [x] **验证**: 158/158 测试通过、16 文件 lsp_diagnostics 通过、5/5 BAKE_MODES 全覆盖。
 - [x] `CHANGELOG.md` 更新 2026-06-06 条目、`ROADMAP.md` 更新 Phase 6-9、`.gitignore` 增强。
 
+### 8. 外部审计修复与发布收尾 (2026-08-17) ✅
+- [x] **B-01** manifest `id` 统一为 `baketool`（== ZIP 目录名 == `import baketool`），修复 4.2+ 扩展安装失败；产物更名为 `baketool-1.0.0.zip`。
+- [x] **B-02** 翻译 locale `zh_CN` → `zh_HANS` 全链路替换（481 词条）；`translations.py` 注册期派生 `zh_CN` 别名兼容 ≤4.1；工具与测试同步。
+- [x] **B-03** 移除 5 个无引擎实现的 Mesh 通道（Vertex Color/Curvature/Slope/Thickness/Select）与 `height` 孤岛元数据；`mesh_settings.contrast/direction/invert` 按 v1.1 预留并注释保护。
+- [x] **B-04** 发布包收录 `dev_tools/`，随包 Run Safety Audit 导入链闭合。
+- [x] **H-03** 崩溃会话文件按 PID 隔离 + glob 检测（新者优先）；`finish_session` 只清本实例，`clear_state` 清全部。
+- [x] **H-04** `Clean Up Bake Junk` 按钮进入 Baked Results 面板。
+- [x] **防护性测试**：`test_channel_pipeline_alignment`、`test_manifest_id_matches_addon_directory`、`test_release_zip_includes_audit_dependencies`——测试数 158 → 161。
+- [x] **词典治理**：`--sync --prune` 清理 19 个死键、补齐 6 个新键的 5 语言 → 468 词条、0 空值。
+- [x] **打磨**：`context.copy()` 弃用 API 移除、预览材质名改用 `SYSTEM_NAMES`、Quick Bake 补 poll、README 引用块修复、CI 官方源回退。
+- [x] **文档一致化**：USER_MANUAL（通道清单/状态文件名/清理入口）、ECOSYSTEM_GUIDE（dev_tools 分发策略修正）、RELEASE_CHECKLIST（id==目录名与 zh 抽查项）、TECHNICAL_GUIDE（新增 §5.4 通道管线与引擎可达性、§9.7 本轮产物）、ROADMAP/task.md/CHANGELOG 同步。
+- [x] **验证**：5 版本 161 项测试 0 失败 0 错误（3.3/3.6 各 4 项 tomllib 预期跳过）；发布 ZIP（67 文件，根目录==id、dev_tools 随包、zh_HANS 生效、无 pycache 泄漏）全项通过；全项目 `py_compile` 0 错误。
+
 ## [v1.1.x] 后续排队功能
+- [ ] **通道实装补齐（外部审计立项，最高优先）**：Vertex Color / Curvature / Slope / Thickness / Select 重实装并挂回通道列表（走 TECHNICAL_GUIDE §5.4.5 检查单）；Normal X/Y/Z 轴向分量实装或删除属性，二选一。
+- [ ] **崩溃记录归属细化**：会话记录结合 blend 文件名哈希，恢复 UI 仅提示本场景的崩溃记录。
 - [ ] Phase 5: 函数拆分（`BakeStepRunner.run` 129 行、`BakePassExecutor._run_blender_bake_pipeline`）。
 - [ ] Phase 6: CI 集成（`isort` + `ruff` + `mypy` incremental）。
 - [ ] 类型覆盖率目标 50%+（`core/common.py` + `core/engine.py`）。

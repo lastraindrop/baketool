@@ -45,6 +45,13 @@ def load_translations():
             translations_map[locale][("*", src_text)] = dest_text
             translations_map[locale][("Operator", src_text)] = dest_text
 
+    # Blender renamed the Simplified Chinese locale from zh_CN (<= 4.1) to
+    # zh_HANS (4.2+). Register both codes from the single zh_HANS source so
+    # extension installs on 4.2+ and legacy source installs both resolve.
+    zh_data = translations_map.get("zh_HANS")
+    if zh_data:
+        translations_map.setdefault("zh_CN", dict(zh_data))
+
     return translations_map
 
 # Load on module import

@@ -124,7 +124,9 @@ BakeNexus 的自动化并不是一个附属目录，而是项目交付的一部�
 
 ### 5.1 `dev_tools/`
 
-这里放开发辅助脚本，例如翻译提取等。它们服务于开发流程，但不应混入插件运行时核心路径，也不应进入最终面向用户的分发包。
+这里放开发辅助脚本，例如翻译提取与审计（`extract_translations.py`）。它们服务于开发流程，不进入插件运行时核心路径。
+
+> **分发说明（1.0.0 起）**：`dev_tools/` **会**随发布 ZIP 分发。原因是测试套件中的 `suite_localization.py` 直接导入 `..dev_tools.extract_translations`，而发布包刻意保留了完整测试套件以支持 Debug 模式下的 `Run Safety Audit`。若 `dev_tools/` 缺失，打包后的安全审计会因导入错误而永远报红。此约束已由 `suite_extension_validation.test_release_zip_includes_audit_dependencies` 固化为回归测试。
 
 ### 5.2 `docs/legacy/`
 
@@ -173,15 +175,14 @@ BakeNexus 的自动化并不是一个附属目录，而是项目交付的一部�
 
 ### 7.4 发布包依赖忽略和打包规则
 
-如果没有正确的 `build_release_zip.py` 显式收录规则和清理步骤，开发脚本、测试目录、历史资料或临时输出就可能混入发布物。BakeNexus 当前由该脚本决定发布包内容，而非使用已废弃的 `MANIFEST.in`。
+如果没有正确的 `build_release_zip.py` 显式收录规则和清理步骤，开发脚本、临时输出或历史资料就可能混入发布物。BakeNexus 当前由该脚本决定发布包内容，而非使用已废弃的 `MANIFEST.in`。
 
-- `automation/`
-- `dev_tools/`
-- `test_cases/`
-- `docs/dev/`
-- `docs/legacy/`
+当前发布 ZIP 的实际收录策略（2026-08 收尾定稿）：
 
-从分发包中排除，只保留运行所需文件和必要用户文档。
+- **随包分发**：`automation/`（cli_runner / headless_bake / multi_version_test）、`test_cases/`、`dev_tools/`——三者共同支撑 Debug 模式的 `Run Safety Audit` 与 headless CLI，缺一都会造成打包后功能断裂（B-04 教训）；以及用户手册、路线图和 `docs/dev/` 指南等必要文档。
+- **排除在外**：`docs/legacy/`、`.venv/`、`test_output/`、`reports/`、`dist/` 等本地或验证期内容。
+
+另有一条硬约束：**ZIP 内顶层目录名必须与 `blender_manifest.toml` 的 `id` 完全一致**（当前均为 `baketool`），否则 Blender 4.2+ 从磁盘安装扩展会直接失败。该约束已由 `suite_extension_validation.test_manifest_id_matches_addon_directory` 固化。
 
 ## 8. 推荐的生态工作流
 

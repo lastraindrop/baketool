@@ -133,6 +133,11 @@ Channel 指单个需要输出的贴图结果，例如颜色、粗糙度、法线
 - 法线与几何辅助：Normal、AO 等
 - 光照类：Combined、Diffuse、Glossy、Transmission
 
+启用 `Mesh` 开关后可用的网格分析通道为：`Bevel`、`Bevel Normal`、`UV`、`Wireframe`、`Position` 以及 `Material/Element/UV/Seam ID` 四种 ID 图。
+
+> [!WARNING]
+> **关于已移除通道**：早期版本曾提供 `Vertex Color`、`Curvature`、`Slope`、`Thickness`、`Select` 五个网格通道。它们在 1.0.0 中已被移除——当时引擎并没有真正实现这些通道的生成逻辑，勾选后只会得到全黑贴图。它们计划在后续版本（v1.1+）以真实实现重新加入。旧预设中若包含这些通道，加载时它们会被安全忽略。
+
 对于光照类或 Combined 类型，当前版本中的 pass filter 选项已经真正会传递到 Blender 的 bake 设置里。也就是说，界面里看到的 direct、indirect、color 等开关不再是摆设，而会实际影响结果。
 
 ### 4.5 OUTPUT & EXPORT
@@ -280,13 +285,13 @@ BakeNexus 的预设系统会序列化 Job 相关属性，并支持一定程度�
 
 ## 8. 状态恢复与中断处理
 
-BakeNexus 使用 `state_manager.py` 在系统临时目录写入上一次执行状态，文件名为：
+BakeNexus 使用 `state_manager.py` 在系统临时目录写入上一次执行状态。文件名带有当前 Blender 进程的 PID：
 
 ```text
-sbt_last_session.json
+sbt_last_session_<PID>.json
 ```
 
-它会记录：
+按 PID 命名意味着：如果你同时开了多个 Blender 窗口并行烘焙，它们不会互相覆盖崩溃记录；而崩溃检测会扫描同一前缀的所有会话文件（最新优先），因此新开的 Blender 仍能发现上一个实例留下的未完成记录。它会记录：
 
 - Job 名称
 - 总步骤数
@@ -299,6 +304,10 @@ sbt_last_session.json
 如果 Blender 崩溃或流程中断，重新打开界面后可以根据 UI 提示决定是否恢复或清理状态。恢复并不意味着从任何内部细节处继续，而是基于记录到的执行位置做合理续跑，因此在关键生产任务中仍然建议保留中间结果和场景备份。
 
 如果烘焙前曾启用 Interactive Preview（交互预览）且崩溃退出，下次加载场景时系统会自动检测并恢复原始材质，无需手动操作。
+
+### 8.1 紧急清理（Clean Up Bake Junk）
+
+异常中断偶尔会留下本应自动回收的临时数据（临时 UV 层、保护节点、`BT_` 前缀图像等）。`Baked Results` 面板底部提供了 **Clean Up Bake Junk** 按钮：它会扫描并移除这些残留、重置烘焙 UI 状态，并把清理明细写入系统临时目录的 `bakenexus_logs/cleanup_history.log` 供排查。正常完成的烘焙不需要手动使用它。
 
 ## 9. Headless 与脚本化使用
 

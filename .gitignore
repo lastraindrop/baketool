@@ -142,6 +142,7 @@ blender.crash.txt
 crash_log.txt
 translations.audit.json
 translations.cleaned.json
+translations_deep.json
 translation_audit_report.json
 translation_clean_audit.json
 # .github/ - now tracked in version control

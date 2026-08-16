@@ -2,6 +2,52 @@
 
 本文件记录 BakeNexus 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
+## 1.0.0 - 2026-08-17
+### 发布收尾：一致性固化与防护性测试 / Wrap-up: Consistency Hardening & Regression Guards
+
+#### 冗余清理 / Redundancy Cleanup
+- **翻译词典治理**：以官方工具 `dev_tools/extract_translations.py --sync --prune` 清理 19 个死键（旧品牌 "Bake Nexus" 标签、已删除的 denoise/UV 功能枚举、已移除通道的显示名），补齐 6 个缺失键（品牌更新后的导入导出标签与操作提示）的 5 语言翻译——词典收敛至 468 词条、0 空值。
+- **仓库清理**：移除全部 `__pycache__/` 与 `test_output/` 临时产物；发布 ZIP 在全部文档定稿后重新生成。
+
+#### 一致性固化 / Consistency Hardening
+- **`property.py`**：`BakeMeshSettings.contrast/direction/invert` 标注为 v1.1 通道重实装的预留字段（防止被后续清理误删，旧预设继续可加载）。
+- **文档与实际行为对齐**：修正 `ECOSYSTEM_GUIDE`（§5.1/§7.4 曾错误声称 `dev_tools/automation/test_cases` 不随包分发）；`RELEASE_CHECKLIST` 新增"manifest id == ZIP 目录名"与"简体中文界面抽查"核对项；`USER_MANUAL` 更新 Mesh 通道清单、已移除通道说明、PID 会话文件名与 `Clean Up Bake Junk` 入口。
+
+#### 防护性测试 / Regression Guards（158 → 161 项）
+- **`test_channel_pipeline_alignment`**（suite_code_review）：通道列表、元数据、UI 布局与引擎可达性四层的一致性机器化——任何"UI 列出但引擎无路径"的通道（B-03 失效模式）将直接导致 CI 失败。
+- **`test_manifest_id_matches_addon_directory`**（suite_extension_validation）：扩展 ID 与打包目录名强制一致（B-01 防复发）。
+- **`test_release_zip_includes_audit_dependencies`**（suite_extension_validation）：打包脚本必须收录 `dev_tools/`（B-04 防复发）。
+
+#### 技术指南完善 / Technical Guide
+- `TECHNICAL_GUIDE.md` 新增 **§5.4 通道管线与引擎可达性**：完整叙述通道从 UI 勾选到像素落盘的四层数据结构与执行流水线、引擎可达性判定规则、B-03 案例复盘，以及"新增通道强制检查单"；§6.1 更新 PID 会话文件机制；§9.7 记录本轮工程产物。
+
+#### 验证 / Verification
+- 5 版本（3.3.21 / 3.6.23 / 4.2.14 / 4.5.3 / 5.0.1）161 项测试：0 失败、0 错误（3.3/3.6 各 4 项 tomllib 缺失的预期跳过）。
+- 发布 ZIP `dist/baketool-1.0.0.zip`（67 文件）：根目录 == manifest id、dev_tools 随包、`zh_HANS` 生效、无 `__pycache__` 泄漏；翻译审计 0 死键 0 缺失。
+
+## 1.0.0 - 2026-08-16
+### 发布前外部审计修复 / Pre-release External Audit Fixes
+
+#### 阻断级修复 / Blocker Fixes
+- **扩展 ID 统一 (B-01)**：`blender_manifest.toml` 的 `id` 从 `bakenexus` 改为 `baketool`，与发布 ZIP 内目录名一致，修复 Blender 4.2+ 从磁盘安装扩展必然失败的问题；发布产物更名为 `baketool-1.0.0.zip`。
+- **中文翻译 locale 修正 (B-02)**：`translations.json` 全部 481 词条 `zh_CN` → `zh_HANS`（Blender 4.2+ 使用的简体中文 locale 代码）；`translations.py` 注册时自动附加 `zh_CN` 别名，保持 ≤4.1 legacy 源码安装的兼容；同步更新提取工具与 `suite_localization` 测试。
+- **移除无实现 Mesh 通道 (B-03)**：`Vertex Color / Curvature / Slope / Thickness / Select` 五个通道在引擎中无生成路径（静默产出全黑贴图），从 `BAKE_CHANNEL_INFO["MESH"]` 移除并列入 ROADMAP v1.1；连带清理 `CHANNEL_BAKE_INFO` / `CHANNEL_UI_LAYOUT` / `DATA_BAKE_FORCE_SINGLE_SAMPLE` / `CHANNEL_MESH_TYPE_MAP` 残留及 `height` 孤岛元数据、`engine.py` 的 `displacement` 死键。
+- **发布包补齐 dev_tools (B-04)**：`build_release_zip.py` 收录 `dev_tools/*.py`，修复打包后 `Run Safety Audit` 因 `suite_localization` 导入 `..dev_tools` 必然报错的问题（67 文件）。
+
+#### 高优先级修复 / High-priority Fixes
+- **崩溃记录多实例隔离 (H-03)**：`state_manager.py` 会话文件改为 `sbt_last_session_<PID>.json`，检测/读取/清理改为 glob 前缀匹配（按 mtime 新者优先），并行 Blender 实例不再互相覆盖崩溃记录。
+- **紧急清理 UI 入口 (H-04)**：`Baked Results` 面板新增 `Clean Up Bake Junk` 按钮（原先仅 F3 可达）。
+
+#### 打磨项 / Polish
+- `engine.py` 降噪管线移除已弃用的 `context.copy()`，改用纯 `temp_override(scene=...)`。
+- `preset_handler.py` 预览材质恢复改用 `SYSTEM_NAMES["PREVIEW_MAT"]` 常量（消除硬编码）。
+- `Quick Bake` 添加 `poll`（无 Mesh 选择时右键菜单置灰）。
+- README 顶部 CAUTION 引用块断裂修复；CI Blender 下载增加官方源回退（镜像单点依赖）。
+
+#### 验证 / Verification
+- 5 版本全量套件：Blender 3.3.21 / 3.6.23（154 passed + 4 skipped，tomllib 缺失的预期跳过）、4.2.14 / 4.5.3 / 5.0.1（158/158）——0 失败 0 错误。
+- 发布 ZIP 结构验证：根目录 == manifest id == `baketool`；dev_tools 随包；`zh_HANS` 生效且无 `zh_CN` 残留；无 `__pycache__` 泄漏。
+
 ## Unreleased
 ### 架构一致性、运行时安全与文档同步 / Architecture Consistency, Runtime Safety & Documentation
 - **执行安全**：modal 烘焙队列长度变化转为受控错误；cage 视口切换失败时恢复选择状态；补齐 Quick Bake、Reset 与导出预检的用户反馈。

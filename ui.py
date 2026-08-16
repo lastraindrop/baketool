@@ -218,6 +218,15 @@ def draw_results(scene: bpy.types.Scene, layout: bpy.types.UILayout, bj: Any) ->
     col.operator("baketool.export_result", text="", icon="EXPORT")
     col.operator("baketool.export_all_results", text="", icon="FILE_FOLDER")
 
+    # H-04: Expose the emergency cleanup entry point in the UI
+    row = layout.row()
+    row.alignment = "RIGHT"
+    row.operator(
+        "baketool.emergency_cleanup",
+        text=pgettext("Clean Up Bake Junk"),
+        icon="BRUSH_DATA",
+    )
+
     # Detailed Metadata Inspector
     if (
         scene.baked_image_results

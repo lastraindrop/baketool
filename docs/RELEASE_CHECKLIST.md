@@ -6,6 +6,7 @@
 
 - 确认 `__init__.py` 中的 `bl_info` 版本号正确。
 - 确认 `blender_manifest.toml` 中的 `version`、`blender_version_min`、`website` 正确。
+- 确认 manifest 的 `id` 与 ZIP 内顶层目录名（即仓库目录名 `baketool`）完全一致，否则 Blender 4.2+ 从磁盘安装扩展会直接失败（由 `suite_extension_validation.test_manifest_id_matches_addon_directory` 把关）。
 - 确认 `README.md`、`CHANGELOG.md` 与当前版本号一致。
 - 确认 `doc_url` 和 `tracker_url` 不再使用占位地址。
 - 确认 `__init__.py` 中 `bl_info["warning"]` 已更新为发布版（非 Beta 提示）。
@@ -92,14 +93,14 @@ python automation/multi_version_test.py --verification
 
 正式发布前建议人工跑完以下场景：
 
-- 安装 ZIP 并启用插件
+- 安装 ZIP 并启用插件（在语言设为简体中文的界面下重复一次，抽查中文翻译是否生效——词典使用 `zh_HANS` locale）
 - 新建 Job 并执行单对象基础烘焙
 - Selected-to-Active 烘焙
 - 自定义图生成与通道打包
 - UDIM 模式基础验证
 - 节点烘焙
 - 导出联动
-- 崩溃恢复提示与清理入口
+- 崩溃恢复提示与清理入口（`Baked Results` 面板底部的 `Clean Up Bake Junk` 按钮）
 - `Run Safety Audit` 返回隔离测试摘要，且不会把当前交互式会话改乱
 - headless CLI 运行已保存 Job
 
@@ -124,7 +125,7 @@ python automation/multi_version_test.py --verification
 python automation/build_release_zip.py
 ```
 
-这样可以稳定排除 `.venv/`、`test_output/`、`docs/legacy/`、`dev_tools/` 等本地或开发期内容；发布包会保留 `automation/cli_runner.py`、`automation/headless_bake.py` 和测试套件，以支持 Debug 模式下的 `Run Safety Audit` 与文档中的 headless CLI。
+这样可以稳定排除 `.venv/`、`test_output/`、`docs/legacy/` 等本地或验证期内容；发布包会保留 `automation/cli_runner.py`、`automation/headless_bake.py`、`test_cases/` **以及 `dev_tools/`**（`suite_localization` 的直接依赖，缺失会导致打包后的 Run Safety Audit 报导入错误），以支持 Debug 模式下的 `Run Safety Audit` 与文档中的 headless CLI。此收录关系由 `suite_extension_validation.test_release_zip_includes_audit_dependencies` 固化为回归测试。
 
 ## 9. 发布说明
 

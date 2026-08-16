@@ -19,6 +19,12 @@
   - **错误日志治理**：`bake_error_log` 添加 8000 字符滚动窗口，防止场景内存无限膨胀。
   - **上下文物联网**：`core/api.py` 支持可选的 `context` 参数，headless/API 模式安全调用。
   - 更多修复详情见 `CHANGELOG.md` 和 `STYLE_GUIDE_ANALYSIS.md`。
+- **外部审计修复与收尾 (2026-08-17)**：
+  - **4 个阻断级缺陷修复**：扩展 ID 统一为 `baketool`（B-01）；中文翻译 locale 迁移 `zh_HANS` 并保留 `zh_CN` 运行时别名（B-02）；移除 5 个无引擎实现的 Mesh 通道与 `height` 孤岛数据（B-03）；发布包补齐 `dev_tools/` 使随包 Safety Audit 可用（B-04）。
+  - **防护性测试固化**：新增 `test_channel_pipeline_alignment`（通道必须可达引擎）、`test_manifest_id_matches_addon_directory`（扩展 ID == 打包目录名）、`test_release_zip_includes_audit_dependencies`（打包内容完整性），把本轮教训转化为 161 项测试的常驻闸门。
+  - **多实例安全**：崩溃会话文件按 PID 隔离 + glob 检测，并行 Blender 互不干扰（H-03）；`Clean Up Bake Junk` 补 UI 入口（H-04）。
+  - **词典治理**：翻译死键清理 + 新键补齐（468 词条、0 空值），维护流程统一走 `dev_tools/extract_translations.py --sync`。
+  - **验证**：5 版本（3.3.21/3.6.23/4.2.14/4.5.3/5.0.1）161 项测试 0 失败 0 错误；发布 ZIP 结构（根目录==id、dev_tools 随包、无泄漏）全项通过。
 
 ## 2. 已完成代码风格整肃 (2026-05-14) ✅
 - **Phase 1 — 自动修复与 import 清理**：196 W293 + 23 W291 + 2 W292 + 10 E111/E117 归零；40 个未使用 import 删除；发现并修复 2 个潜伏 bug (`BAKE_CHANNEL_INFO` 未导入 + `bpy.utils.previews` API 缺失降级)。
@@ -64,6 +70,9 @@
 - **验证**：22/22 运行时源文件 py_compile 全过，0 lsp error。
 
 ## 7. 短期计划 (v1.1.x) - 生产力增强
+- **通道实装补齐（2026-08-16 外部审计立项，最高优先）**：v1.0.0 从 `BAKE_CHANNEL_INFO["MESH"]` 移除了 `Vertex Color / Curvature / Slope / Thickness / Select` 五个无引擎实现的通道（静默产出黑图）以及不可达的 `height` 元数据；v1.1 需为其补齐真实生成路径（节点逻辑或 BMesh 分析）后重新挂出。`mesh_settings` 的 `contrast/direction/invert` RNA 字段已按 v1.1 预留（`property.py` 有注释保护），重实装无需预设迁移。实施时必须走 `TECHNICAL_GUIDE.md` §5.4.5 检查单——`test_channel_pipeline_alignment` 会强制引擎路径同步落地。
+- **Normal 轴向分量决策**：`BakeNormalSettings` 的 X/Y/Z 分量属性与预设迁移映射仍在，但引擎从未读取（`normal_r/g/b` 参数未传入 bake operator）。v1.1 决定实装（含 CUSTOM 模式）或删除属性，不允许继续处于"可保存、不生效"状态。
+- **崩溃记录归属细化**：会话文件已按 PID 隔离，但恢复 UI 只展示最新记录；结合 blend 文件名哈希区分"本场景的崩溃"与"其他场景的崩溃"，避免误报。
 - **架构拆分（CM.1，后续）**：在 `core/bake_types.py` 共享 `BakeStep` / `BakeTask` 契约的前提下，将 `core/engine.py` 的 `ModelExporter` 提取至 `exporter.py`，并将 `TaskBuilder` / `JobPreparer` 提取至 `job_prep.py`；`engine.py` 保持 facade 重导出，避免破坏现有 API。
 - **i18n 全量覆盖**：`ops.py` self.report 与 `ui.py` 面板标签走 `pgettext` 或 `UI_MESSAGES`。
 - **继续 DRY 清理**：`draw_collapsible_header()` UI 辅助函数（4 处重复）、`report_cancel` 装饰器（26 处重复模式）。
@@ -79,8 +88,9 @@
 ## 8. 长期愿景 (v2.x) - 智能烘焙生态
 - **异步像素回传**：研究 B5.0 下的高性能像素拷贝方案。
 - **全自动化资产处理**：从原始高模到优化后的 LOD 资产实现一键全流程自动化。
-- **数据驱动参数系统**：将通道元数据、UI 布局、保存格式约束和执行参数逐步统一为可校验 schema。
+- **数据驱动参数系统**：将通道元数据、UI 布局、保存格式约束和执行参数逐步统一为可校验 schema。v1.0.0 的 `test_channel_pipeline_alignment` 是该方向的第一个机器化子集（通道层已达声明-引擎双向可校验），后续把保存格式与导出参数纳入同一 schema 体系。
 - **完整 Google Python Style 合规**：目标 pycodestyle 违规数降至 15 以下，类型覆盖率 ≥80%。
+- **声明式通道定义**：把 `TECHNICAL_GUIDE.md` §5.4.5 的"新增通道强制检查单"进一步压缩为单处声明——开发者只写一份通道定义（含引擎路径引用），①②③④四层由代码生成，从根上消灭多层失配的可能。
 
 
 ---

@@ -96,9 +96,83 @@ core/shading.py: apply_baked_result 消费通道映射
 1. `property.py` 定义可持久化的 RNA 字段、默认值和 update callback。
 2. `constants.py` 提供格式约束、通道元数据及 `CHANNEL_UI_LAYOUT`；重复布局通过共享配置对象复用，避免同一参数描述分叉。
 3. `ui.py` 依据配置路径绘制属性；`engine.py` / `image_manager.py` / `shading.py` 消费同一 RNA 和通道标识。
-4. `suite_unit.test_property_group_integrity`、`suite_unit.test_ui_layout_config_integrity`、`suite_parameter_matrix.test_dynamic_enum_returns_5tuple`、`suite_code_review` 验证 RNA、布局、动态枚举和公开接口。
+4. `suite_unit.test_property_group_integrity`、`suite_unit.test_ui_layout_config_integrity`、`suite_parameter_matrix.test_dynamic_enum_returns_5tuple`、`suite_code_review.test_channel_pipeline_alignment` 验证 RNA、布局、动态枚举、公开接口与引擎可达性。
 
 任何新增通道、保存格式或 UI 参数都必须同时检查这四层；不能只让 UI 显示新字段，或只让引擎读取未注册字段。
+
+### 5.4 通道管线与引擎可达性（Channel Pipeline & Engine Reachability）
+
+本节完整叙述一条烘焙通道从"UI 勾选"到"像素落盘"的全链路。它是 1.0.0 发布前外部审计中 B-03 缺陷（无实现通道烘出全黑图）的直接产物——该缺陷暴露了"通道被列出但没有引擎路径"这一类失配此前没有任何机制拦截。
+
+#### 5.4.1 工作原理：通道的四层数据结构
+
+一个通道在代码库中由四份契约共同描述，任何一层与其他层脱节都会产生用户可见的故障：
+
+| 层 | 事实源（`constants.py`） | 职责 | 失配后果 |
+|---|---|---|---|
+| ① 通道列表 | `BAKE_CHANNEL_INFO` | 决定 UI 上出现哪些通道、默认后缀与启用状态 | 多列 → 用户可勾选（见 5.4.4）；漏列 → 元数据成孤岛（`height` 案例） |
+| ② 通道元数据 | `CHANNEL_BAKE_INFO` | 提供烘焙 pass（EMIT/DIFFUSE/…）、分类、默认色彩空间 | 漏配 → 引擎回退 EMIT + sRGB，颜色空间错误 |
+| ③ UI 布局 | `CHANNEL_UI_LAYOUT` | 数据驱动地绘制每通道的专属参数 | 孤儿键 → 面板永不显示（死配置） |
+| ④ 引擎映射 | `CHANNEL_MESH_TYPE_MAP` / `BSDF_COMPATIBILITY_MAP` / 引擎特判 | 告诉执行器"这个通道的像素从哪来" | **缺失 → 全黑贴图（B-03）** |
+
+运行期入口是 `reset_channels_logic()`（`core/common.py`）：它按①的声明对 RNA `channels` 集合做破坏性同步（增/删/改名），保证场景数据与列表声明一致，旧场景升级时被移除的通道会被安全剔除。
+
+#### 5.4.2 具体过程：一条通道的执行流水线
+
+```
+用户勾选通道 (RNA BakeChannel.enabled)
+    ↓
+JobPreparer._collect_channels()            # 读①+② → 通道执行配置 {id, bake_pass, prop, …}
+    ↓
+BakePassExecutor.execute()                 # 三路分发：
+    ├─ _try_custom_channel()               #   CUSTOM：NumPy 从既有结果组装（无需 Blender bake）
+    ├─ _try_numpy_pbr()                    #   pbr_conv_*：NumPy 镜面反射转换
+    └─ _run_blender_bake_pipeline()        #   标准管线：
+         ├─ _get_mesh_type()               #     查④：mesh 通道 → 节点逻辑类型 (AO/BEVEL/POS/UV/WF/ID)
+         ├─ _ensure_attributes()           #     ID_* 通道 → 写临时 BYTE_COLOR 顶点色属性
+         ├─ NodeGraphHandler.setup_for_pass()
+         │     ├─ mesh_type → _create_mesh_map_logic()   # 注入 AO/Bevel/Geometry 等着色节点
+         │     ├─ pbr_conv_*/node_group → 扩展逻辑
+         │     └─ 其余 → _find_socket_source()           # 查④：BSDF 插座 → 取上游或常量
+         ├─ compat.set_bake_type()         #     原生 pass（DIFFUSE/NORMAL/…）直接交给 Cycles
+         └─ bpy.ops.object.bake()
+    ↓
+BakeStepRunner._handle_save() → image_manager.save_image()   # 格式参数（②⑤ FORMAT_SETTINGS）落盘
+```
+
+关键点：`bake_pass` 为原生 pass（DIFFUSE/GLOSSY/TRANSMISSION/COMBINED/NORMAL/SHADOW/ENVIRONMENT）的通道由 Cycles 直接执行，不需要④的插座映射；而 `bake_pass = EMIT` 的通道**必须**有一条④层来源，否则 Emission 节点无输入，烘出的就是目标图的清底色（通常是黑）。
+
+#### 5.4.3 引擎可达性判定规则
+
+一个列在①中的通道 id 是"可达的"，当且仅当满足以下五条之一：
+
+1. 其②元数据的 `bake_pass` ∈ 原生 pass 集合（Cycles 直接执行）；
+2. `id ∈ {pbr_conv_base, pbr_conv_metal, node_group}`（`BakePassExecutor`/`NodeGraphHandler` 引擎特判）；
+3. `id` 以 `ID_` 开头（`setup_mesh_attribute` 顶点色属性路径）；
+4. `id ∈ CHANNEL_MESH_TYPE_MAP`（网格分析节点逻辑）；
+5. `id ∈ BSDF_COMPATIBILITY_MAP`（Principled BSDF 插座来源）。
+
+不满足任何一条的通道会被列出、可勾选、正常走完烘焙流程、返回"成功"——然后产出一张黑图。**这正是 B-03 的失效模式：静默失败比崩溃更危险。**
+
+#### 5.4.4 B-03 案例复盘
+
+**缺陷**：`Vertex Color / Curvature / Slope / Thickness / Select` 五个通道被①列出且②有元数据，但④没有任何路径（Slope 有 `CHANNEL_MESH_TYPE_MAP` 映射到 `"SLOPE"`，而 `_create_mesh_map_logic` 没有 SLOPE 分支——映射表指向不存在的实现；其余四个连映射都没有）。另 `height` 通道反向失配：②有元数据但①从未列出，属不可达死数据。
+
+**为何 158 个测试没有拦住**：既有测试断言了①内部的一致性（BSDF/BASIC 列表的默认启用集合）和③ ⊆ ①，但没有任何测试问过"①中的每个通道，引擎真的会执行吗"。测试覆盖的是"声明之间的 harmony"，而非"声明与实现的 harmony"。
+
+**修复与固化**：
+- 从①②③及 `DATA_BAKE_FORCE_SINGLE_SAMPLE`、`CHANNEL_MESH_TYPE_MAP` 中移除全部无实现条目；`mesh_settings` 的 `contrast/direction/invert` RNA 字段保留（v1.1 重实装时免迁移，`property.py` 有注释保护）。
+- 新增 `suite_code_review.test_channel_pipeline_alignment`，将 5.4.3 的判定规则与"①②双向一致""③无孤儿键"固化为断言。此后任何人往 `BAKE_CHANNEL_INFO` 加通道而不同时提供引擎路径，CI 会在 `code_review` 套件直接红掉。
+
+#### 5.4.5 新增/修改通道的强制检查单
+
+1. 在①加条目（id、显示名、默认后缀/启用状态）。
+2. 在②补元数据（bake_pass、分类、def_cs、def_mode）——①②必须双向覆盖。
+3. 若通道有专属参数：在③加布局；参数本体加进 `BakeChannel` 或其子 PropertyGroup。
+4. **回答"像素从哪来"**：按 5.4.3 五选一落位；需要新的 mesh 逻辑时同步扩展 `_create_mesh_map_logic()` 并在 `CHANNEL_MESH_TYPE_MAP` 注册。
+5. 若为数据图（无需采样）：加入 `DATA_BAKE_FORCE_SINGLE_SAMPLE`。
+6. 翻译键：运行 `python dev_tools/extract_translations.py --source . --existing translations.json --sync --print-missing` 后补全 5 语言。
+7. 跑 `--suite code_review`——`test_channel_pipeline_alignment` 是这一检查单的机器化版本。
 
 ---
 
@@ -109,18 +183,20 @@ core/shading.py: apply_baked_result 消费通道映射
 BakeNexus 通过 `state_manager.py` 的 `BakeStateManager` 实现了轻量级崩溃恢复：
 
 ```
-烘焙开始 → start_session() → 写入 {tempdir}/sbt_last_session.json
+烘焙开始 → start_session() → 写入 {tempdir}/sbt_last_session_<PID>.json
     ↓
 每通道更新 → update_step() → 读-改-写 JSON（含 fsync 落盘保证）
     ↓
 异常中断 → log_error() → 标记 status="ERROR"
     ↓
-正常结束 → finish_session() → 删除 JSON + 重置 UI
+正常结束 → finish_session() → 删除本实例 JSON + 重置 UI
 ```
+
+**多实例隔离（1.0.0 收尾加固）**：会话文件按进程 PID 命名（`sbt_last_session_<PID>.json`）。`has_crash_record()` / `read_log()` / `clear_state()` 通过 `SESSION_FILE_GLOB = "sbt_last_session*.json"` 前缀扫描所有实例的文件（按 mtime 新者优先），因此：并行运行的多个 Blender 互不覆盖彼此的记录；新实例仍能发现旧实例崩溃留下的记录；`finish_session()` 只清理本实例文件（不打断并行会话），`clear_state()`（用户主动清理）删除全部。该机制取代了 1.0.0 早期的单一固定文件名 `sbt_last_session.json`。
 
 **持久化内容**：`status`, `start_time`, `job_name`, `total_steps`, `current_step`, `current_queue_idx`, `current_object`, `current_channel`, `last_error`
 
-**检测逻辑**：`has_crash_record()` 检查 JSON 文件是否存在 → 若存在说明上次未正常完成 → UI 显示警告
+**检测逻辑**：`has_crash_record()` glob 会话文件 → 若存在说明上次未正常完成 → UI 显示警告
 
 **写入安全**：每次 `_write()` 执行 `f.flush()` + `os.fsync()`，确保断电/进程杀灭时数据已落盘。损坏的 JSON 文件读取返回 `None` 而非崩溃。
 
@@ -129,7 +205,7 @@ BakeNexus 通过 `state_manager.py` 的 `BakeStateManager` 实现了轻量级崩
 - `BakeStepRunner.run()` → 每个通道前 `update_step()`
 - 异常捕获 → `log_error()`
 - `_cleanup_state()` → `finish_session()` / `clear_state()`
-- 紧急清理 `BAKETOOL_OT_EmergencyCleanup` → `reset_ui_state()`
+- 紧急清理 `BAKETOOL_OT_EmergencyCleanup`（Baked Results 面板 `Clean Up Bake Junk` 按钮）→ `reset_ui_state()`
 
 ### 6.2 状态缓存优化
 
@@ -251,3 +327,10 @@ for _fmt, _cfg in FORMAT_SETTINGS.items():
 - `UVLayoutManager` 接受可选 `context`，调用方优先传入显式上下文；仅在未提供时回退 `bpy.context`，保证 headless/API 可用。
 - `common.py` 的材质结果函数迁移至 `shading.py`，同时 re-export 旧路径，兼顾职责分离与第三方脚本兼容。
 - 通过 Blender 3.3.21、3.6.23、4.2.14、4.5.3、5.0.1 的 `unit` 跨版本矩阵（5/5）；并通过 4.2 的 `verification`、注册循环、facade 导入，以及 5.0 的 `production_workflow` 10/10。
+
+### 9.7 外部审计修复轮的工程产物 (2026-08-17)
+
+- **`test_channel_pipeline_alignment`**（`suite_code_review`）：将 §5.4.3 引擎可达性规则机器化，是防止"UI 列出、引擎落空"类缺陷复发的第一道闸门。
+- **`test_manifest_id_matches_addon_directory` / `test_release_zip_includes_audit_dependencies`**（`suite_extension_validation`）：分别防止扩展 ID 与打包目录名漂移（B-01）、打包内容与随包审计依赖断裂（B-04）。
+- **`translations.py` 双 locale 注册**：JSON 单一事实源使用 `zh_HANS`（Blender 4.2+），注册期自动派生 `zh_CN` 别名兼容 ≤4.1 legacy 源码安装——新旧版本共用一份词典，不产生数据分叉。
+- **词典治理**：以 `dev_tools/extract_translations.py --sync --prune` 收敛死键（19 个旧品牌/已删功能/已删通道键）并补齐 6 个缺失键的多语言，落盘 468 词条、0 空值；此后词典维护必须走该工具而非手工编辑。

@@ -491,7 +491,7 @@ class RestorePreviewMaterialsHandler:
                 obj.active_material = orig_mat
             del obj["_bt_orig_mat_name"]
 
-        mat = bpy.data.materials.get("BT_Packing_Preview")
+        mat = bpy.data.materials.get(SYSTEM_NAMES["PREVIEW_MAT"])
         if mat and mat.users == 0:
             try:
                 bpy.data.materials.remove(mat)

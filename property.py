@@ -313,6 +313,12 @@ class BakeCombineSettings(bpy.types.PropertyGroup):
 class BakeMeshSettings(bpy.types.PropertyGroup):
     """Generic settings for Mesh Analysis maps (AO, Bevel, Curvature, etc.)"""
 
+    # NOTE: `contrast`, `direction` and `invert` are currently consumed only by
+    # the Curvature/Slope/Thickness channels, which were removed from the 1.0.0
+    # channel list pending a real engine implementation (see ROADMAP v1.1).
+    # The RNA fields are intentionally retained so old presets keep loading and
+    # the v1.1 re-implementation does not need a migration step. Do NOT prune
+    # them as dead code until those channels ship.
     samples: props.IntProperty(name="Samples", default=8, min=1, max=128)
     radius: props.FloatProperty(name="Radius", default=0.1, min=0.0)
     distance: props.FloatProperty(name="Distance", default=1.0, min=0.0)

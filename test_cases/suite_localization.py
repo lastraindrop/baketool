@@ -67,8 +67,8 @@ class SuiteLocalization(unittest.TestCase):
         existing_payload = {
             "header": {"author": "lastraindrop", "version": "1.0.0"},
             "data": {
-                "Bake Selected Node": {"zh_CN": "烘焙选中节点"},
-                "stale_key": {"zh_CN": "旧键"},
+                "Bake Selected Node": {"zh_HANS": "烘焙选中节点"},
+                "stale_key": {"zh_HANS": "旧键"},
             },
         }
 
@@ -84,7 +84,7 @@ class SuiteLocalization(unittest.TestCase):
             payload, audit = extract_translations.sync_translation_payload(
                 source_dir=Path("ignored"),
                 translation_path=Path("ignored.json"),
-                locales=["zh_CN"],
+                locales=["zh_HANS"],
                 prune=True,
                 excludes=set(),
             )
@@ -92,7 +92,7 @@ class SuiteLocalization(unittest.TestCase):
         self.assertIn("Bake Selected Node", payload["data"])
         self.assertIn("Bake the active node", payload["data"])
         self.assertNotIn("stale_key", payload["data"])
-        self.assertEqual(payload["data"]["Bake Selected Node"]["zh_CN"], "烘焙选中节点")
+        self.assertEqual(payload["data"]["Bake Selected Node"]["zh_HANS"], "烘焙选中节点")
         self.assertEqual(
             payload["data"]["Bake Selected Node"]["en_US"], "Bake Selected Node"
         )
@@ -106,30 +106,30 @@ class SuiteLocalization(unittest.TestCase):
             extracted_strings=["Quick Bake"],
             existing_payload={
                 "data": {
-                    "bake.quick_bake": {"zh_CN": "错误键"},
-                    "Quick Bake": {"zh_CN": "快速烘焙"},
+                    "bake.quick_bake": {"zh_HANS": "错误键"},
+                    "Quick Bake": {"zh_HANS": "快速烘焙"},
                 }
             },
-            locales=["en_US", "zh_CN"],
+            locales=["en_US", "zh_HANS"],
         )
         self.assertIn("bake.quick_bake", audit["suspicious_existing_keys"])
-        self.assertEqual(audit["missing_by_locale"]["zh_CN"], [])
+        self.assertEqual(audit["missing_by_locale"]["zh_HANS"], [])
 
     def test_audit_report_flags_broken_and_untranslated_locale_values(self):
         audit = extract_translations.build_audit_report(
             extracted_strings=["Bake Objects", "PNG", "Output"],
             existing_payload={
                 "data": {
-                    "Bake Objects": {"zh_CN": "Bake Objects"},
-                    "PNG": {"zh_CN": "PNG"},
-                    "Output": {"zh_CN": "??"},
+                    "Bake Objects": {"zh_HANS": "Bake Objects"},
+                    "PNG": {"zh_HANS": "PNG"},
+                    "Output": {"zh_HANS": "??"},
                 }
             },
-            locales=["en_US", "zh_CN"],
+            locales=["en_US", "zh_HANS"],
         )
-        self.assertIn("Output", audit["broken_by_locale"]["zh_CN"])
-        self.assertIn("Bake Objects", audit["untranslated_by_locale"]["zh_CN"])
-        self.assertNotIn("PNG", audit["untranslated_by_locale"]["zh_CN"])
+        self.assertIn("Output", audit["broken_by_locale"]["zh_HANS"])
+        self.assertIn("Bake Objects", audit["untranslated_by_locale"]["zh_HANS"])
+        self.assertNotIn("PNG", audit["untranslated_by_locale"]["zh_HANS"])
 
     def test_audit_report_allows_configured_same_as_source_terms(self):
         audit = extract_translations.build_audit_report(

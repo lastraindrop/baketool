@@ -447,7 +447,7 @@ def main():
         "--locales",
         nargs="*",
         default=None,
-        help="Locales to ensure in synced output (for example zh_CN fr_FR).",
+        help="Locales to ensure in synced output (for example zh_HANS fr_FR).",
     )
     parser.add_argument(
         "--check",

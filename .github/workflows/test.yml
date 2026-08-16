@@ -46,7 +46,8 @@ jobs:
 
       - name: Download Blender
         run: |
-          wget -q ${{ matrix.blender-repo }} -O blender.tar.xz
+          OFFICIAL_URL=$(echo ${{ matrix.blender-repo }} | sed 's|https://mirrors.tuna.tsinghua.edu.cn/blender|https://download.blender.org|')
+          wget -q ${{ matrix.blender-repo }} -O blender.tar.xz || wget -q "$OFFICIAL_URL" -O blender.tar.xz
           tar xf blender.tar.xz
           BLENDER_BIN="$(find "$(pwd)" -name 'blender' -type f -path '*/blender-*/blender' | head -1)"
           echo "BLENDER_DIR=$(dirname "$BLENDER_BIN")" >> $GITHUB_ENV

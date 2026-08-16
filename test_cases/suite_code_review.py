@@ -157,6 +157,73 @@ class SuiteCodeReviewFixes(unittest.TestCase):
         from baketool import bl_info
         self.assertEqual(bl_info["version"], manifest_version, "bl_info version doesn't match manifest")
 
+    def test_channel_pipeline_alignment(self):
+        """[B-03 regression] Every listed channel must have a real engine path.
+
+        Guards against channels being exposed in the UI (BAKE_CHANNEL_INFO)
+        without any generation logic, which silently produces black images.
+        Also enforces bidirectional consistency between the channel lists and
+        CHANNEL_BAKE_INFO metadata, and rejects orphan CHANNEL_UI_LAYOUT keys.
+        """
+        from baketool.constants import (
+            BAKE_CHANNEL_INFO,
+            CHANNEL_BAKE_INFO,
+            CHANNEL_UI_LAYOUT,
+            CHANNEL_MESH_TYPE_MAP,
+            BSDF_COMPATIBILITY_MAP,
+        )
+
+        # Pass types executed natively by bpy.ops.object.bake (no node graph
+        # source needed beyond the standard texture-node target).
+        native_passes = {
+            "DIFFUSE", "GLOSSY", "TRANSMISSION", "COMBINED",
+            "NORMAL", "SHADOW", "ENVIRONMENT",
+        }
+        # Channels special-cased inside BakePassExecutor / NodeGraphHandler.
+        engine_special = {"pbr_conv_base", "pbr_conv_metal", "node_group"}
+
+        listed_ids = set()
+        for key, channel_list in BAKE_CHANNEL_INFO.items():
+            for chan in channel_list:
+                listed_ids.add(chan["id"])
+
+        # 1. Metadata <-> list bidirectional consistency
+        self.assertEqual(
+            listed_ids,
+            set(CHANNEL_BAKE_INFO.keys()),
+            "BAKE_CHANNEL_INFO lists and CHANNEL_BAKE_INFO metadata diverged",
+        )
+
+        # 2. Every listed channel must be reachable by the engine
+        unreachable = []
+        for chan_id in sorted(listed_ids):
+            meta = CHANNEL_BAKE_INFO.get(chan_id, {})
+            if meta.get("bake_pass") in native_passes:
+                continue
+            if chan_id in engine_special:
+                continue
+            if chan_id.startswith("ID_"):
+                continue  # attribute-based, handled by setup_mesh_attribute
+            if chan_id in CHANNEL_MESH_TYPE_MAP:
+                continue  # mesh analysis node logic
+            if chan_id in BSDF_COMPATIBILITY_MAP:
+                continue  # BSDF socket source
+            unreachable.append(chan_id)
+        self.assertEqual(
+            unreachable,
+            [],
+            "Channels listed in UI have no engine generation path "
+            f"(would bake black): {unreachable}",
+        )
+
+        # 3. UI layout entries must reference listed channels
+        orphan_ui = sorted(set(CHANNEL_UI_LAYOUT.keys()) - listed_ids)
+        self.assertEqual(
+            orphan_ui,
+            [],
+            f"CHANNEL_UI_LAYOUT references unknown channels: {orphan_ui}",
+        )
+
     def test_all_test_suites_importable(self):
         """Verify all test suites can be imported without errors."""
         import importlib

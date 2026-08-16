@@ -277,6 +277,11 @@ class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
     bl_label = "Quick Bake Selected"
     bl_options = {"REGISTER"}
 
+    @classmethod
+    def poll(cls, context: bpy.types.Context) -> bool:
+        """Grey out the context-menu entry when no mesh is selected."""
+        return any(o.type == "MESH" for o in context.selected_objects)
+
     def execute(self, context: bpy.types.Context) -> Set[str]:
         """Support non-interactive execution.
 

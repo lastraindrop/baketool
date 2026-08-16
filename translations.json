@@ -10,3367 +10,3276 @@
             "fr_FR": "!! ARRÊTER LE BAKE ? Appuyez sur Y/Entrée pour arrêter, N/Échap pour reprendre !!",
             "ja_JP": "!! ベイクを停止しますか？ Y/Enter で停止、N/Esc で再開 !!",
             "ru_RU": "!! ОСТАНОВИТЬ ЗАПЕКАНИЕ? Нажмите Y/Enter для остановки, N/Esc для продолжения !!",
-            "zh_CN": "!! 停止烘焙？按 Y/Enter 停止，按 N/Esc 继续 !!"
+            "zh_HANS": "!! 停止烘焙？按 Y/Enter 停止，按 N/Esc 继续 !!"
         },
         "(Empty)": {
             "en_US": "(Empty)",
             "fr_FR": "(Vide)",
             "ja_JP": "（空）",
             "ru_RU": "(Пусто)",
-            "zh_CN": "（空）"
+            "zh_HANS": "（空）"
         },
         "(No UV!)": {
             "en_US": "(No UV!)",
             "fr_FR": "(Pas d'UV !)",
             "ja_JP": "（UV なし！）",
             "ru_RU": "(Нет UV!)",
-            "zh_CN": "（无 UV！）"
+            "zh_HANS": "（无 UV！）"
         },
         "+X": {
             "en_US": "+X",
             "fr_FR": "+X",
             "ja_JP": "+X",
             "ru_RU": "+X",
-            "zh_CN": "+X"
+            "zh_HANS": "+X"
         },
         "+Y": {
             "en_US": "+Y",
             "fr_FR": "+Y",
             "ja_JP": "+Y",
             "ru_RU": "+Y",
-            "zh_CN": "+Y"
+            "zh_HANS": "+Y"
         },
         "+Z": {
             "en_US": "+Z",
             "fr_FR": "+Z",
             "ja_JP": "+Z",
             "ru_RU": "+Z",
-            "zh_CN": "+Z"
+            "zh_HANS": "+Z"
         },
         "-X": {
             "en_US": "-X",
             "fr_FR": "-X",
             "ja_JP": "-X",
             "ru_RU": "-X",
-            "zh_CN": "-X"
+            "zh_HANS": "-X"
         },
         "-Y": {
             "en_US": "-Y",
             "fr_FR": "-Y",
             "ja_JP": "-Y",
             "ru_RU": "-Y",
-            "zh_CN": "-Y"
+            "zh_HANS": "-Y"
         },
         "-Z": {
             "en_US": "-Z",
             "fr_FR": "-Z",
             "ja_JP": "-Z",
             "ru_RU": "-Z",
-            "zh_CN": "-Z"
+            "zh_HANS": "-Z"
         },
         "1. SETUP & TARGETS": {
             "en_US": "1. SETUP & TARGETS",
             "fr_FR": "1. CONFIGURATION ET CIBLES",
             "ja_JP": "1. セットアップとターゲット",
             "ru_RU": "1. НАСТРОЙКА И ЦЕЛИ",
-            "zh_CN": "1. 设置与目标"
+            "zh_HANS": "1. 设置与目标"
         },
         "10": {
             "en_US": "10",
             "fr_FR": "10",
             "ja_JP": "10",
             "ru_RU": "10",
-            "zh_CN": "10"
+            "zh_HANS": "10"
         },
         "10 Bits": {
             "en_US": "10 Bits",
             "fr_FR": "10 bits",
             "ja_JP": "10ビット",
             "ru_RU": "10 бит",
-            "zh_CN": "10 位"
+            "zh_HANS": "10 位"
         },
         "12": {
             "en_US": "12",
             "fr_FR": "12",
             "ja_JP": "12",
             "ru_RU": "12",
-            "zh_CN": "12"
+            "zh_HANS": "12"
         },
         "12 Bits": {
             "en_US": "12 Bits",
             "fr_FR": "12 bits",
             "ja_JP": "12ビット",
             "ru_RU": "12 бит",
-            "zh_CN": "12 位"
+            "zh_HANS": "12 位"
         },
         "16": {
             "en_US": "16",
             "fr_FR": "16",
             "ja_JP": "16",
             "ru_RU": "16",
-            "zh_CN": "16"
+            "zh_HANS": "16"
         },
         "16 Bits": {
             "en_US": "16 Bits",
             "fr_FR": "16 bits",
             "ja_JP": "16ビット",
             "ru_RU": "16 бит",
-            "zh_CN": "16 位"
+            "zh_HANS": "16 位"
         },
         "2. BAKE CHANNELS": {
             "en_US": "2. BAKE CHANNELS",
             "fr_FR": "2. CANAUX DE BAKE",
             "ja_JP": "2. ベイクチャンネル",
             "ru_RU": "2. КАНАЛЫ ЗАПЕКАНИЯ",
-            "zh_CN": "2. 烘焙通道"
+            "zh_HANS": "2. 烘焙通道"
         },
         "3. OUTPUT & EXPORT": {
             "en_US": "3. OUTPUT & EXPORT",
             "fr_FR": "3. SORTIE ET EXPORT",
             "ja_JP": "3. 出力とエクスポート",
             "ru_RU": "3. ВЫВОД И ЭКСПОРТ",
-            "zh_CN": "3. 输出与导出"
+            "zh_HANS": "3. 输出与导出"
         },
         "32": {
             "en_US": "32",
             "fr_FR": "32",
             "ja_JP": "32",
             "ru_RU": "32",
-            "zh_CN": "32"
+            "zh_HANS": "32"
         },
         "32 Bit": {
             "en_US": "32 Bit",
             "fr_FR": "32 bits",
             "ja_JP": "32ビット",
             "ru_RU": "32 бита",
-            "zh_CN": "32位"
+            "zh_HANS": "32位"
         },
         "32 Bits": {
             "en_US": "32 Bits",
             "fr_FR": "32 bits",
             "ja_JP": "32ビット",
             "ru_RU": "32 бита",
-            "zh_CN": "32 位"
+            "zh_HANS": "32 位"
         },
         "4. CUSTOM MAPS": {
             "en_US": "4. CUSTOM MAPS",
             "fr_FR": "4. CARTES PERSONNALISÉES",
             "ja_JP": "4. カスタムマップ",
             "ru_RU": "4. ПОЛЬЗОВАТЕЛЬСКИЕ КАРТЫ",
-            "zh_CN": "4. 自定义贴图"
+            "zh_HANS": "4. 自定义贴图"
         },
         "8 Bits": {
             "en_US": "8 Bits",
             "fr_FR": "8 bits",
             "ja_JP": "8ビット",
             "ru_RU": "8 бит",
-            "zh_CN": "8 位"
-        },
-        "Accurate": {
-            "en_US": "Accurate",
-            "fr_FR": "Précis",
-            "ja_JP": "高精度",
-            "ru_RU": "Точный",
-            "zh_CN": "精确"
-        },
-        "Accurate Jobs Setting": {
-            "en_US": "Accurate Jobs Setting",
-            "fr_FR": "Paramètres de tâches précis",
-            "ja_JP": "高精度ジョブ設定",
-            "ru_RU": "Точные настройки задач",
-            "zh_CN": "精确任务设置"
+            "zh_HANS": "8 位"
         },
         "Action": {
             "en_US": "Action",
             "fr_FR": "Opération",
             "ja_JP": "操作",
             "ru_RU": "Действие",
-            "zh_CN": "操作"
+            "zh_HANS": "操作"
         },
         "Active": {
             "en_US": "Active",
             "fr_FR": "Actif",
             "ja_JP": "アクティブ",
             "ru_RU": "Активный",
-            "zh_CN": "活动项"
+            "zh_HANS": "活动项"
         },
         "Active Bake": {
             "en_US": "Active Bake",
             "fr_FR": "Cuisson active",
             "ja_JP": "アクティブベイク",
             "ru_RU": "Активное запекание",
-            "zh_CN": "活动项烘焙"
+            "zh_HANS": "活动项烘焙"
         },
         "Active Channel Index": {
             "en_US": "Active Channel Index",
             "fr_FR": "Index du canal actif",
             "ja_JP": "アクティブチャンネルインデックス",
             "ru_RU": "Индекс активного канала",
-            "zh_CN": "活动通道索引"
+            "zh_HANS": "活动通道索引"
         },
         "Active Object Index": {
             "en_US": "Active Object Index",
             "fr_FR": "Index de l'objet actif",
             "ja_JP": "アクティブオブジェクトインデックス",
             "ru_RU": "Индекс активного объекта",
-            "zh_CN": "活动物体索引"
+            "zh_HANS": "活动物体索引"
         },
         "Active material with nodes required.": {
             "en_US": "Active material with nodes required.",
             "fr_FR": "Un matériau actif avec des nœuds est requis.",
             "ja_JP": "ノードを持つアクティブなマテリアルが必要です。",
             "ru_RU": "Требуется активный материал с узлами.",
-            "zh_CN": "需要一个启用节点的活动材质。"
+            "zh_HANS": "需要一个启用节点的活动材质。"
         },
         "Active mesh object required.": {
             "en_US": "Active mesh object required.",
             "fr_FR": "Un objet maillage actif est requis.",
             "ja_JP": "アクティブなメッシュオブジェクトが必要です。",
             "ru_RU": "Требуется активный объект-меш.",
-            "zh_CN": "需要一个活动网格对象。"
+            "zh_HANS": "需要一个活动网格对象。"
         },
         "Add": {
             "en_US": "Add",
             "fr_FR": "Ajouter",
             "ja_JP": "追加",
             "ru_RU": "Добавить",
-            "zh_CN": "添加"
+            "zh_HANS": "添加"
         },
         "Add a new item": {
             "en_US": "Add a new item",
             "fr_FR": "Ajouter un élément",
             "ja_JP": "項目を追加",
             "ru_RU": "Добавить элемент",
-            "zh_CN": "添加新项"
+            "zh_HANS": "添加新项"
         },
         "Addon Prefs": {
             "en_US": "Addon Prefs",
             "fr_FR": "Préférences de l'addon",
             "ja_JP": "アドオン設定",
             "ru_RU": "Настройки аддона",
-            "zh_CN": "插件偏好设置"
+            "zh_HANS": "插件偏好设置"
         },
         "Addon is disabled!": {
             "en_US": "Addon is disabled!",
             "fr_FR": "L'addon est désactivé !",
             "ja_JP": "アドオンが無効です！",
             "ru_RU": "Аддон отключён!",
-            "zh_CN": "插件已禁用！"
+            "zh_HANS": "插件已禁用！"
         },
         "All bake settings are valid and ready.": {
             "en_US": "All bake settings are valid and ready.",
             "fr_FR": "Tous les paramètres de bake sont valides et prêts.",
             "ja_JP": "すべてのベイク設定は有効で準備完了です。",
             "ru_RU": "Все параметры запекания корректны и готовы.",
-            "zh_CN": "所有烘焙设置均有效且已就绪。"
+            "zh_HANS": "所有烘焙设置均有效且已就绪。"
         },
         "Alpha": {
             "en_US": "Alpha",
             "fr_FR": "Canal alpha",
             "ja_JP": "アルファ",
             "ru_RU": "Альфа",
-            "zh_CN": "透明度"
+            "zh_HANS": "透明度"
         },
         "Alpha (A)": {
             "en_US": "Alpha (A)",
             "fr_FR": "Canal alpha (A)",
             "ja_JP": "アルファ (A)",
             "ru_RU": "Альфа (A)",
-            "zh_CN": "Alpha（A）"
+            "zh_HANS": "Alpha（A）"
         },
         "Ambient Occlusion": {
             "en_US": "Ambient Occlusion",
             "fr_FR": "Occlusion ambiante",
             "ja_JP": "アンビエントオクルージョン",
             "ru_RU": "Окружающая окклюзия",
-            "zh_CN": "环境光遮蔽"
+            "zh_HANS": "环境光遮蔽"
         },
         "Analyze Cage Overlap": {
             "en_US": "Analyze Cage Overlap",
             "fr_FR": "Analyser le chevauchement de cage",
             "ja_JP": "ケージの重なりを解析",
             "ru_RU": "Анализ пересечения клетки",
-            "zh_CN": "分析烘焙笼重叠"
+            "zh_HANS": "分析烘焙笼重叠"
         },
         "Analyze Overlap": {
             "en_US": "Analyze Overlap",
             "fr_FR": "Analyser le chevauchement",
             "ja_JP": "重なりを解析",
             "ru_RU": "Анализ пересечения",
-            "zh_CN": "分析重叠"
+            "zh_HANS": "分析重叠"
         },
         "Angle": {
             "en_US": "Angle",
             "fr_FR": "Angle",
             "ja_JP": "角度",
             "ru_RU": "Угол",
-            "zh_CN": "角度"
+            "zh_HANS": "角度"
         },
         "Angle Limit": {
             "en_US": "Angle Limit",
             "fr_FR": "Limite d'angle",
             "ja_JP": "角度制限",
             "ru_RU": "Предел угла",
-            "zh_CN": "角度限制"
+            "zh_HANS": "角度限制"
         },
         "Angle limit for Smart UV projection (66° default)": {
             "en_US": "Angle limit for Smart UV projection (66° default)",
             "fr_FR": "Limite d'angle pour la projection UV intelligente (66° par défaut)",
             "ja_JP": "スマートUV投影の角度制限（既定値 66°）",
             "ru_RU": "Предел угла для умной UV-проекции (по умолчанию 66°)",
-            "zh_CN": "智能 UV 投影的角度限制（默认 66°）"
+            "zh_HANS": "智能 UV 投影的角度限制（默认 66°）"
         },
         "Animation": {
             "en_US": "Animation",
             "fr_FR": "Animation",
             "ja_JP": "アニメーション",
             "ru_RU": "Анимация",
-            "zh_CN": "动画"
+            "zh_HANS": "动画"
         },
         "Anisotropic": {
             "en_US": "Anisotropic",
             "fr_FR": "Anisotrope",
             "ja_JP": "異方性",
             "ru_RU": "Анизотропия",
-            "zh_CN": "各向异性"
+            "zh_HANS": "各向异性"
         },
         "Anisotropic Rotation": {
             "en_US": "Anisotropic Rotation",
             "fr_FR": "Rotation anisotrope",
             "ja_JP": "異方性回転",
             "ru_RU": "Поворот анизотропии",
-            "zh_CN": "各向异性旋转"
+            "zh_HANS": "各向异性旋转"
         },
         "Anisotropy": {
             "en_US": "Anisotropy",
             "fr_FR": "Anisotropie",
             "ja_JP": "異方性",
             "ru_RU": "Анизотропия",
-            "zh_CN": "各向异性"
+            "zh_HANS": "各向异性"
         },
         "Anisotropy Rotating": {
             "en_US": "Anisotropy Rotating",
             "fr_FR": "Rotation de l'anisotropie",
             "ja_JP": "異方性回転",
             "ru_RU": "Поворот анизотропии",
-            "zh_CN": "各向异性旋转"
-        },
-        "Anti-Aliasing": {
-            "en_US": "Anti-Aliasing",
-            "fr_FR": "Anticrénelage",
-            "ja_JP": "アンチエイリアス",
-            "ru_RU": "Сглаживание",
-            "zh_CN": "抗锯齿"
+            "zh_HANS": "各向异性旋转"
         },
         "Apply Bake": {
             "en_US": "Apply Bake",
             "fr_FR": "Appliquer la cuisson",
             "ja_JP": "ベイクを適用",
             "ru_RU": "Применить запекание",
-            "zh_CN": "应用烘焙"
+            "zh_HANS": "应用烘焙"
         },
         "Auto Load on Startup/New File": {
             "en_US": "Auto Load on Startup/New File",
             "fr_FR": "Chargement auto au démarrage / nouveau fichier",
             "ja_JP": "起動時 / 新規ファイルで自動読み込み",
             "ru_RU": "Автозагрузка при запуске / новом файле",
-            "zh_CN": "启动/新建文件时自动加载"
+            "zh_HANS": "启动/新建文件时自动加载"
         },
         "Auto Pack Channels": {
             "en_US": "Auto Pack Channels",
             "fr_FR": "Empaqueter automatiquement les canaux",
             "ja_JP": "チャンネルを自動パック",
             "ru_RU": "Автоматически упаковывать каналы",
-            "zh_CN": "自动打包通道"
+            "zh_HANS": "自动打包通道"
         },
         "Auto Repack": {
             "en_US": "Auto Repack",
             "fr_FR": "Réemballage automatique",
             "ja_JP": "自動再パック",
             "ru_RU": "Автопереупаковка",
-            "zh_CN": "自动重新分幅"
+            "zh_HANS": "自动重新分幅"
         },
         "Auto Smart UV": {
             "en_US": "Auto Smart UV",
             "fr_FR": "UV intelligent auto",
             "ja_JP": "自動スマートUV",
             "ru_RU": "Авто-Smart UV",
-            "zh_CN": "自动智能 UV"
+            "zh_HANS": "自动智能 UV"
         },
         "Auto Switch to Vertex Paint": {
             "en_US": "Auto Switch to Vertex Paint",
             "fr_FR": "Basculer automatiquement en peinture de sommet",
             "ja_JP": "自動で頂点ペイントに切り替え",
             "ru_RU": "Автоматически переключать в режим раскраски вершин",
-            "zh_CN": "自动切换到顶点绘制"
+            "zh_HANS": "自动切换到顶点绘制"
         },
         "Auto-Apply": {
             "en_US": "Auto-Apply",
             "fr_FR": "Application automatique",
             "ja_JP": "自動適用",
             "ru_RU": "Автоприменение",
-            "zh_CN": "自动应用"
+            "zh_HANS": "自动应用"
         },
         "Auto-VP": {
             "en_US": "Auto-VP",
             "fr_FR": "VP auto",
             "ja_JP": "自動VP",
             "ru_RU": "Авто-VP",
-            "zh_CN": "自动顶点绘制"
+            "zh_HANS": "自动顶点绘制"
         },
         "Automatically bind baked textures to exported model": {
             "en_US": "Automatically bind baked textures to exported model",
             "fr_FR": "Lier automatiquement les textures bakeées au modèle exporté",
             "ja_JP": "ベイクしたテクスチャをエクスポートモデルへ自動で割り当て",
             "ru_RU": "Автоматически привязывать запечённые текстуры к экспортируемой модели",
-            "zh_CN": "自动将烘焙贴图绑定到导出的模型"
+            "zh_HANS": "自动将烘焙贴图绑定到导出的模型"
         },
         "Automatically load this preset if the scene has no bake jobs": {
             "en_US": "Automatically load this preset if the scene has no bake jobs",
             "fr_FR": "Charger automatiquement ce préréglage si la scène n'a aucun job de bake",
             "ja_JP": "シーンにベイクジョブがない場合、このプリセットを自動読み込み",
             "ru_RU": "Автоматически загружать этот пресет, если в сцене нет задач запекания",
-            "zh_CN": "如果场景中没有烘焙任务，则自动加载此预设"
+            "zh_HANS": "如果场景中没有烘焙任务，则自动加载此预设"
         },
         "Automatically switch viewport to Vertex Paint mode after cage analysis": {
             "en_US": "Automatically switch viewport to Vertex Paint mode after cage analysis",
             "fr_FR": "Basculer automatiquement la vue en mode peinture de sommet après l'analyse de cage",
             "ja_JP": "ケージ解析後に自動でビューポートを頂点ペイントモードへ切り替え",
             "ru_RU": "После анализа клетки автоматически переключать вид в режим раскраски вершин",
-            "zh_CN": "在笼体分析后自动切换视口到顶点绘制模式"
+            "zh_HANS": "在笼体分析后自动切换视口到顶点绘制模式"
         },
         "B&W": {
             "en_US": "B&W",
             "fr_FR": "B&W",
             "ja_JP": "B&W",
             "ru_RU": "B&W",
-            "zh_CN": "B&W"
+            "zh_HANS": "B&W"
         },
         "B44": {
             "en_US": "B44",
             "fr_FR": "B44",
             "ja_JP": "B44",
             "ru_RU": "B44",
-            "zh_CN": "B44"
+            "zh_HANS": "B44"
         },
         "B44A": {
             "en_US": "B44A",
             "fr_FR": "B44A",
             "ja_JP": "B44A",
             "ru_RU": "B44A",
-            "zh_CN": "B44A"
+            "zh_HANS": "B44A"
         },
         "BMP": {
             "en_US": "BMP",
             "fr_FR": "BMP",
             "ja_JP": "BMP",
             "ru_RU": "BMP",
-            "zh_CN": "BMP"
+            "zh_HANS": "BMP"
         },
         "BSDF Bake": {
             "en_US": "BSDF Bake",
             "fr_FR": "Cuisson BSDF",
             "ja_JP": "BSDFベイク",
             "ru_RU": "Запекание BSDF",
-            "zh_CN": "BSDF 烘焙"
+            "zh_HANS": "BSDF 烘焙"
         },
         "BW": {
             "en_US": "BW",
             "fr_FR": "BW",
             "ja_JP": "BW",
             "ru_RU": "BW",
-            "zh_CN": "BW"
+            "zh_HANS": "BW"
         },
         "BW channel": {
             "en_US": "BW channel",
             "fr_FR": "Canal NB",
             "ja_JP": "白黒チャンネル",
             "ru_RU": "Ч/Б канал",
-            "zh_CN": "黑白通道"
+            "zh_HANS": "黑白通道"
         },
         "Bake": {
             "en_US": "Bake",
             "fr_FR": "Cuisson",
             "ja_JP": "ベイク",
             "ru_RU": "Запекание",
-            "zh_CN": "烘焙"
+            "zh_HANS": "烘焙"
         },
         "Bake Mode": {
             "en_US": "Bake Mode",
             "fr_FR": "Mode de cuisson",
             "ja_JP": "ベイクモード",
             "ru_RU": "Режим запекания",
-            "zh_CN": "烘焙模式"
+            "zh_HANS": "烘焙模式"
         },
         "Bake Node": {
             "en_US": "Bake Node",
             "fr_FR": "Cuire le nœud",
             "ja_JP": "ノードをベイク",
             "ru_RU": "Запечь узел",
-            "zh_CN": "烘焙节点"
+            "zh_HANS": "烘焙节点"
         },
         "Bake Objects": {
             "en_US": "Bake Objects",
             "fr_FR": "Objets à baker",
             "ja_JP": "ベイク対象オブジェクト",
             "ru_RU": "Объекты для запекания",
-            "zh_CN": "烘焙对象"
+            "zh_HANS": "烘焙对象"
         },
         "Bake Selected Node": {
             "en_US": "Bake Selected Node",
             "fr_FR": "Baker le nœud sélectionné",
             "ja_JP": "選択ノードをベイク",
             "ru_RU": "Запечь выбранный узел",
-            "zh_CN": "烘焙选中节点"
+            "zh_HANS": "烘焙选中节点"
         },
         "Bake Time": {
             "en_US": "Bake Time",
             "fr_FR": "Temps de bake",
             "ja_JP": "ベイク時間",
             "ru_RU": "Время запекания",
-            "zh_CN": "烘焙时间"
+            "zh_HANS": "烘焙时间"
         },
         "Bake Type": {
             "en_US": "Bake Type",
             "fr_FR": "Type de cuisson",
             "ja_JP": "ベイクタイプ",
             "ru_RU": "Тип запекания",
-            "zh_CN": "烘焙类型"
+            "zh_HANS": "烘焙类型"
         },
         "Bake each split material": {
             "en_US": "Bake each split material",
             "fr_FR": "Cuire chaque matériau séparé",
             "ja_JP": "分割された各マテリアルをベイク",
             "ru_RU": "Запечь каждый разделенный материал",
-            "zh_CN": "烘焙每个分离材质"
+            "zh_HANS": "烘焙每个分离材质"
         },
         "Bake multi objects": {
             "en_US": "Bake multi objects",
             "fr_FR": "Cuisson multi-objets",
             "ja_JP": "マルチオブジェクトベイク",
             "ru_RU": "Запекание нескольких объектов",
-            "zh_CN": "多物体烘焙"
+            "zh_HANS": "多物体烘焙"
         },
         "Bake preparation failed: {}": {
             "en_US": "Bake preparation failed: {}",
             "fr_FR": "Échec de la préparation du bake : {}",
             "ja_JP": "ベイク準備に失敗しました: {}",
             "ru_RU": "Подготовка запекания не удалась: {}",
-            "zh_CN": "烘焙准备失败: {}"
+            "zh_HANS": "烘焙准备失败: {}"
         },
         "Bake selected objects to UDIM tiles": {
             "en_US": "Bake selected objects to UDIM tiles",
             "fr_FR": "Cuire les objets sélectionnés vers des tuiles UDIM",
             "ja_JP": "選択したオブジェクトをUDIMタイルにベイク",
             "ru_RU": "Запечь выбранные объекты в плитки UDIM",
-            "zh_CN": "将选中物体烘焙到 UDIM 瓦片"
+            "zh_HANS": "将选中物体烘焙到 UDIM 瓦片"
         },
         "Bake selected to active": {
             "en_US": "Bake selected to active",
             "fr_FR": "Cuire la sélection vers l'actif",
             "ja_JP": "選択物からアクティブへベイク",
             "ru_RU": "Запечь выбранное в активное",
-            "zh_CN": "所选向活动项烘焙"
+            "zh_HANS": "所选向活动项烘焙"
         },
         "Bake single object": {
             "en_US": "Bake single object",
             "fr_FR": "Cuisson d'un seul objet",
             "ja_JP": "単一オブジェクトベイク",
             "ru_RU": "Запекание одного объекта",
-            "zh_CN": "单个物体烘焙"
+            "zh_HANS": "单个物体烘焙"
         },
         "BakeNexus properties not initialized.": {
             "en_US": "BakeNexus properties not initialized.",
             "fr_FR": "Les propriétés BakeNexus ne sont pas initialisées.",
             "ja_JP": "BakeNexus のプロパティが初期化されていません。",
             "ru_RU": "Свойства BakeNexus не инициализированы.",
-            "zh_CN": "BakeNexus 属性尚未初始化。"
+            "zh_HANS": "BakeNexus 属性尚未初始化。"
         },
         "BakeNexus v1.0.0 optimized for Blender 5.0 rendering pipeline.": {
             "en_US": "BakeNexus v1.0.0 optimized for Blender 5.0 rendering pipeline.",
             "fr_FR": "BakeNexus v1.0.0 optimisé pour le pipeline de rendu de Blender 5.0.",
             "ja_JP": "BakeNexus v1.0.0 は Blender 5.0 のレンダーパイプライン向けに最適化されています。",
             "ru_RU": "BakeNexus v1.0.0 оптимизирован для конвейера рендеринга Blender 5.0.",
-            "zh_CN": "BakeNexus v1.0.0 已针对 Blender 5.0 渲染管线进行优化。"
+            "zh_HANS": "BakeNexus v1.0.0 已针对 Blender 5.0 渲染管线进行优化。"
         },
         "Baked Image Results": {
             "en_US": "Baked Image Results",
             "fr_FR": "Résultats d'images cuites",
             "ja_JP": "ベイク済み画像結果",
             "ru_RU": "Результаты запеченных изображений",
-            "zh_CN": "已烘焙图像结果"
+            "zh_HANS": "已烘焙图像结果"
         },
         "Baked Results": {
             "en_US": "Baked Results",
             "fr_FR": "Résultats cuits",
             "ja_JP": "ベイク结果",
             "ru_RU": "Результаты запекания",
-            "zh_CN": "烘焙结果"
+            "zh_HANS": "烘焙结果"
         },
         "Baking": {
             "en_US": "Baking",
             "fr_FR": "Cuisson",
             "ja_JP": "ベイク",
             "ru_RU": "Запекание",
-            "zh_CN": "烘焙"
+            "zh_HANS": "烘焙"
         },
         "Baking Tool": {
             "en_US": "Baking Tool",
             "fr_FR": "Outil de cuisson",
             "ja_JP": "ベイクツール",
             "ru_RU": "Панель запекания",
-            "zh_CN": "烘焙工具面板"
+            "zh_HANS": "烘焙工具面板"
         },
         "Base Color": {
             "en_US": "Base Color",
             "fr_FR": "Couleur de base",
             "ja_JP": "ベースカラー",
             "ru_RU": "Базовый цвет",
-            "zh_CN": "基础颜色"
+            "zh_HANS": "基础颜色"
         },
         "Base Name": {
             "en_US": "Base Name",
             "fr_FR": "Nom de base",
             "ja_JP": "ベース名",
             "ru_RU": "Базовое имя",
-            "zh_CN": "基础命名"
+            "zh_HANS": "基础命名"
         },
         "Basic Bake": {
             "en_US": "Basic Bake",
             "fr_FR": "Cuisson de base",
             "ja_JP": "基本ベイク",
             "ru_RU": "Базовое запекание",
-            "zh_CN": "基础烘焙"
+            "zh_HANS": "基础烘焙"
         },
         "Bevel": {
             "en_US": "Bevel",
             "fr_FR": "Biseau",
             "ja_JP": "ベベル",
             "ru_RU": "Скос",
-            "zh_CN": "倒角"
+            "zh_HANS": "倒角"
         },
         "Bevel Normal": {
             "en_US": "Bevel Normal",
             "fr_FR": "Normale du biseau",
             "ja_JP": "ベベル法線",
             "ru_RU": "Нормаль скоса",
-            "zh_CN": "倒角法线"
-        },
-        "Blender Default Baking": {
-            "en_US": "Blender Default Baking",
-            "fr_FR": "Cuisson par défaut de Blender",
-            "ja_JP": "Blenderデフォルトベイク",
-            "ru_RU": "Запекание Blender по умолчанию",
-            "zh_CN": "Blender 默认烘焙"
-        },
-        "Blue": {
-            "en_US": "Blue",
-            "fr_FR": "Bleu",
-            "ja_JP": "青",
-            "ru_RU": "Синий",
-            "zh_CN": "蓝色"
-        },
-        "Blue (B)": {
-            "en_US": "Blue (B)",
-            "fr_FR": "Bleu (B)",
-            "ja_JP": "青 (B)",
-            "ru_RU": "Синий (B)",
-            "zh_CN": "蓝色（B）"
-        },
-        "CPU": {
-            "en_US": "CPU",
-            "fr_FR": "CPU",
-            "ja_JP": "CPU",
-            "ru_RU": "CPU",
-            "zh_CN": "CPU"
-        },
-        "CS": {
-            "en_US": "CS",
-            "fr_FR": "Espace colorimétrique",
-            "ja_JP": "色空間",
-            "ru_RU": "Цвет. пространство",
-            "zh_CN": "色彩空间"
-        },
-        "Cage": {
-            "en_US": "Cage",
-            "fr_FR": "Cage",
-            "ja_JP": "ケージ",
-            "ru_RU": "Клетка",
-            "zh_CN": "笼体"
-        },
-        "Cage Mode": {
-            "en_US": "Cage Mode",
-            "fr_FR": "Mode de cage",
-            "ja_JP": "ケージモード",
-            "ru_RU": "Режим клетки",
-            "zh_CN": "罩体模式"
-        },
-        "Channel": {
-            "en_US": "Channel",
-            "fr_FR": "Canal",
-            "ja_JP": "チャンネル",
-            "ru_RU": "Канал",
-            "zh_CN": "通道"
-        },
-        "Channel ID": {
-            "en_US": "Channel ID",
-            "fr_FR": "ID du canal",
-            "ja_JP": "チャンネルID",
-            "ru_RU": "ID канала",
-            "zh_CN": "通道ID"
-        },
-        "Channel Name": {
-            "en_US": "Channel Name",
-            "fr_FR": "Nom du canal",
-            "ja_JP": "チャンネル名",
-            "ru_RU": "Имя канала",
-            "zh_CN": "通道名称"
-        },
-        "Channel Op": {
-            "en_US": "Channel Op",
-            "fr_FR": "Opération de canal",
-            "ja_JP": "チャンネル操作",
-            "ru_RU": "Операция канала",
-            "zh_CN": "通道操作"
-        },
-        "Channels reset to default for current bake type.": {
-            "en_US": "Channels reset to default for current bake type.",
-            "fr_FR": "Les canaux ont été réinitialisés aux valeurs par défaut pour le type de bake actuel.",
-            "ja_JP": "現在のベイクタイプの既定値にチャンネルをリセットしました。",
-            "ru_RU": "Каналы сброшены к значениям по умолчанию для текущего типа запекания.",
-            "zh_CN": "通道已重置为当前类型的默认值。"
-        },
-        "Check this object's UV/Mesh complexity": {
-            "en_US": "Check this object's UV/Mesh complexity",
-            "fr_FR": "Vérifiez la complexité UV/Maillage de cet objet",
-            "ja_JP": "オブジェクトのUV/メッシュの複雑さを確認してください",
-            "ru_RU": "Проверьте сложность UV/сетки этого объекта",
-            "zh_CN": "请检查该物体的 UV/网格复杂度"
-        },
-        "Cineon": {
-            "en_US": "Cineon",
-            "fr_FR": "Format Cineon",
-            "ja_JP": "Cineon 形式",
-            "ru_RU": "Формат Cineon",
-            "zh_CN": "Cineon 格式"
-        },
-        "Clean Up Bake Junk": {
-            "en_US": "Clean Up Bake Junk",
-            "fr_FR": "Nettoyer les déchets de cuisson",
-            "ja_JP": "ベイクのゴミをクリーンアップ",
-            "ru_RU": "Очистить мусор запекания",
-            "zh_CN": "清理烘焙垃圾"
-        },
-        "Clear": {
-            "en_US": "Clear",
-            "fr_FR": "Effacer",
-            "ja_JP": "クリア",
-            "ru_RU": "Очистить",
-            "zh_CN": "清除"
-        },
-        "Clear Crash Log": {
-            "en_US": "Clear Crash Log",
-            "fr_FR": "Effacer le journal de crash",
-            "ja_JP": "クラッシュログを消去",
-            "ru_RU": "Очистить журнал сбоев",
-            "zh_CN": "清除崩溃日志"
-        },
-        "Clearcoat": {
-            "en_US": "Clearcoat",
-            "fr_FR": "Vernis",
-            "ja_JP": "クリアコート",
-            "ru_RU": "Лак",
-            "zh_CN": "清漆"
-        },
-        "Clearcoat Roughness": {
-            "en_US": "Clearcoat Roughness",
-            "fr_FR": "Rugosité du vernis",
-            "ja_JP": "クリアコートの粗さ",
-            "ru_RU": "Шероховатость лака",
-            "zh_CN": "清漆粗糙度"
-        },
-        "Clearcoat Tint": {
-            "en_US": "Clearcoat Tint",
-            "fr_FR": "Teinte du vernis",
-            "ja_JP": "クリアコートの色味",
-            "ru_RU": "Оттенок лака",
-            "zh_CN": "清漆色调"
-        },
-        "Coat": {
-            "en_US": "Coat",
-            "fr_FR": "Revêtement",
-            "ja_JP": "コート",
-            "ru_RU": "Покрытие",
-            "zh_CN": "涂层"
-        },
-        "Coat Roughness": {
-            "en_US": "Coat Roughness",
-            "fr_FR": "Rugosité du revêtement",
-            "ja_JP": "コートの粗さ",
-            "ru_RU": "Шероховатость покрытия",
-            "zh_CN": "涂层粗糙度"
-        },
-        "Coat Tint": {
-            "en_US": "Coat Tint",
-            "fr_FR": "Teinte du revêtement",
-            "ja_JP": "コートの色味",
-            "ru_RU": "Оттенок покрытия",
-            "zh_CN": "涂层色调"
-        },
-        "Coat Weight": {
-            "en_US": "Coat Weight",
-            "fr_FR": "Poids du revêtement",
-            "ja_JP": "コートの強さ",
-            "ru_RU": "Вес покрытия",
-            "zh_CN": "涂层权重"
-        },
-        "Col": {
-            "en_US": "Col",
-            "fr_FR": "Couleur",
-            "ja_JP": "色",
-            "ru_RU": "Цвет",
-            "zh_CN": "颜色"
-        },
-        "Color": {
-            "en_US": "Color",
-            "fr_FR": "Couleur",
-            "ja_JP": "カラー",
-            "ru_RU": "Цвет",
-            "zh_CN": "颜色"
-        },
-        "Color Base": {
-            "en_US": "Color Base",
-            "fr_FR": "Couleur de base",
-            "ja_JP": "ベースカラー",
-            "ru_RU": "Базовый цвет",
-            "zh_CN": "底色"
-        },
-        "Color Depth": {
-            "en_US": "Color Depth",
-            "fr_FR": "Profondeur de couleur",
-            "ja_JP": "色深度",
-            "ru_RU": "Глубина цвета",
-            "zh_CN": "色深"
-        },
-        "Color Mode": {
-            "en_US": "Color Mode",
-            "fr_FR": "Mode couleur",
-            "ja_JP": "カラーモード",
-            "ru_RU": "Цветовой режим",
-            "zh_CN": "色彩模式"
-        },
-        "Color Space": {
-            "en_US": "Color Space",
-            "fr_FR": "Espace colorimétrique",
-            "ja_JP": "色空間",
-            "ru_RU": "Цветовое пространство",
-            "zh_CN": "色彩空间"
-        },
-        "Combine": {
-            "en_US": "Combine",
-            "fr_FR": "Combiner",
-            "ja_JP": "結合",
-            "ru_RU": "Объединить",
-            "zh_CN": "合并"
-        },
-        "Combined Passes": {
-            "en_US": "Combined Passes",
-            "fr_FR": "Pass combinées",
-            "ja_JP": "合成パス",
-            "ru_RU": "Комбинированные проходы",
-            "zh_CN": "合并通道"
-        },
-        "Config Name": {
-            "en_US": "Config Name",
-            "fr_FR": "Nom de configuration",
-            "ja_JP": "設定名",
-            "ru_RU": "Имя конфигурации",
-            "zh_CN": "配置名称"
-        },
-        "Contrast": {
-            "en_US": "Contrast",
-            "fr_FR": "Contraste",
-            "ja_JP": "コントラスト",
-            "ru_RU": "Контраст",
-            "zh_CN": "对比度"
-        },
-        "Conv: Base Color": {
-            "en_US": "Conv: Base Color",
-            "fr_FR": "Conv. : couleur de base",
-            "ja_JP": "変換: ベースカラー",
-            "ru_RU": "Конв.: базовый цвет",
-            "zh_CN": "转换：基础颜色"
-        },
-        "Conv: Metallic": {
-            "en_US": "Conv: Metallic",
-            "fr_FR": "Conv. : métallique",
-            "ja_JP": "変換: メタリック",
-            "ru_RU": "Конв.: металличность",
-            "zh_CN": "转换：金属度"
-        },
-        "Crash Data Cache": {
-            "en_US": "Crash Data Cache",
-            "fr_FR": "Cache des données de crash",
-            "ja_JP": "クラッシュデータキャッシュ",
-            "ru_RU": "Кэш данных сбоя",
-            "zh_CN": "崩溃数据缓存"
-        },
-        "Create a job to define bake parameters": {
-            "en_US": "Create a job to define bake parameters",
-            "fr_FR": "Créez un job pour définir les paramètres de bake",
-            "ja_JP": "ベイクパラメータを定義するジョブを作成してください",
-            "ru_RU": "Создайте задачу для настройки параметров запекания",
-            "zh_CN": "创建一个作业以定义烘焙参数"
-        },
-        "Currently selected index in the baked image results list": {
-            "en_US": "Currently selected index in the baked image results list",
-            "fr_FR": "Index actuellement sélectionné dans la liste des résultats de cuisson",
-            "ja_JP": "ベイク済み画像结果リストで现在选択されているインデックス",
-            "ru_RU": "Текущий выбранный индекс в списке результатов запекания",
-            "zh_CN": "烘焙结果列表中的当前选中索引"
-        },
-        "Curvature": {
-            "en_US": "Curvature",
-            "fr_FR": "Courbure",
-            "ja_JP": "曲率",
-            "ru_RU": "Кривизна",
-            "zh_CN": "曲率"
-        },
-        "Custom": {
-            "en_US": "Custom",
-            "fr_FR": "Personnalisé",
-            "ja_JP": "カスタム",
-            "ru_RU": "Пользовательский",
-            "zh_CN": "自定义"
-        },
-        "Custom Folder Name": {
-            "en_US": "Custom Folder Name",
-            "fr_FR": "Nom de dossier personnalisé",
-            "ja_JP": "カスタムフォルダ名",
-            "ru_RU": "Польз. имя папки",
-            "zh_CN": "自定义文件夹名"
-        },
-        "Custom Frames": {
-            "en_US": "Custom Frames",
-            "fr_FR": "Trames personnalisées",
-            "ja_JP": "カスタムフレーム",
-            "ru_RU": "Польз. кадры",
-            "zh_CN": "自定义帧范围"
-        },
-        "Custom List": {
-            "en_US": "Custom List",
-            "fr_FR": "Liste personnalisée",
-            "ja_JP": "カスタムリスト",
-            "ru_RU": "Пользовательский список",
-            "zh_CN": "自定义列表"
-        },
-        "Custom Name": {
-            "en_US": "Custom Name",
-            "fr_FR": "Nom personnalisé",
-            "ja_JP": "カスタム名",
-            "ru_RU": "Польз. имя",
-            "zh_CN": "自定义名称"
-        },
-        "Custom Node Group": {
-            "en_US": "Custom Node Group",
-            "fr_FR": "Groupe de nœuds personnalisé",
-            "ja_JP": "カスタムノードグループ",
-            "ru_RU": "Пользовательская группа узлов",
-            "zh_CN": "自定义节点组"
-        },
-        "DEV MODE": {
-            "en_US": "DEV MODE",
-            "fr_FR": "DEV MODE",
-            "ja_JP": "DEV MODE",
-            "ru_RU": "DEV MODE",
-            "zh_CN": "DEV MODE"
-        },
-        "DIRECTX": {
-            "en_US": "DIRECTX",
-            "fr_FR": "Mode DirectX",
-            "ja_JP": "DirectX モード",
-            "ru_RU": "Режим DirectX",
-            "zh_CN": "DirectX"
-        },
-        "DPX": {
-            "en_US": "DPX",
-            "fr_FR": "DPX",
-            "ja_JP": "DPX",
-            "ru_RU": "DPX",
-            "zh_CN": "DPX"
-        },
-        "DWAA": {
-            "en_US": "DWAA",
-            "fr_FR": "DWAA",
-            "ja_JP": "DWAA",
-            "ru_RU": "DWAA",
-            "zh_CN": "DWAA"
-        },
-        "DWAB": {
-            "en_US": "DWAB",
-            "fr_FR": "DWAB",
-            "ja_JP": "DWAB",
-            "ru_RU": "DWAB",
-            "zh_CN": "DWAB"
-        },
-        "Debug Mode": {
-            "en_US": "Debug Mode",
-            "fr_FR": "Mode débogage",
-            "ja_JP": "デバッグモード",
-            "ru_RU": "Режим отладки",
-            "zh_CN": "调试模式"
-        },
-        "Default Preset": {
-            "en_US": "Default Preset",
-            "fr_FR": "Préréglage par défaut",
-            "ja_JP": "既定プリセット",
-            "ru_RU": "Пресет по умолчанию",
-            "zh_CN": "默认预设"
-        },
-        "Default Startup Configuration": {
-            "en_US": "Default Startup Configuration",
-            "fr_FR": "Configuration de démarrage par défaut",
-            "ja_JP": "既定の起動設定",
-            "ru_RU": "Конфигурация запуска по умолчанию",
-            "zh_CN": "默认启动配置"
-        },
-        "Default Value": {
-            "en_US": "Default Value",
-            "fr_FR": "Valeur par défaut",
-            "ja_JP": "デフォルト値",
-            "ru_RU": "Значение по умолчанию",
-            "zh_CN": "默认值"
-        },
-        "Deflate": {
-            "en_US": "Deflate",
-            "fr_FR": "Compression Deflate",
-            "ja_JP": "Deflate 圧縮",
-            "ru_RU": "Сжатие Deflate",
-            "zh_CN": "Deflate 压缩"
-        },
-        "Deflate compression": {
-            "en_US": "Deflate compression",
-            "fr_FR": "Compression Deflate",
-            "ja_JP": "Deflate圧縮",
-            "ru_RU": "Сжатие Deflate",
-            "zh_CN": "Deflate 压缩"
-        },
-        "Delete": {
-            "en_US": "Delete",
-            "fr_FR": "Supprimer",
-            "ja_JP": "削除",
-            "ru_RU": "Удалить",
-            "zh_CN": "删除"
-        },
-        "Delete All": {
-            "en_US": "Delete All",
-            "fr_FR": "Tout supprimer",
-            "ja_JP": "すべて削除",
-            "ru_RU": "Удалить все",
-            "zh_CN": "删除所有"
-        },
-        "Denoise": {
-            "en_US": "Denoise",
-            "fr_FR": "Débruitage",
-            "ja_JP": "ノイズ除去",
-            "ru_RU": "Шумоподавление",
-            "zh_CN": "降噪"
-        },
-        "Denoise (OIDN)": {
-            "en_US": "Denoise (OIDN)",
-            "fr_FR": "Débruitage (OIDN)",
-            "ja_JP": "ノイズ除去 (OIDN)",
-            "ru_RU": "Шумоподавление (OIDN)",
-            "zh_CN": "降噪（OIDN）"
-        },
-        "Depth": {
-            "en_US": "Depth",
-            "fr_FR": "Profondeur",
-            "ja_JP": "深度",
-            "ru_RU": "Глубина",
-            "zh_CN": "深度"
-        },
-        "Detail": {
-            "en_US": "Detail",
-            "fr_FR": "Détail",
-            "ja_JP": "詳細",
-            "ru_RU": "Подробности",
-            "zh_CN": "详情"
-        },
-        "Detected Unexpected Exit (Crash)": {
-            "en_US": "Detected Unexpected Exit (Crash)",
-            "fr_FR": "Sortie inattendue détectée (Crash)",
-            "ja_JP": "予期しない終了が検出されました (クラッシュ)",
-            "ru_RU": "Обнаружен неожиданный выход (Сбой)",
-            "zh_CN": "检测到意外退出 (崩溃)"
-        },
-        "Device": {
-            "en_US": "Device",
-            "fr_FR": "Appareil",
-            "ja_JP": "デバイス",
-            "ru_RU": "Устройство",
-            "zh_CN": "设备"
-        },
-        "Diff": {
-            "en_US": "Diff",
-            "fr_FR": "Diffus",
-            "ja_JP": "拡散",
-            "ru_RU": "Диффузный",
-            "zh_CN": "漫反射"
-        },
-        "Diffuse": {
-            "en_US": "Diffuse",
-            "fr_FR": "Diffus",
-            "ja_JP": "ディフューズ",
-            "ru_RU": "Диффуз",
-            "zh_CN": "漫射"
-        },
-        "Dir": {
-            "en_US": "Dir",
-            "fr_FR": "Dir.",
-            "ja_JP": "直接光",
-            "ru_RU": "Прямой",
-            "zh_CN": "直接光"
-        },
-        "Direct": {
-            "en_US": "Direct",
-            "fr_FR": "Direct",
-            "ja_JP": "直接光",
-            "ru_RU": "Прямой",
-            "zh_CN": "直接光"
-        },
-        "Direction": {
-            "en_US": "Direction",
-            "fr_FR": "Direction",
-            "ja_JP": "方向",
-            "ru_RU": "Направление",
-            "zh_CN": "方向"
-        },
-        "Directory containing .json presets and matching .png thumbnails": {
-            "en_US": "Directory containing .json presets and matching .png thumbnails",
-            "fr_FR": "Répertoire contenant les préréglages .json et les miniatures .png correspondantes",
-            "ja_JP": ".json プリセットと対応する .png サムネイルを含むディレクトリ",
-            "ru_RU": "Каталог с пресетами .json и соответствующими миниатюрами .png",
-            "zh_CN": "包含 .json 预设和对应 .png 缩略图的目录"
-        },
-        "Distance": {
-            "en_US": "Distance",
-            "fr_FR": "Distance",
-            "ja_JP": "距离",
-            "ru_RU": "Расстояние",
-            "zh_CN": "距离"
-        },
-        "Down": {
-            "en_US": "Down",
-            "fr_FR": "Bas",
-            "ja_JP": "下",
-            "ru_RU": "Вниз",
-            "zh_CN": "下移"
-        },
-        "Duration": {
-            "en_US": "Duration",
-            "fr_FR": "Durée",
-            "ja_JP": "期间",
-            "ru_RU": "Длительность",
-            "zh_CN": "持续时间"
-        },
-        "EXR Codec": {
-            "en_US": "EXR Codec",
-            "fr_FR": "Codec EXR",
-            "ja_JP": "EXRコーデック",
-            "ru_RU": "Кодек EXR",
-            "zh_CN": "EXR 编码"
-        },
-        "Element ID": {
-            "en_US": "Element ID",
-            "fr_FR": "ID d'élément",
-            "ja_JP": "要素ID",
-            "ru_RU": "ID элемента",
-            "zh_CN": "元素 ID"
-        },
-        "Emi": {
-            "en_US": "Emi",
-            "fr_FR": "Émissif",
-            "ja_JP": "放射",
-            "ru_RU": "Эмиссия",
-            "zh_CN": "自发光"
-        },
-        "Emission": {
-            "en_US": "Emission",
-            "fr_FR": "Émission",
-            "ja_JP": "放射",
-            "ru_RU": "Излучение",
-            "zh_CN": "自发光"
-        },
-        "Emission Color": {
-            "en_US": "Emission Color",
-            "fr_FR": "Couleur d'émission",
-            "ja_JP": "放射カラー",
-            "ru_RU": "Цвет эмиссии",
-            "zh_CN": "自发光颜色"
-        },
-        "Emission Strength": {
-            "en_US": "Emission Strength",
-            "fr_FR": "Puissance d'émission",
-            "ja_JP": "放射強度",
-            "ru_RU": "Сила эмиссии",
-            "zh_CN": "自发光强度"
-        },
-        "Enable Custom Map Logic": {
-            "en_US": "Enable Custom Map Logic",
-            "fr_FR": "Activer la logique de carte personnalisée",
-            "ja_JP": "カスタムマップロジックを有効化",
-            "ru_RU": "Вкл. логику польз. карт",
-            "zh_CN": "启用自定义贴图逻辑"
-        },
-        "Enabled": {
-            "en_US": "Enabled",
-            "fr_FR": "Activé",
-            "ja_JP": "有効",
-            "ru_RU": "Включено",
-            "zh_CN": "启用"
-        },
-        "Environment": {
-            "en_US": "Environment",
-            "fr_FR": "Environnement",
-            "ja_JP": "環境",
-            "ru_RU": "Окружение",
-            "zh_CN": "环境"
-        },
-        "Error Log": {
-            "en_US": "Error Log",
-            "fr_FR": "Journal d'erreurs",
-            "ja_JP": "エラーログ",
-            "ru_RU": "Журнал ошибок",
-            "zh_CN": "错误日志"
-        },
-        "Export": {
-            "en_US": "Export",
-            "fr_FR": "Exporter",
-            "ja_JP": "エクスポート",
-            "ru_RU": "Экспорт",
-            "zh_CN": "导出"
-        },
-        "Export All": {
-            "en_US": "Export All",
-            "fr_FR": "Tout exporter",
-            "ja_JP": "すべてエクスポート",
-            "ru_RU": "Экспортировать все",
-            "zh_CN": "导出所有"
-        },
-        "Export Bake Nexus Settings": {
-            "en_US": "Export Bake Nexus Settings",
-            "fr_FR": "Exporter les paramètres Bake Nexus",
-            "ja_JP": "Bake Nexus 設定をエクスポート",
-            "ru_RU": "Экспортировать настройки Bake Nexus",
-            "zh_CN": "导出 Bake Nexus 设置"
-        },
-        "Export Mesh": {
-            "en_US": "Export Mesh",
-            "fr_FR": "Exporter le maillage",
-            "ja_JP": "メッシュをエクスポート",
-            "ru_RU": "Экспорт сетки",
-            "zh_CN": "导出网格"
-        },
-        "Export Mode": {
-            "en_US": "Export Mode",
-            "fr_FR": "Mode d'exportation",
-            "ja_JP": "エクスポートモード",
-            "ru_RU": "Режим экспорта",
-            "zh_CN": "导出模式"
-        },
-        "Export Model": {
-            "en_US": "Export Model",
-            "fr_FR": "Exporter le modèle",
-            "ja_JP": "モデルをエクスポート",
-            "ru_RU": "Экспорт модели",
-            "zh_CN": "导出模型"
-        },
-        "Export Settings": {
-            "en_US": "Export Settings",
-            "fr_FR": "Paramètres d'exportation",
-            "ja_JP": "エクスポート設定",
-            "ru_RU": "Настройки экспорта",
-            "zh_CN": "导出设置"
-        },
-        "Export with Textures": {
-            "en_US": "Export with Textures",
-            "fr_FR": "Exporter avec les textures",
-            "ja_JP": "テクスチャ付きでエクスポート",
-            "ru_RU": "Экспортировать с текстурами",
-            "zh_CN": "连同贴图导出"
+            "zh_HANS": "倒角法线"
         },
         "Bind Textures": {
             "en_US": "Bind Textures",
             "fr_FR": "Lier les textures",
             "ja_JP": "テクスチャを割り当て",
             "ru_RU": "Привязать текстуры",
-            "zh_CN": "绑定贴图"
+            "zh_HANS": "绑定贴图"
         },
-        "Ext": {
-            "en_US": "Ext",
-            "fr_FR": "Extr.",
-            "ja_JP": "押出",
-            "ru_RU": "Выст.",
-            "zh_CN": "外扩"
+        "Blender Default Baking": {
+            "en_US": "Blender Default Baking",
+            "fr_FR": "Cuisson par défaut de Blender",
+            "ja_JP": "Blenderデフォルトベイク",
+            "ru_RU": "Запекание Blender по умолчанию",
+            "zh_HANS": "Blender 默认烘焙"
         },
-        "Extension Maps": {
-            "en_US": "Extension Maps",
-            "fr_FR": "Cartes d'extension",
-            "ja_JP": "扩展マップ",
-            "ru_RU": "Карты расширения",
-            "zh_CN": "扩展贴图"
+        "Blue": {
+            "en_US": "Blue",
+            "fr_FR": "Bleu",
+            "ja_JP": "青",
+            "ru_RU": "Синий",
+            "zh_HANS": "蓝色"
         },
-        "External Save": {
-            "en_US": "External Save",
-            "fr_FR": "Sauvegarde externe",
-            "ja_JP": "外部保存",
-            "ru_RU": "Внешнее сохранение",
-            "zh_CN": "外部保存"
+        "Blue (B)": {
+            "en_US": "Blue (B)",
+            "fr_FR": "Bleu (B)",
+            "ja_JP": "青 (B)",
+            "ru_RU": "Синий (B)",
+            "zh_HANS": "蓝色（B）"
         },
-        "F0 Threshold": {
-            "en_US": "F0 Threshold",
-            "fr_FR": "Seuil F0",
-            "ja_JP": "F0 しきい値",
-            "ru_RU": "Порог F0",
-            "zh_CN": "F0 阈值"
+        "CPU": {
+            "en_US": "CPU",
+            "fr_FR": "CPU",
+            "ja_JP": "CPU",
+            "ru_RU": "CPU",
+            "zh_HANS": "CPU"
         },
-        "FBX": {
-            "en_US": "FBX",
-            "fr_FR": "FBX",
-            "ja_JP": "FBX",
-            "ru_RU": "FBX",
-            "zh_CN": "FBX"
+        "CS": {
+            "en_US": "CS",
+            "fr_FR": "Espace colorimétrique",
+            "ja_JP": "色空間",
+            "ru_RU": "Цвет. пространство",
+            "zh_HANS": "色彩空间"
         },
-        "Fast": {
-            "en_US": "Fast",
-            "fr_FR": "Rapide",
-            "ja_JP": "高速",
-            "ru_RU": "Быстрый",
-            "zh_CN": "快速"
+        "Cage": {
+            "en_US": "Cage",
+            "fr_FR": "Cage",
+            "ja_JP": "ケージ",
+            "ru_RU": "Клетка",
+            "zh_HANS": "笼体"
         },
-        "File Size": {
-            "en_US": "File Size",
-            "fr_FR": "Taille du fichier",
-            "ja_JP": "ファイルサイズ",
-            "ru_RU": "Размер файла",
-            "zh_CN": "文件大小"
+        "Cage Mode": {
+            "en_US": "Cage Mode",
+            "fr_FR": "Mode de cage",
+            "ja_JP": "ケージモード",
+            "ru_RU": "Режим клетки",
+            "zh_HANS": "罩体模式"
         },
-        "Fix": {
-            "en_US": "Fix",
-            "fr_FR": "Corriger",
-            "ja_JP": "修正",
-            "ru_RU": "Исправить",
-            "zh_CN": "修复"
+        "Channel": {
+            "en_US": "Channel",
+            "fr_FR": "Canal",
+            "ja_JP": "チャンネル",
+            "ru_RU": "Канал",
+            "zh_HANS": "通道"
         },
-        "Format": {
-            "en_US": "Format",
-            "fr_FR": "Format",
-            "ja_JP": "フォーマット",
-            "ru_RU": "Формат",
-            "zh_CN": "格式"
+        "Channel ID": {
+            "en_US": "Channel ID",
+            "fr_FR": "ID du canal",
+            "ja_JP": "チャンネルID",
+            "ru_RU": "ID канала",
+            "zh_HANS": "通道ID"
         },
-        "Frame Digits": {
-            "en_US": "Frame Digits",
-            "fr_FR": "Chiffres de trame",
-            "ja_JP": "フレーム桁数",
-            "ru_RU": "Разрядность кадра",
-            "zh_CN": "帧位数"
+        "Channel Name": {
+            "en_US": "Channel Name",
+            "fr_FR": "Nom du canal",
+            "ja_JP": "チャンネル名",
+            "ru_RU": "Имя канала",
+            "zh_HANS": "通道名称"
+        },
+        "Channel Op": {
+            "en_US": "Channel Op",
+            "fr_FR": "Opération de canal",
+            "ja_JP": "チャンネル操作",
+            "ru_RU": "Операция канала",
+            "zh_HANS": "通道操作"
+        },
+        "Channels reset to default for current bake type.": {
+            "en_US": "Channels reset to default for current bake type.",
+            "fr_FR": "Les canaux ont été réinitialisés aux valeurs par défaut pour le type de bake actuel.",
+            "ja_JP": "現在のベイクタイプの既定値にチャンネルをリセットしました。",
+            "ru_RU": "Каналы сброшены к значениям по умолчанию для текущего типа запекания.",
+            "zh_HANS": "通道已重置为当前类型的默认值。"
+        },
+        "Check this object's UV/Mesh complexity": {
+            "en_US": "Check this object's UV/Mesh complexity",
+            "fr_FR": "Vérifiez la complexité UV/Maillage de cet objet",
+            "ja_JP": "オブジェクトのUV/メッシュの複雑さを確認してください",
+            "ru_RU": "Проверьте сложность UV/сетки этого объекта",
+            "zh_HANS": "请检查该物体的 UV/网格复杂度"
+        },
+        "Cineon": {
+            "en_US": "Cineon",
+            "fr_FR": "Format Cineon",
+            "ja_JP": "Cineon 形式",
+            "ru_RU": "Формат Cineon",
+            "zh_HANS": "Cineon 格式"
+        },
+        "Clean Up Bake Junk": {
+            "en_US": "Clean Up Bake Junk",
+            "fr_FR": "Nettoyer les déchets de cuisson",
+            "ja_JP": "ベイクのゴミをクリーンアップ",
+            "ru_RU": "Очистить мусор запекания",
+            "zh_HANS": "清理烘焙垃圾"
+        },
+        "Clear": {
+            "en_US": "Clear",
+            "fr_FR": "Effacer",
+            "ja_JP": "クリア",
+            "ru_RU": "Очистить",
+            "zh_HANS": "清除"
+        },
+        "Clear Crash Log": {
+            "en_US": "Clear Crash Log",
+            "fr_FR": "Effacer le journal de crash",
+            "ja_JP": "クラッシュログを消去",
+            "ru_RU": "Очистить журнал сбоев",
+            "zh_HANS": "清除崩溃日志"
+        },
+        "Clearcoat": {
+            "en_US": "Clearcoat",
+            "fr_FR": "Vernis",
+            "ja_JP": "クリアコート",
+            "ru_RU": "Лак",
+            "zh_HANS": "清漆"
+        },
+        "Clearcoat Roughness": {
+            "en_US": "Clearcoat Roughness",
+            "fr_FR": "Rugosité du vernis",
+            "ja_JP": "クリアコートの粗さ",
+            "ru_RU": "Шероховатость лака",
+            "zh_HANS": "清漆粗糙度"
+        },
+        "Clearcoat Tint": {
+            "en_US": "Clearcoat Tint",
+            "fr_FR": "Teinte du vernis",
+            "ja_JP": "クリアコートの色味",
+            "ru_RU": "Оттенок лака",
+            "zh_HANS": "清漆色调"
+        },
+        "Coat": {
+            "en_US": "Coat",
+            "fr_FR": "Revêtement",
+            "ja_JP": "コート",
+            "ru_RU": "Покрытие",
+            "zh_HANS": "涂层"
+        },
+        "Coat Roughness": {
+            "en_US": "Coat Roughness",
+            "fr_FR": "Rugosité du revêtement",
+            "ja_JP": "コートの粗さ",
+            "ru_RU": "Шероховатость покрытия",
+            "zh_HANS": "涂层粗糙度"
+        },
+        "Coat Tint": {
+            "en_US": "Coat Tint",
+            "fr_FR": "Teinte du revêtement",
+            "ja_JP": "コートの色味",
+            "ru_RU": "Оттенок покрытия",
+            "zh_HANS": "涂层色调"
+        },
+        "Coat Weight": {
+            "en_US": "Coat Weight",
+            "fr_FR": "Poids du revêtement",
+            "ja_JP": "コートの強さ",
+            "ru_RU": "Вес покрытия",
+            "zh_HANS": "涂层权重"
+        },
+        "Col": {
+            "en_US": "Col",
+            "fr_FR": "Couleur",
+            "ja_JP": "色",
+            "ru_RU": "Цвет",
+            "zh_HANS": "颜色"
+        },
+        "Color": {
+            "en_US": "Color",
+            "fr_FR": "Couleur",
+            "ja_JP": "カラー",
+            "ru_RU": "Цвет",
+            "zh_HANS": "颜色"
+        },
+        "Color Base": {
+            "en_US": "Color Base",
+            "fr_FR": "Couleur de base",
+            "ja_JP": "ベースカラー",
+            "ru_RU": "Базовый цвет",
+            "zh_HANS": "底色"
+        },
+        "Color Depth": {
+            "en_US": "Color Depth",
+            "fr_FR": "Profondeur de couleur",
+            "ja_JP": "色深度",
+            "ru_RU": "Глубина цвета",
+            "zh_HANS": "色深"
+        },
+        "Color Mode": {
+            "en_US": "Color Mode",
+            "fr_FR": "Mode couleur",
+            "ja_JP": "カラーモード",
+            "ru_RU": "Цветовой режим",
+            "zh_HANS": "色彩模式"
+        },
+        "Color Space": {
+            "en_US": "Color Space",
+            "fr_FR": "Espace colorimétrique",
+            "ja_JP": "色空間",
+            "ru_RU": "Цветовое пространство",
+            "zh_HANS": "色彩空间"
+        },
+        "Combine": {
+            "en_US": "Combine",
+            "fr_FR": "Combiner",
+            "ja_JP": "結合",
+            "ru_RU": "Объединить",
+            "zh_HANS": "合并"
+        },
+        "Combined Passes": {
+            "en_US": "Combined Passes",
+            "fr_FR": "Pass combinées",
+            "ja_JP": "合成パス",
+            "ru_RU": "Комбинированные проходы",
+            "zh_HANS": "合并通道"
+        },
+        "Config Name": {
+            "en_US": "Config Name",
+            "fr_FR": "Nom de configuration",
+            "ja_JP": "設定名",
+            "ru_RU": "Имя конфигурации",
+            "zh_HANS": "配置名称"
+        },
+        "Contrast": {
+            "en_US": "Contrast",
+            "fr_FR": "Contraste",
+            "ja_JP": "コントラスト",
+            "ru_RU": "Контраст",
+            "zh_HANS": "对比度"
+        },
+        "Conv: Base Color": {
+            "en_US": "Conv: Base Color",
+            "fr_FR": "Conv. : couleur de base",
+            "ja_JP": "変換: ベースカラー",
+            "ru_RU": "Конв.: базовый цвет",
+            "zh_HANS": "转换：基础颜色"
+        },
+        "Conv: Metallic": {
+            "en_US": "Conv: Metallic",
+            "fr_FR": "Conv. : métallique",
+            "ja_JP": "変換: メタリック",
+            "ru_RU": "Конв.: металличность",
+            "zh_HANS": "转换：金属度"
+        },
+        "Crash Data Cache": {
+            "en_US": "Crash Data Cache",
+            "fr_FR": "Cache des données de crash",
+            "ja_JP": "クラッシュデータキャッシュ",
+            "ru_RU": "Кэш данных сбоя",
+            "zh_HANS": "崩溃数据缓存"
+        },
+        "Create a job to define bake parameters": {
+            "en_US": "Create a job to define bake parameters",
+            "fr_FR": "Créez un job pour définir les paramètres de bake",
+            "ja_JP": "ベイクパラメータを定義するジョブを作成してください",
+            "ru_RU": "Создайте задачу для настройки параметров запекания",
+            "zh_HANS": "创建一个作业以定义烘焙参数"
+        },
+        "Currently selected index in the baked image results list": {
+            "en_US": "Currently selected index in the baked image results list",
+            "fr_FR": "Index actuellement sélectionné dans la liste des résultats de cuisson",
+            "ja_JP": "ベイク済み画像结果リストで现在选択されているインデックス",
+            "ru_RU": "Текущий выбранный индекс в списке результатов запекания",
+            "zh_HANS": "烘焙结果列表中的当前选中索引"
+        },
+        "Custom": {
+            "en_US": "Custom",
+            "fr_FR": "Personnalisé",
+            "ja_JP": "カスタム",
+            "ru_RU": "Пользовательский",
+            "zh_HANS": "自定义"
+        },
+        "Custom Folder Name": {
+            "en_US": "Custom Folder Name",
+            "fr_FR": "Nom de dossier personnalisé",
+            "ja_JP": "カスタムフォルダ名",
+            "ru_RU": "Польз. имя папки",
+            "zh_HANS": "自定义文件夹名"
+        },
+        "Custom Frames": {
+            "en_US": "Custom Frames",
+            "fr_FR": "Trames personnalisées",
+            "ja_JP": "カスタムフレーム",
+            "ru_RU": "Польз. кадры",
+            "zh_HANS": "自定义帧范围"
+        },
+        "Custom List": {
+            "en_US": "Custom List",
+            "fr_FR": "Liste personnalisée",
+            "ja_JP": "カスタムリスト",
+            "ru_RU": "Пользовательский список",
+            "zh_HANS": "自定义列表"
+        },
+        "Custom Name": {
+            "en_US": "Custom Name",
+            "fr_FR": "Nom personnalisé",
+            "ja_JP": "カスタム名",
+            "ru_RU": "Польз. имя",
+            "zh_HANS": "自定义名称"
+        },
+        "Custom Node Group": {
+            "en_US": "Custom Node Group",
+            "fr_FR": "Groupe de nœuds personnalisé",
+            "ja_JP": "カスタムノードグループ",
+            "ru_RU": "Пользовательская группа узлов",
+            "zh_HANS": "自定义节点组"
+        },
+        "DEV MODE": {
+            "en_US": "DEV MODE",
+            "fr_FR": "DEV MODE",
+            "ja_JP": "DEV MODE",
+            "ru_RU": "DEV MODE",
+            "zh_HANS": "DEV MODE"
+        },
+        "DIRECTX": {
+            "en_US": "DIRECTX",
+            "fr_FR": "Mode DirectX",
+            "ja_JP": "DirectX モード",
+            "ru_RU": "Режим DirectX",
+            "zh_HANS": "DirectX"
+        },
+        "DPX": {
+            "en_US": "DPX",
+            "fr_FR": "DPX",
+            "ja_JP": "DPX",
+            "ru_RU": "DPX",
+            "zh_HANS": "DPX"
+        },
+        "DWAA": {
+            "en_US": "DWAA",
+            "fr_FR": "DWAA",
+            "ja_JP": "DWAA",
+            "ru_RU": "DWAA",
+            "zh_HANS": "DWAA"
+        },
+        "DWAB": {
+            "en_US": "DWAB",
+            "fr_FR": "DWAB",
+            "ja_JP": "DWAB",
+            "ru_RU": "DWAB",
+            "zh_HANS": "DWAB"
+        },
+        "Debug Mode": {
+            "en_US": "Debug Mode",
+            "fr_FR": "Mode débogage",
+            "ja_JP": "デバッグモード",
+            "ru_RU": "Режим отладки",
+            "zh_HANS": "调试模式"
+        },
+        "Default Preset": {
+            "en_US": "Default Preset",
+            "fr_FR": "Préréglage par défaut",
+            "ja_JP": "既定プリセット",
+            "ru_RU": "Пресет по умолчанию",
+            "zh_HANS": "默认预设"
+        },
+        "Default Startup Configuration": {
+            "en_US": "Default Startup Configuration",
+            "fr_FR": "Configuration de démarrage par défaut",
+            "ja_JP": "既定の起動設定",
+            "ru_RU": "Конфигурация запуска по умолчанию",
+            "zh_HANS": "默认启动配置"
+        },
+        "Default Value": {
+            "en_US": "Default Value",
+            "fr_FR": "Valeur par défaut",
+            "ja_JP": "デフォルト値",
+            "ru_RU": "Значение по умолчанию",
+            "zh_HANS": "默认值"
+        },
+        "Deflate": {
+            "en_US": "Deflate",
+            "fr_FR": "Compression Deflate",
+            "ja_JP": "Deflate 圧縮",
+            "ru_RU": "Сжатие Deflate",
+            "zh_HANS": "Deflate 压缩"
+        },
+        "Deflate compression": {
+            "en_US": "Deflate compression",
+            "fr_FR": "Compression Deflate",
+            "ja_JP": "Deflate圧縮",
+            "ru_RU": "Сжатие Deflate",
+            "zh_HANS": "Deflate 压缩"
+        },
+        "Delete": {
+            "en_US": "Delete",
+            "fr_FR": "Supprimer",
+            "ja_JP": "削除",
+            "ru_RU": "Удалить",
+            "zh_HANS": "删除"
+        },
+        "Delete All": {
+            "en_US": "Delete All",
+            "fr_FR": "Tout supprimer",
+            "ja_JP": "すべて削除",
+            "ru_RU": "Удалить все",
+            "zh_HANS": "删除所有"
+        },
+        "Denoise": {
+            "en_US": "Denoise",
+            "fr_FR": "Débruitage",
+            "ja_JP": "ノイズ除去",
+            "ru_RU": "Шумоподавление",
+            "zh_HANS": "降噪"
+        },
+        "Denoise (OIDN)": {
+            "en_US": "Denoise (OIDN)",
+            "fr_FR": "Débruitage (OIDN)",
+            "ja_JP": "ノイズ除去 (OIDN)",
+            "ru_RU": "Шумоподавление (OIDN)",
+            "zh_HANS": "降噪（OIDN）"
+        },
+        "Depth": {
+            "en_US": "Depth",
+            "fr_FR": "Profondeur",
+            "ja_JP": "深度",
+            "ru_RU": "Глубина",
+            "zh_HANS": "深度"
+        },
+        "Detail": {
+            "en_US": "Detail",
+            "fr_FR": "Détail",
+            "ja_JP": "詳細",
+            "ru_RU": "Подробности",
+            "zh_HANS": "详情"
+        },
+        "Detected Unexpected Exit (Crash)": {
+            "en_US": "Detected Unexpected Exit (Crash)",
+            "fr_FR": "Sortie inattendue détectée (Crash)",
+            "ja_JP": "予期しない終了が検出されました (クラッシュ)",
+            "ru_RU": "Обнаружен неожиданный выход (Сбой)",
+            "zh_HANS": "检测到意外退出 (崩溃)"
+        },
+        "Device": {
+            "en_US": "Device",
+            "fr_FR": "Appareil",
+            "ja_JP": "デバイス",
+            "ru_RU": "Устройство",
+            "zh_HANS": "设备"
+        },
+        "Diff": {
+            "en_US": "Diff",
+            "fr_FR": "Diffus",
+            "ja_JP": "拡散",
+            "ru_RU": "Диффузный",
+            "zh_HANS": "漫反射"
+        },
+        "Diffuse": {
+            "en_US": "Diffuse",
+            "fr_FR": "Diffus",
+            "ja_JP": "ディフューズ",
+            "ru_RU": "Диффуз",
+            "zh_HANS": "漫射"
         },
         "Digits": {
             "en_US": "Digits",
             "fr_FR": "Chiffres",
             "ja_JP": "桁数",
             "ru_RU": "Разряды",
-            "zh_CN": "位数"
+            "zh_HANS": "位数"
+        },
+        "Dir": {
+            "en_US": "Dir",
+            "fr_FR": "Dir.",
+            "ja_JP": "直接光",
+            "ru_RU": "Прямой",
+            "zh_HANS": "直接光"
+        },
+        "Direct": {
+            "en_US": "Direct",
+            "fr_FR": "Direct",
+            "ja_JP": "直接光",
+            "ru_RU": "Прямой",
+            "zh_HANS": "直接光"
+        },
+        "Direction": {
+            "en_US": "Direction",
+            "fr_FR": "Direction",
+            "ja_JP": "方向",
+            "ru_RU": "Направление",
+            "zh_HANS": "方向"
+        },
+        "Directory containing .json presets and matching .png thumbnails": {
+            "en_US": "Directory containing .json presets and matching .png thumbnails",
+            "fr_FR": "Répertoire contenant les préréglages .json et les miniatures .png correspondantes",
+            "ja_JP": ".json プリセットと対応する .png サムネイルを含むディレクトリ",
+            "ru_RU": "Каталог с пресетами .json и соответствующими миниатюрами .png",
+            "zh_HANS": "包含 .json 预设和对应 .png 缩略图的目录"
+        },
+        "Distance": {
+            "en_US": "Distance",
+            "fr_FR": "Distance",
+            "ja_JP": "距离",
+            "ru_RU": "Расстояние",
+            "zh_HANS": "距离"
+        },
+        "Down": {
+            "en_US": "Down",
+            "fr_FR": "Bas",
+            "ja_JP": "下",
+            "ru_RU": "Вниз",
+            "zh_HANS": "下移"
+        },
+        "Duration": {
+            "en_US": "Duration",
+            "fr_FR": "Durée",
+            "ja_JP": "期间",
+            "ru_RU": "Длительность",
+            "zh_HANS": "持续时间"
+        },
+        "EXR Codec": {
+            "en_US": "EXR Codec",
+            "fr_FR": "Codec EXR",
+            "ja_JP": "EXRコーデック",
+            "ru_RU": "Кодек EXR",
+            "zh_HANS": "EXR 编码"
+        },
+        "Element ID": {
+            "en_US": "Element ID",
+            "fr_FR": "ID d'élément",
+            "ja_JP": "要素ID",
+            "ru_RU": "ID элемента",
+            "zh_HANS": "元素 ID"
+        },
+        "Emi": {
+            "en_US": "Emi",
+            "fr_FR": "Émissif",
+            "ja_JP": "放射",
+            "ru_RU": "Эмиссия",
+            "zh_HANS": "自发光"
+        },
+        "Emission": {
+            "en_US": "Emission",
+            "fr_FR": "Émission",
+            "ja_JP": "放射",
+            "ru_RU": "Излучение",
+            "zh_HANS": "自发光"
+        },
+        "Emission Color": {
+            "en_US": "Emission Color",
+            "fr_FR": "Couleur d'émission",
+            "ja_JP": "放射カラー",
+            "ru_RU": "Цвет эмиссии",
+            "zh_HANS": "自发光颜色"
+        },
+        "Emission Strength": {
+            "en_US": "Emission Strength",
+            "fr_FR": "Puissance d'émission",
+            "ja_JP": "放射強度",
+            "ru_RU": "Сила эмиссии",
+            "zh_HANS": "自发光强度"
+        },
+        "Enable Custom Map Logic": {
+            "en_US": "Enable Custom Map Logic",
+            "fr_FR": "Activer la logique de carte personnalisée",
+            "ja_JP": "カスタムマップロジックを有効化",
+            "ru_RU": "Вкл. логику польз. карт",
+            "zh_HANS": "启用自定义贴图逻辑"
+        },
+        "Enabled": {
+            "en_US": "Enabled",
+            "fr_FR": "Activé",
+            "ja_JP": "有効",
+            "ru_RU": "Включено",
+            "zh_HANS": "启用"
+        },
+        "Environment": {
+            "en_US": "Environment",
+            "fr_FR": "Environnement",
+            "ja_JP": "環境",
+            "ru_RU": "Окружение",
+            "zh_HANS": "环境"
+        },
+        "Error Log": {
+            "en_US": "Error Log",
+            "fr_FR": "Journal d'erreurs",
+            "ja_JP": "エラーログ",
+            "ru_RU": "Журнал ошибок",
+            "zh_HANS": "错误日志"
+        },
+        "Export": {
+            "en_US": "Export",
+            "fr_FR": "Exporter",
+            "ja_JP": "エクスポート",
+            "ru_RU": "Экспорт",
+            "zh_HANS": "导出"
+        },
+        "Export All": {
+            "en_US": "Export All",
+            "fr_FR": "Tout exporter",
+            "ja_JP": "すべてエクスポート",
+            "ru_RU": "Экспортировать все",
+            "zh_HANS": "导出所有"
+        },
+        "Export BakeNexus Settings": {
+            "en_US": "Export BakeNexus Settings",
+            "fr_FR": "Exporter les parametres BakeNexus",
+            "ja_JP": "BakeNexus設定をエクスポート",
+            "ru_RU": "Экспортировать настройки BakeNexus",
+            "zh_HANS": "导出 BakeNexus 设置"
+        },
+        "Export Mesh": {
+            "en_US": "Export Mesh",
+            "fr_FR": "Exporter le maillage",
+            "ja_JP": "メッシュをエクスポート",
+            "ru_RU": "Экспорт сетки",
+            "zh_HANS": "导出网格"
+        },
+        "Export Mode": {
+            "en_US": "Export Mode",
+            "fr_FR": "Mode d'exportation",
+            "ja_JP": "エクスポートモード",
+            "ru_RU": "Режим экспорта",
+            "zh_HANS": "导出模式"
+        },
+        "Export Model": {
+            "en_US": "Export Model",
+            "fr_FR": "Exporter le modèle",
+            "ja_JP": "モデルをエクスポート",
+            "ru_RU": "Экспорт модели",
+            "zh_HANS": "导出模型"
+        },
+        "Export Settings": {
+            "en_US": "Export Settings",
+            "fr_FR": "Paramètres d'exportation",
+            "ja_JP": "エクスポート設定",
+            "ru_RU": "Настройки экспорта",
+            "zh_HANS": "导出设置"
+        },
+        "Export with Textures": {
+            "en_US": "Export with Textures",
+            "fr_FR": "Exporter avec les textures",
+            "ja_JP": "テクスチャ付きでエクスポート",
+            "ru_RU": "Экспортировать с текстурами",
+            "zh_HANS": "连同贴图导出"
+        },
+        "Ext": {
+            "en_US": "Ext",
+            "fr_FR": "Extr.",
+            "ja_JP": "押出",
+            "ru_RU": "Выст.",
+            "zh_HANS": "外扩"
+        },
+        "Extension Maps": {
+            "en_US": "Extension Maps",
+            "fr_FR": "Cartes d'extension",
+            "ja_JP": "扩展マップ",
+            "ru_RU": "Карты расширения",
+            "zh_HANS": "扩展贴图"
+        },
+        "External Save": {
+            "en_US": "External Save",
+            "fr_FR": "Sauvegarde externe",
+            "ja_JP": "外部保存",
+            "ru_RU": "Внешнее сохранение",
+            "zh_HANS": "外部保存"
+        },
+        "F0 Threshold": {
+            "en_US": "F0 Threshold",
+            "fr_FR": "Seuil F0",
+            "ja_JP": "F0 しきい値",
+            "ru_RU": "Порог F0",
+            "zh_HANS": "F0 阈值"
+        },
+        "FBX": {
+            "en_US": "FBX",
+            "fr_FR": "FBX",
+            "ja_JP": "FBX",
+            "ru_RU": "FBX",
+            "zh_HANS": "FBX"
+        },
+        "File Size": {
+            "en_US": "File Size",
+            "fr_FR": "Taille du fichier",
+            "ja_JP": "ファイルサイズ",
+            "ru_RU": "Размер файла",
+            "zh_HANS": "文件大小"
+        },
+        "Fix": {
+            "en_US": "Fix",
+            "fr_FR": "Corriger",
+            "ja_JP": "修正",
+            "ru_RU": "Исправить",
+            "zh_HANS": "修复"
+        },
+        "Format": {
+            "en_US": "Format",
+            "fr_FR": "Format",
+            "ja_JP": "フォーマット",
+            "ru_RU": "Формат",
+            "zh_HANS": "格式"
+        },
+        "Frame Digits": {
+            "en_US": "Frame Digits",
+            "fr_FR": "Chiffres de trame",
+            "ja_JP": "フレーム桁数",
+            "ru_RU": "Разрядность кадра",
+            "zh_HANS": "帧位数"
         },
         "Frames": {
             "en_US": "Frames",
             "fr_FR": "Images",
             "ja_JP": "フレーム",
             "ru_RU": "Кадры",
-            "zh_CN": "帧"
+            "zh_HANS": "帧"
         },
         "GLB": {
             "en_US": "GLB",
             "fr_FR": "GLB",
             "ja_JP": "GLB",
             "ru_RU": "GLB",
-            "zh_CN": "GLB"
+            "zh_HANS": "GLB"
         },
         "GPU": {
             "en_US": "GPU",
             "fr_FR": "GPU",
             "ja_JP": "GPU",
             "ru_RU": "GPU",
-            "zh_CN": "GPU"
+            "zh_HANS": "GPU"
         },
         "Gloss": {
             "en_US": "Gloss",
             "fr_FR": "Brillance",
             "ja_JP": "光沢",
             "ru_RU": "Глянец",
-            "zh_CN": "光泽"
+            "zh_HANS": "光泽"
         },
         "Glossy": {
             "en_US": "Glossy",
             "fr_FR": "Brillant",
             "ja_JP": "グロッシー",
             "ru_RU": "Глянцевый",
-            "zh_CN": "光泽"
+            "zh_HANS": "光泽"
         },
         "Green": {
             "en_US": "Green",
             "fr_FR": "Vert",
             "ja_JP": "緑",
             "ru_RU": "Зеленый",
-            "zh_CN": "绿色"
+            "zh_HANS": "绿色"
         },
         "Green (G)": {
             "en_US": "Green (G)",
             "fr_FR": "Vert (G)",
             "ja_JP": "緑 (G)",
             "ru_RU": "Зелёный (G)",
-            "zh_CN": "绿色（G）"
+            "zh_HANS": "绿色（G）"
         },
         "Group": {
             "en_US": "Group",
             "fr_FR": "Groupe",
             "ja_JP": "グループ",
             "ru_RU": "Группа",
-            "zh_CN": "组"
+            "zh_HANS": "组"
         },
         "HDR": {
             "en_US": "HDR",
             "fr_FR": "HDR",
             "ja_JP": "HDR",
             "ru_RU": "HDR",
-            "zh_CN": "HDR"
+            "zh_HANS": "HDR"
         },
         "Has Crash Record": {
             "en_US": "Has Crash Record",
             "fr_FR": "A un enregistrement de crash",
             "ja_JP": "クラッシュ記録あり",
             "ru_RU": "Есть запись о сбое",
-            "zh_CN": "存在崩溃记录"
+            "zh_HANS": "存在崩溃记录"
         },
         "Height": {
             "en_US": "Height",
             "fr_FR": "Hauteur",
             "ja_JP": "高さ",
             "ru_RU": "Высота",
-            "zh_CN": "高度"
+            "zh_HANS": "高度"
         },
         "ID Map Count": {
             "en_US": "ID Map Count",
             "fr_FR": "Nombre de cartes ID",
             "ja_JP": "IDマップ数",
             "ru_RU": "Кол-во карт ID",
-            "zh_CN": "ID图数量"
+            "zh_HANS": "ID图数量"
         },
         "ID Start Color": {
             "en_US": "ID Start Color",
             "fr_FR": "Couleur de départ ID",
             "ja_JP": "ID开始色",
             "ru_RU": "Нач. цвет ID",
-            "zh_CN": "ID起始色"
+            "zh_HANS": "ID起始色"
         },
         "Import": {
             "en_US": "Import",
             "fr_FR": "Importer",
             "ja_JP": "インポート",
             "ru_RU": "Импорт",
-            "zh_CN": "导入"
+            "zh_HANS": "导入"
         },
-        "Import Bake Nexus Settings": {
-            "en_US": "Import Bake Nexus Settings",
-            "fr_FR": "Importer les paramètres Bake Nexus",
-            "ja_JP": "Bake Nexus 設定をインポート",
-            "ru_RU": "Импортировать настройки Bake Nexus",
-            "zh_CN": "导入 Bake Nexus 设置"
+        "Import BakeNexus Settings": {
+            "en_US": "Import BakeNexus Settings",
+            "fr_FR": "Importer les parametres BakeNexus",
+            "ja_JP": "BakeNexus設定をインポート",
+            "ru_RU": "Импортировать настройки BakeNexus",
+            "zh_HANS": "导入 BakeNexus 设置"
         },
         "Ind": {
             "en_US": "Ind",
             "fr_FR": "Indirect",
             "ja_JP": "间接光",
             "ru_RU": "Косвенный",
-            "zh_CN": "间接光"
+            "zh_HANS": "间接光"
         },
         "Index": {
             "en_US": "Index",
             "fr_FR": "Indice",
             "ja_JP": "インデックス",
             "ru_RU": "Индекс",
-            "zh_CN": "索引"
+            "zh_HANS": "索引"
         },
         "Index for baked image results": {
             "en_US": "Index for baked image results",
             "fr_FR": "Index pour les résultats d'images cuites",
             "ja_JP": "ベイク済み画像结果のインデックス",
             "ru_RU": "Индекс результатов запекания",
-            "zh_CN": "烘焙图像结果索引"
+            "zh_HANS": "烘焙图像结果索引"
         },
         "Indirect": {
             "en_US": "Indirect",
             "fr_FR": "Indirect",
             "ja_JP": "间接光",
             "ru_RU": "Косвенный",
-            "zh_CN": "间接光"
+            "zh_HANS": "间接光"
         },
         "Inside": {
             "en_US": "Inside",
             "fr_FR": "Intérieur",
             "ja_JP": "内部",
             "ru_RU": "Внутри",
-            "zh_CN": "内部"
+            "zh_HANS": "内部"
         },
         "Interactive Preview": {
             "en_US": "Interactive Preview",
             "fr_FR": "Aperçu interactif",
             "ja_JP": "インタラクティブプレビュー",
             "ru_RU": "Интерактивный предпросмотр",
-            "zh_CN": "交互式预览"
+            "zh_HANS": "交互式预览"
         },
         "Internal cache for export path validity": {
             "en_US": "Internal cache for export path validity",
             "fr_FR": "Cache interne pour la validité du chemin d'export",
             "ja_JP": "エクスポートパス有効性の内部キャッシュ",
             "ru_RU": "Внутренний кэш корректности пути экспорта",
-            "zh_CN": "导出路径有效性的内部缓存"
+            "zh_HANS": "导出路径有效性的内部缓存"
         },
         "Invalid Export Path!": {
             "en_US": "Invalid Export Path!",
             "fr_FR": "Chemin d'export invalide !",
             "ja_JP": "無効なエクスポートパス！",
             "ru_RU": "Неверный путь экспорта !",
-            "zh_CN": "导出路径无效！"
+            "zh_HANS": "导出路径无效！"
         },
         "Invert": {
             "en_US": "Invert",
             "fr_FR": "Inverser",
             "ja_JP": "反転",
             "ru_RU": "Инвертировать",
-            "zh_CN": "反转"
+            "zh_HANS": "反转"
         },
         "Invert G": {
             "en_US": "Invert G",
             "fr_FR": "Inverser G",
             "ja_JP": "Gを反転",
             "ru_RU": "Инвертировать G",
-            "zh_CN": "反转 G"
+            "zh_HANS": "反转 G"
         },
         "Invert Roughness": {
             "en_US": "Invert Roughness",
             "fr_FR": "Inverser la rugosité",
             "ja_JP": "粗さを反転",
             "ru_RU": "Инвертировать шероховатость",
-            "zh_CN": "反转粗糙度"
+            "zh_HANS": "反转粗糙度"
         },
         "Iris": {
             "en_US": "Iris",
             "fr_FR": "Format Iris",
             "ja_JP": "Iris 形式",
             "ru_RU": "Формат Iris",
-            "zh_CN": "Iris 格式"
+            "zh_HANS": "Iris 格式"
         },
         "Is Baking": {
             "en_US": "Is Baking",
             "fr_FR": "Cuisson en cours",
             "ja_JP": "ベイク中",
             "ru_RU": "Запекается",
-            "zh_CN": "正在烘焙"
+            "zh_HANS": "正在烘焙"
         },
         "Island Margin": {
             "en_US": "Island Margin",
             "fr_FR": "Marge d'île",
             "ja_JP": "アイランド余白",
             "ru_RU": "Отступ островов",
-            "zh_CN": "岛屿间距"
+            "zh_HANS": "岛屿间距"
         },
         "JOB MANAGER": {
             "en_US": "JOB MANAGER",
             "fr_FR": "GESTIONNAIRE DE JOBS",
             "ja_JP": "ジョブマネージャー",
             "ru_RU": "МЕНЕДЖЕР ЗАДАЧ",
-            "zh_CN": "作业管理器"
+            "zh_HANS": "作业管理器"
         },
         "JPEG": {
             "en_US": "JPEG",
             "fr_FR": "JPEG",
             "ja_JP": "JPEG",
             "ru_RU": "JPEG",
-            "zh_CN": "JPEG"
+            "zh_HANS": "JPEG"
         },
         "JPEG 2000": {
             "en_US": "JPEG 2000",
             "fr_FR": "JPEG 2000",
             "ja_JP": "JPEG 2000",
             "ru_RU": "JPEG 2000",
-            "zh_CN": "JPEG 2000"
+            "zh_HANS": "JPEG 2000"
         },
         "Job '{}' skipped: Missing UVs on {}": {
             "en_US": "Job '{}' skipped: Missing UVs on {}",
             "fr_FR": "Job '{}' ignoré : UV manquants sur {}",
             "ja_JP": "ジョブ '{}' をスキップ: {} に UV がありません",
             "ru_RU": "Задача '{}' пропущена: отсутствуют UV на {}",
-            "zh_CN": "任务 '{}' 已跳过：{} 缺失 UV。"
+            "zh_HANS": "任务 '{}' 已跳过：{} 缺失 UV。"
         },
         "Job '{}' skipped: No active object target for Select-to-Active.": {
             "en_US": "Job '{}' skipped: No active object target for Select-to-Active.",
             "fr_FR": "Job '{}' ignoré : aucune cible d'objet active pour Select-to-Active.",
             "ja_JP": "ジョブ '{}' をスキップ: Select-to-Active 用のアクティブオブジェクトターゲットがありません。",
             "ru_RU": "Задача '{}' пропущена: нет активной цели объекта для Select-to-Active.",
-            "zh_CN": "任务 '{}' 已跳过：缺少“所选向活动项”的活动物体目标。"
+            "zh_HANS": "任务 '{}' 已跳过：缺少“所选向活动项”的活动物体目标。"
         },
         "Job '{}' skipped: No objects assigned.": {
             "en_US": "Job '{}' skipped: No objects assigned.",
             "fr_FR": "Job '{}' ignoré : aucun objet assigné.",
             "ja_JP": "ジョブ '{}' をスキップ: オブジェクトが割り当てられていません。",
             "ru_RU": "Задача '{}' пропущена: объекты не назначены.",
-            "zh_CN": "任务 '{}' 已跳过：未分配物体。"
+            "zh_HANS": "任务 '{}' 已跳过：未分配物体。"
         },
         "Job '{}' skipped: No valid Mesh target.": {
             "en_US": "Job '{}' skipped: No valid Mesh target.",
             "fr_FR": "Job '{}' ignoré : aucune cible Mesh valide.",
             "ja_JP": "ジョブ '{}' をスキップ: 有効なメッシュターゲットがありません。",
             "ru_RU": "Задача '{}' пропущена: нет корректной цели Mesh.",
-            "zh_CN": "任务 '{}' 已跳过：无有效的网格目标。"
+            "zh_HANS": "任务 '{}' 已跳过：无有效的网格目标。"
         },
         "Job '{}' skipped: Objects not in current View Layer: {}": {
             "en_US": "Job '{}' skipped: Objects not in current View Layer: {}",
             "fr_FR": "Job '{}' ignoré : objets absents du View Layer actuel : {}",
             "ja_JP": "ジョブ '{}' をスキップ: 現在のビューレイヤーにないオブジェクト: {}",
             "ru_RU": "Задача '{}' пропущена: объекты отсутствуют в текущем View Layer: {}",
-            "zh_CN": "任务 '{}' 已跳过：物体不在当前视图层中：{}"
+            "zh_HANS": "任务 '{}' 已跳过：物体不在当前视图层中：{}"
         },
         "Job Name": {
             "en_US": "Job Name",
             "fr_FR": "Nom de la tâche",
             "ja_JP": "ジョブ名",
             "ru_RU": "Имя задачи",
-            "zh_CN": "任务名称"
+            "zh_HANS": "任务名称"
         },
         "LZW": {
             "en_US": "LZW",
             "fr_FR": "LZW",
             "ja_JP": "LZW",
             "ru_RU": "LZW",
-            "zh_CN": "LZW"
+            "zh_HANS": "LZW"
         },
         "LZW compression": {
             "en_US": "LZW compression",
             "fr_FR": "Compression LZW",
             "ja_JP": "LZW压缩",
             "ru_RU": "Сжатие LZW",
-            "zh_CN": "LZW 压缩"
+            "zh_HANS": "LZW 压缩"
         },
         "Last Error": {
             "en_US": "Last Error",
             "fr_FR": "Dernière erreur",
             "ja_JP": "最後のエラー",
             "ru_RU": "Последняя ошибка",
-            "zh_CN": "最后错误"
+            "zh_HANS": "最后错误"
         },
         "Last Object": {
             "en_US": "Last Object",
             "fr_FR": "Dernier objet",
             "ja_JP": "最後のオブジェクト",
             "ru_RU": "Последний объект",
-            "zh_CN": "最后对象"
+            "zh_HANS": "最后对象"
         },
         "Last Test Info": {
             "en_US": "Last Test Info",
             "fr_FR": "Infos du dernier test",
             "ja_JP": "前回テスト情報",
             "ru_RU": "Информация о последнем тесте",
-            "zh_CN": "上次测试信息"
+            "zh_HANS": "上次测试信息"
         },
         "Legacy 16-bit": {
             "en_US": "Legacy 16-bit",
             "fr_FR": "Ancien 16 bits",
             "ja_JP": "旧16ビット",
             "ru_RU": "Устаревший 16-бит",
-            "zh_CN": "旧版 16 位"
+            "zh_HANS": "旧版 16 位"
         },
         "Legacy 32-bit": {
             "en_US": "Legacy 32-bit",
             "fr_FR": "Ancien 32 bits",
             "ja_JP": "旧32ビット",
             "ru_RU": "Устаревший 32-бит",
-            "zh_CN": "旧版 32 位"
+            "zh_HANS": "旧版 32 位"
         },
         "Legacy 8-bit": {
             "en_US": "Legacy 8-bit",
             "fr_FR": "Ancien 8 bits",
             "ja_JP": "旧8ビット",
             "ru_RU": "Устаревший 8-бит",
-            "zh_CN": "旧版 8 位"
+            "zh_HANS": "旧版 8 位"
         },
         "Legacy BW": {
             "en_US": "Legacy BW",
             "fr_FR": "Ancien N&B",
             "ja_JP": "旧白黒",
             "ru_RU": "Устаревший Ч/Б",
-            "zh_CN": "旧版黑白"
+            "zh_HANS": "旧版黑白"
         },
         "Legacy RGB": {
             "en_US": "Legacy RGB",
             "fr_FR": "Ancien RGB",
             "ja_JP": "旧RGB",
             "ru_RU": "Устаревший RGB",
-            "zh_CN": "旧版 RGB"
+            "zh_HANS": "旧版 RGB"
         },
         "Legacy RGBA": {
             "en_US": "Legacy RGBA",
             "fr_FR": "Ancien RGBA",
             "ja_JP": "旧RGBA",
             "ru_RU": "Устаревший RGBA",
-            "zh_CN": "旧版 RGBA"
+            "zh_HANS": "旧版 RGBA"
         },
         "Library": {
             "en_US": "Library",
             "fr_FR": "Bibliothèque",
             "ja_JP": "ライブラリ",
             "ru_RU": "Библиотека",
-            "zh_CN": "库"
+            "zh_HANS": "库"
         },
         "Light": {
             "en_US": "Light",
             "fr_FR": "Lumière",
             "ja_JP": "ライト",
             "ru_RU": "Свет",
-            "zh_CN": "光照"
+            "zh_HANS": "光照"
         },
         "Light Maps": {
             "en_US": "Light Maps",
             "fr_FR": "Cartes de lumière",
             "ja_JP": "ライトマップ",
             "ru_RU": "Карты света",
-            "zh_CN": "光照贴图"
+            "zh_HANS": "光照贴图"
         },
         "Light Paths": {
             "en_US": "Light Paths",
             "fr_FR": "Chemins de lumière",
             "ja_JP": "ライトパス",
             "ru_RU": "Пути света",
-            "zh_CN": "光线路径"
+            "zh_HANS": "光线路径"
         },
         "Linear": {
             "en_US": "Linear",
             "fr_FR": "Linéaire",
             "ja_JP": "リニア",
             "ru_RU": "Линейный",
-            "zh_CN": "线性"
+            "zh_HANS": "线性"
         },
         "List of baked image results with metadata": {
             "en_US": "List of baked image results with metadata",
             "fr_FR": "Liste des résultats d'images cuites avec métadonnées",
             "ja_JP": "メタデータ付きのベイク済み画像结果リスト",
             "ru_RU": "Список результатов запекания с метаданными",
-            "zh_CN": "包含元数据的烘焙图像结果列表"
+            "zh_HANS": "包含元数据的烘焙图像结果列表"
         },
         "Lossless": {
             "en_US": "Lossless",
             "fr_FR": "Sans perte",
             "ja_JP": "ロスレス",
             "ru_RU": "Без потерь",
-            "zh_CN": "无损"
+            "zh_HANS": "无损"
         },
         "Lossy": {
             "en_US": "Lossy",
             "fr_FR": "Avec perte",
             "ja_JP": "ロッシー",
             "ru_RU": "С потерями",
-            "zh_CN": "有损"
+            "zh_HANS": "有损"
         },
         "Manage Objects": {
             "en_US": "Manage Objects",
             "fr_FR": "Gérer les objets",
             "ja_JP": "オブジェクト管理",
             "ru_RU": "Управление объектами",
-            "zh_CN": "管理物体"
+            "zh_HANS": "管理物体"
         },
         "Manual Start Color": {
             "en_US": "Manual Start Color",
             "fr_FR": "Couleur de départ manuelle",
             "ja_JP": "手动开始色",
             "ru_RU": "Ручной нач. цвет",
-            "zh_CN": "手动起始颜色"
+            "zh_HANS": "手动起始颜色"
         },
         "Margin": {
             "en_US": "Margin",
             "fr_FR": "Marge",
             "ja_JP": "マージン",
             "ru_RU": "Отступ",
-            "zh_CN": "边距"
+            "zh_HANS": "边距"
         },
         "Material": {
             "en_US": "Material",
             "fr_FR": "Matériau",
             "ja_JP": "マテリアル",
             "ru_RU": "Материал",
-            "zh_CN": "材质"
+            "zh_HANS": "材质"
         },
         "Material ID": {
             "en_US": "Material ID",
             "fr_FR": "ID matériau",
             "ja_JP": "マテリアルID",
             "ru_RU": "ID материала",
-            "zh_CN": "材质 ID"
+            "zh_HANS": "材质 ID"
         },
         "Mesh": {
             "en_US": "Mesh",
             "fr_FR": "Maillage",
             "ja_JP": "メッシュ",
             "ru_RU": "Меш",
-            "zh_CN": "网格"
+            "zh_HANS": "网格"
         },
         "Mesh Maps": {
             "en_US": "Mesh Maps",
             "fr_FR": "Cartes de maillage",
             "ja_JP": "メッシュマップ",
             "ru_RU": "Карты сетки",
-            "zh_CN": "网格贴图"
+            "zh_HANS": "网格贴图"
         },
         "Metallic": {
             "en_US": "Metallic",
             "fr_FR": "Métallique",
             "ja_JP": "メタリック",
             "ru_RU": "Металличность",
-            "zh_CN": "金属度"
+            "zh_HANS": "金属度"
         },
         "Metalness": {
             "en_US": "Metalness",
             "fr_FR": "Métallicité",
             "ja_JP": "メタルネス",
             "ru_RU": "Металличность",
-            "zh_CN": "金属度"
+            "zh_HANS": "金属度"
         },
         "Method": {
             "en_US": "Method",
             "fr_FR": "Méthode",
             "ja_JP": "メソッド",
             "ru_RU": "Метод",
-            "zh_CN": "方法"
+            "zh_HANS": "方法"
         },
         "Missing": {
             "en_US": "Missing",
             "fr_FR": "Manquant",
             "ja_JP": "欠落",
             "ru_RU": "Отсутствует",
-            "zh_CN": "缺失"
+            "zh_HANS": "缺失"
         },
         "Move current item down": {
             "en_US": "Move current item down",
             "fr_FR": "Déplacer l'élément vers le bas",
             "ja_JP": "現在の項目を下へ移動",
             "ru_RU": "Переместить текущий элемент вниз",
-            "zh_CN": "下移当前项"
+            "zh_HANS": "下移当前项"
         },
         "Move current item up": {
             "en_US": "Move current item up",
             "fr_FR": "Déplacer l'élément vers le haut",
             "ja_JP": "現在の項目を上へ移動",
             "ru_RU": "Переместить текущий элемент вверх",
-            "zh_CN": "上移当前项"
+            "zh_HANS": "上移当前项"
         },
         "Multi Objects Bake": {
             "en_US": "Multi Objects Bake",
             "fr_FR": "Cuisson multi-objets",
             "ja_JP": "マルチオブジェクトベイク",
             "ru_RU": "Запекание нескольких объектов",
-            "zh_CN": "多物体烘焙"
+            "zh_HANS": "多物体烘焙"
         },
         "Name": {
             "en_US": "Name",
             "fr_FR": "Nom",
             "ja_JP": "名前",
             "ru_RU": "Имя",
-            "zh_CN": "名称"
+            "zh_HANS": "名称"
         },
         "Naming": {
             "en_US": "Naming",
             "fr_FR": "Nommage",
             "ja_JP": "命名",
             "ru_RU": "Именование",
-            "zh_CN": "命名"
+            "zh_HANS": "命名"
         },
         "New Folder": {
             "en_US": "New Folder",
             "fr_FR": "Nouveau dossier",
             "ja_JP": "新規フォルダ",
             "ru_RU": "Новая папка",
-            "zh_CN": "新建文件夹"
+            "zh_HANS": "新建文件夹"
         },
-        "No": {
-            "en_US": "No",
-            "fr_FR": "Non",
-            "ja_JP": "いいえ",
-            "ru_RU": "Нет",
-            "zh_CN": "否"
-        },
-        "No Prefilter": {
-            "en_US": "No Prefilter",
-            "fr_FR": "Pas de pré-filtrage",
-            "ja_JP": "プリフィルタなし",
-            "ru_RU": "Без префильтра",
-            "zh_CN": "无预过滤"
+        "No bake jobs configured.": {
+            "en_US": "No bake jobs configured.",
+            "fr_FR": "Aucun job de bake configure.",
+            "ja_JP": "ベークジョブが設定されていません。",
+            "ru_RU": "Не настроено ни одного задания запекания.",
+            "zh_HANS": "尚未配置烘焙作业。"
         },
         "No compression": {
             "en_US": "No compression",
             "fr_FR": "Pas de compression",
             "ja_JP": "压缩なし",
             "ru_RU": "Без сжатия",
-            "zh_CN": "无压缩"
+            "zh_HANS": "无压缩"
         },
         "No enabled jobs.": {
             "en_US": "No enabled jobs.",
             "fr_FR": "Aucun job activé.",
             "ja_JP": "有効なジョブがありません。",
             "ru_RU": "Нет включённых задач.",
-            "zh_CN": "没有启用的任务。"
+            "zh_HANS": "没有启用的任务。"
         },
         "No image to export": {
             "en_US": "No image to export",
             "fr_FR": "Pas d'image à exporter",
             "ja_JP": "エクスポートする画像がありません",
             "ru_RU": "Нет изображения для экспорта",
-            "zh_CN": "没有要导出的图像"
+            "zh_HANS": "没有要导出的图像"
         },
         "No objects to preview": {
             "en_US": "No objects to preview",
             "fr_FR": "Aucun objet à prévisualiser",
             "ja_JP": "プレビューするオブジェクトがありません",
             "ru_RU": "Нет объектов для предпросмотра",
-            "zh_CN": "没有可预览的对象"
+            "zh_HANS": "没有可预览的对象"
         },
         "No result selected": {
             "en_US": "No result selected",
             "fr_FR": "Aucun résultat sélectionné",
             "ja_JP": "結果が選択されていません",
             "ru_RU": "Результат не выбран",
-            "zh_CN": "未选择结果"
+            "zh_HANS": "未选择结果"
+        },
+        "No result selected to export.": {
+            "en_US": "No result selected to export.",
+            "fr_FR": "Aucun resultat selectionne a exporter.",
+            "ja_JP": "エクスポートする結果が選択されていません。",
+            "ru_RU": "Не выбран результат для экспорта.",
+            "zh_HANS": "未选择要导出的结果。"
         },
         "No results to export": {
             "en_US": "No results to export",
             "fr_FR": "Aucun résultat à exporter",
             "ja_JP": "エクスポートする結果がありません",
             "ru_RU": "Нет результатов для экспорта",
-            "zh_CN": "没有可导出的结果"
+            "zh_HANS": "没有可导出的结果"
         },
         "No save target is available.": {
             "en_US": "No save target is available.",
             "fr_FR": "Aucune cible d'enregistrement disponible.",
             "ja_JP": "利用可能な保存先がありません。",
             "ru_RU": "Нет доступной цели для сохранения.",
-            "zh_CN": "没有可用的保存目标。"
+            "zh_HANS": "没有可用的保存目标。"
+        },
+        "No valid bake job selected.": {
+            "en_US": "No valid bake job selected.",
+            "fr_FR": "Aucun job de bake valide selectionne.",
+            "ja_JP": "有効なベークジョブが選択されていません。",
+            "ru_RU": "Не выбрано допустимое задание запекания.",
+            "zh_HANS": "未选择有效的烘焙作业。"
         },
         "Node Bake": {
             "en_US": "Node Bake",
             "fr_FR": "Cuisson de nœud",
             "ja_JP": "ノードベイク",
             "ru_RU": "Запекание узла",
-            "zh_CN": "节点烘焙"
+            "zh_HANS": "节点烘焙"
         },
         "Node Group": {
             "en_US": "Node Group",
             "fr_FR": "Groupe de nœuds",
             "ja_JP": "ノードグループ",
             "ru_RU": "Группа узлов",
-            "zh_CN": "节点组"
+            "zh_HANS": "节点组"
         },
         "Non-Color": {
             "en_US": "Non-Color",
             "fr_FR": "Non-couleur",
             "ja_JP": "非カラー",
             "ru_RU": "Нецвет",
-            "zh_CN": "非色彩"
+            "zh_HANS": "非色彩"
         },
         "None": {
             "en_US": "None",
             "fr_FR": "Aucun",
             "ja_JP": "なし",
             "ru_RU": "Нет",
-            "zh_CN": "无"
+            "zh_HANS": "无"
         },
         "Normal": {
             "en_US": "Normal",
             "fr_FR": "Normale",
             "ja_JP": "法線",
             "ru_RU": "Нормаль",
-            "zh_CN": "法线"
+            "zh_HANS": "法线"
         },
         "Normal Mode": {
             "en_US": "Normal Mode",
             "fr_FR": "Mode Normale",
             "ja_JP": "ノーマルモード",
             "ru_RU": "Режим нормали",
-            "zh_CN": "法线模式"
+            "zh_HANS": "法线模式"
         },
         "Normal Settings": {
             "en_US": "Normal Settings",
             "fr_FR": "Paramètres de normale",
             "ja_JP": "法線設定",
             "ru_RU": "Настройки нормалей",
-            "zh_CN": "法线设置"
+            "zh_HANS": "法线设置"
         },
         "Nothing to bake (Check logs/setup).": {
             "en_US": "Nothing to bake (Check logs/setup).",
             "fr_FR": "Rien à baker (vérifiez les logs / la configuration).",
             "ja_JP": "ベイク対象がありません（ログ/設定を確認してください）。",
             "ru_RU": "Нечего запекать (проверьте логи / настройки).",
-            "zh_CN": "没有可烘焙的内容 (请检查日志或设置)"
+            "zh_HANS": "没有可烘焙的内容 (请检查日志或设置)"
         },
         "OPENGL": {
             "en_US": "OPENGL",
             "fr_FR": "OpenGL",
             "ja_JP": "OpenGL",
             "ru_RU": "OpenGL",
-            "zh_CN": "OpenGL"
+            "zh_HANS": "OpenGL"
         },
         "ORM Packing (R+G+B+A)": {
             "en_US": "ORM Packing (R+G+B+A)",
             "fr_FR": "Empaquetage ORM (R+G+B+A)",
             "ja_JP": "ORMパッキング (R+G+B+A)",
             "ru_RU": "ORM Упаковка (R+G+B+A)",
-            "zh_CN": "ORM 打包 (R+G+B+A)"
+            "zh_HANS": "ORM 打包 (R+G+B+A)"
         },
         "Obj": {
             "en_US": "Obj",
             "fr_FR": "Objet",
             "ja_JP": "オブジェクト",
             "ru_RU": "Объект",
-            "zh_CN": "对象"
+            "zh_HANS": "对象"
         },
         "Obj-Mat": {
             "en_US": "Obj-Mat",
             "fr_FR": "Obj.-Mat.",
             "ja_JP": "オブジェクト-マテリアル",
             "ru_RU": "Объект-Мат",
-            "zh_CN": "物体-材质"
+            "zh_HANS": "物体-材质"
         },
         "Object": {
             "en_US": "Object",
             "fr_FR": "Objet",
             "ja_JP": "オブジェクト",
             "ru_RU": "Объект",
-            "zh_CN": "物体"
+            "zh_HANS": "物体"
         },
         "Object Space": {
             "en_US": "Object Space",
             "fr_FR": "Espace objet",
             "ja_JP": "オブジェクト空间",
             "ru_RU": "Пространство объекта",
-            "zh_CN": "物体空间"
+            "zh_HANS": "物体空间"
         },
         "Object-Material": {
             "en_US": "Object-Material",
             "fr_FR": "Objet-Matériau",
             "ja_JP": "オブジェクト-マテリアル",
             "ru_RU": "Объект-Материал",
-            "zh_CN": "物体-材质"
+            "zh_HANS": "物体-材质"
         },
         "Objects": {
             "en_US": "Objects",
             "fr_FR": "Objets",
             "ja_JP": "オブジェクト",
             "ru_RU": "Объекты",
-            "zh_CN": "物体列表"
+            "zh_HANS": "物体列表"
         },
         "One-Click PBR Setup": {
             "en_US": "One-Click PBR Setup",
             "fr_FR": "Configuration PBR en un clic",
             "ja_JP": "ワンクリックPBR設定",
             "ru_RU": "Настройка PBR в один клик",
-            "zh_CN": "一键 PBR 快速设置"
+            "zh_HANS": "一键 PBR 快速设置"
         },
         "Only Local": {
             "en_US": "Only Local",
             "fr_FR": "Seulement local",
             "ja_JP": "ローカルのみ",
             "ru_RU": "Только локально",
-            "zh_CN": "仅本地"
+            "zh_HANS": "仅本地"
         },
         "OpenEXR": {
             "en_US": "OpenEXR",
             "fr_FR": "Format OpenEXR",
             "ja_JP": "OpenEXR 形式",
             "ru_RU": "Формат OpenEXR",
-            "zh_CN": "OpenEXR 格式"
+            "zh_HANS": "OpenEXR 格式"
         },
         "OpenEXR MultiLayer": {
             "en_US": "OpenEXR MultiLayer",
             "fr_FR": "OpenEXR multicouche",
             "ja_JP": "OpenEXRマルチレイヤー",
             "ru_RU": "Многослойный OpenEXR",
-            "zh_CN": "OpenEXR 多层"
+            "zh_HANS": "OpenEXR 多层"
         },
         "Output": {
             "en_US": "Output",
             "fr_FR": "Sortie",
             "ja_JP": "出力",
             "ru_RU": "Вывод",
-            "zh_CN": "输出"
+            "zh_HANS": "输出"
         },
         "Output Socket": {
             "en_US": "Output Socket",
             "fr_FR": "Prise de sortie",
             "ja_JP": "出力ソケット",
             "ru_RU": "Выходной сокет",
-            "zh_CN": "输出插孔"
+            "zh_HANS": "输出插孔"
         },
         "Output image in Cineon format": {
             "en_US": "Output image in Cineon format",
             "fr_FR": "Image de sortie au format Cineon",
             "ja_JP": "Cineon形式で画像を出力",
             "ru_RU": "Вывод изображения в формате Cineon",
-            "zh_CN": "以 Cineon 格式输出图像"
+            "zh_HANS": "以 Cineon 格式输出图像"
         },
         "Output image in DPX format": {
             "en_US": "Output image in DPX format",
             "fr_FR": "Image de sortie au format DPX",
             "ja_JP": "DPX形式で画像を出力",
             "ru_RU": "Вывод изображения в формате DPX",
-            "zh_CN": "以 DPX 格式输出图像"
+            "zh_HANS": "以 DPX 格式输出图像"
         },
         "Output image in JPEG 2000 format": {
             "en_US": "Output image in JPEG 2000 format",
             "fr_FR": "Image de sortie au format JPEG 2000",
             "ja_JP": "JPEG 2000形式で画像を出力",
             "ru_RU": "Вывод изображения в формате JPEG 2000",
-            "zh_CN": "以 JPEG 2000 格式输出图像"
+            "zh_HANS": "以 JPEG 2000 格式输出图像"
         },
         "Output image in JPEG format": {
             "en_US": "Output image in JPEG format",
             "fr_FR": "Image de sortie au format JPEG",
             "ja_JP": "JPEG形式で画像を出力",
             "ru_RU": "Вывод изображения в формате JPEG",
-            "zh_CN": "以 JPEG 格式输出图像"
+            "zh_HANS": "以 JPEG 格式输出图像"
         },
         "Output image in OpenEXR format": {
             "en_US": "Output image in OpenEXR format",
             "fr_FR": "Image de sortie au format OpenEXR",
             "ja_JP": "OpenEXR形式で画像を出力",
             "ru_RU": "Вывод изображения в формате OpenEXR",
-            "zh_CN": "以 OpenEXR 格式输出图像"
+            "zh_HANS": "以 OpenEXR 格式输出图像"
         },
         "Output image in PNG format": {
             "en_US": "Output image in PNG format",
             "fr_FR": "Image de sortie au format PNG",
             "ja_JP": "PNG形式で画像を出力",
             "ru_RU": "Вывод изображения в формате PNG",
-            "zh_CN": "以 PNG 格式输出图像"
+            "zh_HANS": "以 PNG 格式输出图像"
         },
         "Output image in Radiance HDR format": {
             "en_US": "Output image in Radiance HDR format",
             "fr_FR": "Image de sortie au format Radiance HDR",
             "ja_JP": "Radiance HDR形式で画像を出力",
             "ru_RU": "Вывод изображения в формате Radiance HDR",
-            "zh_CN": "以 Radiance HDR 格式输出图像"
+            "zh_HANS": "以 Radiance HDR 格式输出图像"
         },
         "Output image in SGI IRIS format": {
             "en_US": "Output image in SGI IRIS format",
             "fr_FR": "Image de sortie au format SGI IRIS",
             "ja_JP": "SGI IRIS形式で画像を出力",
             "ru_RU": "Вывод изображения в формате SGI IRIS",
-            "zh_CN": "以 SGI IRIS 格式输出图像"
+            "zh_HANS": "以 SGI IRIS 格式输出图像"
         },
         "Output image in TIFF format": {
             "en_US": "Output image in TIFF format",
             "fr_FR": "Image de sortie au format TIFF",
             "ja_JP": "TIFF形式で画像を出力",
             "ru_RU": "Вывод изображения в формате TIFF",
-            "zh_CN": "以 TIFF 格式输出图像"
+            "zh_HANS": "以 TIFF 格式输出图像"
         },
         "Output image in Targa format": {
             "en_US": "Output image in Targa format",
             "fr_FR": "Image de sortie au format Targa",
             "ja_JP": "Targa形式で画像を出力",
             "ru_RU": "Вывод изображения в формате Targa",
-            "zh_CN": "以 Targa 格式输出图像"
+            "zh_HANS": "以 Targa 格式输出图像"
         },
         "Output image in WebP format": {
             "en_US": "Output image in WebP format",
             "fr_FR": "Image de sortie au format WebP",
             "ja_JP": "WebP形式で画像を出力",
             "ru_RU": "Вывод изображения в формате WebP",
-            "zh_CN": "以 WebP 格式输出图像"
+            "zh_HANS": "以 WebP 格式输出图像"
         },
         "Output image in bitmap format": {
             "en_US": "Output image in bitmap format",
             "fr_FR": "Image de sortie au format bitmap",
             "ja_JP": "ビットマップ形式で画像を出力",
             "ru_RU": "Вывод изображения в формате bitmap",
-            "zh_CN": "以 Bitmap 格式输出图像"
+            "zh_HANS": "以 Bitmap 格式输出图像"
         },
         "Output image in multilayer OpenEXR format": {
             "en_US": "Output image in multilayer OpenEXR format",
             "fr_FR": "Image de sortie au format OpenEXR multicouche",
             "ja_JP": "マルチレイヤーOpenEXR形式で画像を出力",
             "ru_RU": "Вывод изображения в многослойном формате OpenEXR",
-            "zh_CN": "以多层 OpenEXR 格式输出图像"
+            "zh_HANS": "以多层 OpenEXR 格式输出图像"
         },
         "Output image in uncompressed Targa format": {
             "en_US": "Output image in uncompressed Targa format",
             "fr_FR": "Image de sortie au format Targa non compressé",
             "ja_JP": "非圧縮Targa形式で画像を出力",
             "ru_RU": "Вывод изображения в несжатом формате Targa",
-            "zh_CN": "以无压缩 Targa 格式输出图像"
+            "zh_HANS": "以无压缩 Targa 格式输出图像"
         },
         "Override Global Color Settings": {
             "en_US": "Override Global Color Settings",
             "fr_FR": "Remplacer les paramètres globaux de couleur",
             "ja_JP": "グローバルカラー設定を上書き",
             "ru_RU": "Переопределить глобальные настройки цвета",
-            "zh_CN": "覆盖全局颜色设置"
+            "zh_HANS": "覆盖全局颜色设置"
         },
         "Override Size": {
             "en_US": "Override Size",
             "fr_FR": "Remplacer la taille",
             "ja_JP": "サイズを上書き",
             "ru_RU": "Переопределить размер",
-            "zh_CN": "覆盖尺寸"
+            "zh_HANS": "覆盖尺寸"
         },
         "PBR": {
             "en_US": "PBR",
             "fr_FR": "PBR",
             "ja_JP": "PBR",
             "ru_RU": "PBR",
-            "zh_CN": "PBR"
+            "zh_HANS": "PBR"
         },
         "PBR Conversion": {
             "en_US": "PBR Conversion",
             "fr_FR": "Conversion PBR",
             "ja_JP": "PBR変換",
             "ru_RU": "Преобразование PBR",
-            "zh_CN": "PBR 转换"
+            "zh_HANS": "PBR 转换"
         },
         "PIZ": {
             "en_US": "PIZ",
             "fr_FR": "PIZ",
             "ja_JP": "PIZ",
             "ru_RU": "PIZ",
-            "zh_CN": "PIZ"
+            "zh_HANS": "PIZ"
         },
         "PNG": {
             "en_US": "PNG",
             "fr_FR": "PNG",
             "ja_JP": "PNG",
             "ru_RU": "PNG",
-            "zh_CN": "PNG"
-        },
-        "Pack Island": {
-            "en_US": "Pack Island",
-            "fr_FR": "Empaqueter les îles",
-            "ja_JP": "アイランドをパッキング",
-            "ru_RU": "Упаковать острова",
-            "zh_CN": "岛屿打包"
-        },
-        "Pack UV island for current UV": {
-            "en_US": "Pack UV island for current UV",
-            "fr_FR": "Empaqueter les îles UV pour l'UV actuel",
-            "ja_JP": "現在のUVのUVアイランドをパッキング",
-            "ru_RU": "Упаковать UV-острова для текущего UV",
-            "zh_CN": "为当前 UV 打包 UV 岛屿"
+            "zh_HANS": "PNG"
         },
         "Packbits": {
             "en_US": "Packbits",
             "fr_FR": "Compression Packbits",
             "ja_JP": "Packbits 圧縮",
             "ru_RU": "Сжатие Packbits",
-            "zh_CN": "Packbits 压缩"
+            "zh_HANS": "Packbits 压缩"
         },
         "Packbits compression": {
             "en_US": "Packbits compression",
             "fr_FR": "Compression Packbits",
             "ja_JP": "Packbits压缩",
             "ru_RU": "Сжатие Packbits",
-            "zh_CN": "Packbits 压缩"
+            "zh_HANS": "Packbits 压缩"
         },
         "Path": {
             "en_US": "Path",
             "fr_FR": "Chemin",
             "ja_JP": "パス",
             "ru_RU": "Путь",
-            "zh_CN": "路径"
+            "zh_HANS": "路径"
         },
         "Path Valid": {
             "en_US": "Path Valid",
             "fr_FR": "Chemin valide",
             "ja_JP": "パス有効",
             "ru_RU": "Путь корректен",
-            "zh_CN": "路径有效"
+            "zh_HANS": "路径有效"
         },
         "Path to the JSON preset file to load on new scenes": {
             "en_US": "Path to the JSON preset file to load on new scenes",
             "fr_FR": "Chemin du fichier JSON de préréglage à charger pour les nouvelles scènes",
             "ja_JP": "新規シーンで読み込むJSONプリセットファイルへのパス",
             "ru_RU": "Путь к JSON-файлу пресета для загрузки в новых сценах",
-            "zh_CN": "新场景加载的 JSON 预设文件路径"
+            "zh_HANS": "新场景加载的 JSON 预设文件路径"
         },
         "Position": {
             "en_US": "Position",
             "fr_FR": "Position",
             "ja_JP": "位置",
             "ru_RU": "Позиция",
-            "zh_CN": "位置"
+            "zh_HANS": "位置"
         },
         "Pre": {
             "en_US": "Pre",
             "fr_FR": "Pré",
             "ja_JP": "接头辞",
             "ru_RU": "Пре",
-            "zh_CN": "前缀"
+            "zh_HANS": "前缀"
         },
         "Prefix": {
             "en_US": "Prefix",
             "fr_FR": "Préfixe",
             "ja_JP": "接头辞",
             "ru_RU": "Префикс",
-            "zh_CN": "前缀"
+            "zh_HANS": "前缀"
         },
         "Preset Library": {
             "en_US": "Preset Library",
             "fr_FR": "Bibliothèque de préréglages",
             "ja_JP": "プリセットライブラリ",
             "ru_RU": "Библиотека пресетов",
-            "zh_CN": "预设库"
+            "zh_HANS": "预设库"
         },
         "Preset Library Path": {
             "en_US": "Preset Library Path",
             "fr_FR": "Chemin de la bibliothèque de préréglages",
             "ja_JP": "プリセットライブラリパス",
             "ru_RU": "Путь к библиотеке пресетов",
-            "zh_CN": "预设库路径"
+            "zh_HANS": "预设库路径"
         },
         "Progress": {
             "en_US": "Progress",
             "fr_FR": "Progrès",
             "ja_JP": "进捗",
             "ru_RU": "Прогресс",
-            "zh_CN": "进度"
+            "zh_HANS": "进度"
         },
         "Proximity": {
             "en_US": "Proximity",
             "fr_FR": "Proximité",
             "ja_JP": "近接",
             "ru_RU": "Близость",
-            "zh_CN": "邻近度"
+            "zh_HANS": "邻近度"
         },
         "Pxr24": {
             "en_US": "Pxr24",
             "fr_FR": "Compression Pxr24",
             "ja_JP": "Pxr24 圧縮",
             "ru_RU": "Сжатие Pxr24",
-            "zh_CN": "Pxr24 压缩"
+            "zh_HANS": "Pxr24 压缩"
         },
         "Quality": {
             "en_US": "Quality",
             "fr_FR": "Qualité",
             "ja_JP": "质量",
             "ru_RU": "Качество",
-            "zh_CN": "质量"
+            "zh_HANS": "质量"
         },
         "Quick Bake Selected": {
             "en_US": "Quick Bake Selected",
             "fr_FR": "Bake rapide de la sélection",
             "ja_JP": "選択項目をクイックベイク",
             "ru_RU": "Быстро запечь выбранное",
-            "zh_CN": "快速烘焙选中项"
+            "zh_HANS": "快速烘焙选中项"
         },
         "Quick Bake preparation failed (check logs).": {
             "en_US": "Quick Bake preparation failed (check logs).",
             "fr_FR": "La préparation du bake rapide a échoué (voir les logs).",
             "ja_JP": "クイックベイクの準備に失敗しました（ログを確認してください）。",
             "ru_RU": "Подготовка быстрого запекания не удалась (смотрите логи).",
-            "zh_CN": "快速烘焙准备失败（请检查日志）。"
+            "zh_HANS": "快速烘焙准备失败（请检查日志）。"
         },
         "RGB": {
             "en_US": "RGB",
             "fr_FR": "RGB",
             "ja_JP": "RGB",
             "ru_RU": "RGB",
-            "zh_CN": "RGB"
+            "zh_HANS": "RGB"
         },
         "RGB and Alpha channel": {
             "en_US": "RGB and Alpha channel",
             "fr_FR": "Canaux RGB et Alpha",
             "ja_JP": "RGBおよびアルファチャンネル",
             "ru_RU": "Каналы RGB и Альфа",
-            "zh_CN": "RGB 和 Alpha 通道"
+            "zh_HANS": "RGB 和 Alpha 通道"
         },
         "RGB channel": {
             "en_US": "RGB channel",
             "fr_FR": "Canal RGB",
             "ja_JP": "RGBチャンネル",
             "ru_RU": "RGB канал",
-            "zh_CN": "RGB 通道"
+            "zh_HANS": "RGB 通道"
         },
         "RGBA": {
             "en_US": "RGBA",
             "fr_FR": "RGBA",
             "ja_JP": "RGBA",
             "ru_RU": "RGBA",
-            "zh_CN": "RGBA"
+            "zh_HANS": "RGBA"
         },
         "RLE": {
             "en_US": "RLE",
             "fr_FR": "RLE",
             "ja_JP": "RLE",
             "ru_RU": "RLE",
-            "zh_CN": "RLE"
+            "zh_HANS": "RLE"
         },
         "Radiance HDR": {
             "en_US": "Radiance HDR",
             "fr_FR": "Format Radiance HDR",
             "ja_JP": "Radiance HDR 形式",
             "ru_RU": "Формат Radiance HDR",
-            "zh_CN": "Radiance HDR 格式"
+            "zh_HANS": "Radiance HDR 格式"
         },
         "Radius": {
             "en_US": "Radius",
             "fr_FR": "Rayon",
             "ja_JP": "半径",
             "ru_RU": "Радиус",
-            "zh_CN": "半径"
+            "zh_HANS": "半径"
         },
         "Random Seed": {
             "en_US": "Random Seed",
             "fr_FR": "Graine aléatoire",
             "ja_JP": "ランダムシード",
             "ru_RU": "Случайное зерно",
-            "zh_CN": "随机种子"
+            "zh_HANS": "随机种子"
         },
         "Ray-cast based smart offset": {
             "en_US": "Ray-cast based smart offset",
             "fr_FR": "Décalage intelligent basé sur le lancer de rayons",
             "ja_JP": "レイキャストベースのスマートオフセット",
             "ru_RU": "Умное смещение на основе трассировки лучей",
-            "zh_CN": "基于射线检测的智能偏移"
+            "zh_HANS": "基于射线检测的智能偏移"
         },
         "Red": {
             "en_US": "Red",
             "fr_FR": "Rouge",
             "ja_JP": "赤",
             "ru_RU": "Красный",
-            "zh_CN": "红色"
+            "zh_HANS": "红色"
         },
         "Red (R)": {
             "en_US": "Red (R)",
             "fr_FR": "Rouge (R)",
             "ja_JP": "赤 (R)",
             "ru_RU": "Красный (R)",
-            "zh_CN": "红色（R）"
+            "zh_HANS": "红色（R）"
         },
         "Refresh Presets": {
             "en_US": "Refresh Presets",
             "fr_FR": "Actualiser les préréglages",
             "ja_JP": "プリセットを更新",
             "ru_RU": "Обновить пресеты",
-            "zh_CN": "刷新预设"
+            "zh_HANS": "刷新预设"
         },
         "Refresh UDIM Tiles": {
             "en_US": "Refresh UDIM Tiles",
             "fr_FR": "Actualiser les tuiles UDIM",
             "ja_JP": "UDIMタイルを更新",
             "ru_RU": "Обновить UDIM-плитки",
-            "zh_CN": "刷新 UDIM 瓦片"
+            "zh_HANS": "刷新 UDIM 瓦片"
         },
         "Remove all items": {
             "en_US": "Remove all items",
             "fr_FR": "Supprimer tous les éléments",
             "ja_JP": "すべての項目を削除",
             "ru_RU": "Удалить все элементы",
-            "zh_CN": "移除全部项"
+            "zh_HANS": "移除全部项"
         },
         "Remove the selected item": {
             "en_US": "Remove the selected item",
             "fr_FR": "Supprimer l'élément sélectionné",
             "ja_JP": "選択項目を削除",
             "ru_RU": "Удалить выбранный элемент",
-            "zh_CN": "移除选中项"
+            "zh_HANS": "移除选中项"
         },
         "Requires 'Selected to Active' mode.": {
             "en_US": "Requires 'Selected to Active' mode.",
             "fr_FR": "Nécessite le mode 'Selected to Active'.",
             "ja_JP": "「Selected to Active」モードが必要です。",
             "ru_RU": "Требуется режим 'Selected to Active'.",
-            "zh_CN": "需要“选中到活动对象”模式。"
+            "zh_HANS": "需要“选中到活动对象”模式。"
         },
         "Res & Save": {
             "en_US": "Res & Save",
             "fr_FR": "Résolution et sauvegarde",
             "ja_JP": "解像度と保存",
             "ru_RU": "Разрешение и сохранение",
-            "zh_CN": "分辨率与保存"
+            "zh_HANS": "分辨率与保存"
         },
         "Reset": {
             "en_US": "Reset",
             "fr_FR": "Réinitialiser",
             "ja_JP": "リセット",
             "ru_RU": "Сброс",
-            "zh_CN": "重置"
+            "zh_HANS": "重置"
         },
         "Resume Interrupted Bake": {
             "en_US": "Resume Interrupted Bake",
             "fr_FR": "Reprendre le bake interrompu",
             "ja_JP": "中断したベイクを再開",
             "ru_RU": "Возобновить прерванное запекание",
-            "zh_CN": "恢复中断的烘焙"
+            "zh_HANS": "恢复中断的烘焙"
         },
         "Roughness": {
             "en_US": "Roughness",
             "fr_FR": "Rugosité",
             "ja_JP": "粗さ",
             "ru_RU": "Шероховатость",
-            "zh_CN": "粗糙度"
+            "zh_HANS": "粗糙度"
         },
         "Run Development Tests": {
             "en_US": "Run Development Tests",
             "fr_FR": "Lancer les tests de développement",
             "ja_JP": "開発テストを実行",
             "ru_RU": "Запустить тесты разработки",
-            "zh_CN": "运行插件安全性开发测试"
+            "zh_HANS": "运行插件安全性开发测试"
         },
         "Run Safety Audit": {
             "en_US": "Run Safety Audit",
             "fr_FR": "Lancer l'audit de sécurité",
             "ja_JP": "安全監査を実行",
             "ru_RU": "Запустить аудит безопасности",
-            "zh_CN": "运行安全审计"
+            "zh_HANS": "运行安全审计"
         },
         "SSS": {
             "en_US": "SSS",
             "fr_FR": "SSS",
             "ja_JP": "SSS",
             "ru_RU": "SSS",
-            "zh_CN": "SSS"
+            "zh_HANS": "SSS"
         },
         "SSS Anisotropy": {
             "en_US": "SSS Anisotropy",
             "fr_FR": "Anisotropie SSS",
             "ja_JP": "SSS異方性",
             "ru_RU": "Анизотропия SSS",
-            "zh_CN": "SSS 各向异性"
+            "zh_HANS": "SSS 各向异性"
         },
         "SSS Base Color": {
             "en_US": "SSS Base Color",
             "fr_FR": "Couleur de base SSS",
             "ja_JP": "SSSベースカラー",
             "ru_RU": "Базовый цвет SSS",
-            "zh_CN": "SSS 基础颜色"
+            "zh_HANS": "SSS 基础颜色"
         },
         "START BAKE PIPELINE": {
             "en_US": "START BAKE PIPELINE",
             "fr_FR": "DÉMARRER LE PIPELINE DE BAKE",
             "ja_JP": "ベイクパイプラインを開始",
             "ru_RU": "ЗАПУСТИТЬ КОНВЕЙЕР ЗАПЕКАНИЯ",
-            "zh_CN": "开始烘焙流程"
+            "zh_HANS": "开始烘焙流程"
         },
         "Safety Margin": {
             "en_US": "Safety Margin",
             "fr_FR": "Marge de sécurité",
             "ja_JP": "安全マージン",
             "ru_RU": "Защитный отступ",
-            "zh_CN": "安全外边距"
+            "zh_HANS": "安全外边距"
         },
         "Sample": {
             "en_US": "Sample",
             "fr_FR": "Échantillon",
             "ja_JP": "サンプル",
             "ru_RU": "Сэмпл",
-            "zh_CN": "采样"
+            "zh_HANS": "采样"
         },
         "Samples": {
             "en_US": "Samples",
             "fr_FR": "Échantillons",
             "ja_JP": "サンプル数",
             "ru_RU": "Сэмплы",
-            "zh_CN": "采样"
+            "zh_HANS": "采样"
         },
         "Sampling": {
             "en_US": "Sampling",
             "fr_FR": "Échantillonnage",
             "ja_JP": "サンプリング",
             "ru_RU": "Сэмплинг",
-            "zh_CN": "采样"
+            "zh_HANS": "采样"
         },
         "Save": {
             "en_US": "Save",
             "fr_FR": "Enregistrer",
             "ja_JP": "保存",
             "ru_RU": "Сохранить",
-            "zh_CN": "保存"
+            "zh_HANS": "保存"
         },
         "Save And Quit": {
             "en_US": "Save And Quit",
             "fr_FR": "Sauvegarder et quitter",
             "ja_JP": "保存して终了",
             "ru_RU": "Сохранить и выйти",
-            "zh_CN": "保存并退出"
+            "zh_HANS": "保存并退出"
         },
         "Save External": {
             "en_US": "Save External",
             "fr_FR": "Sauvegarde externe",
             "ja_JP": "外部保存",
             "ru_RU": "Внешнее сохранение",
-            "zh_CN": "外部保存"
+            "zh_HANS": "外部保存"
         },
         "Save Path": {
             "en_US": "Save Path",
             "fr_FR": "Chemin de sauvegarde",
             "ja_JP": "保存パス",
             "ru_RU": "Путь сохранения",
-            "zh_CN": "保存路径"
+            "zh_HANS": "保存路径"
         },
         "Save Time": {
             "en_US": "Save Time",
             "fr_FR": "Temps d'enregistrement",
             "ja_JP": "保存時間",
             "ru_RU": "Время сохранения",
-            "zh_CN": "保存时间"
+            "zh_HANS": "保存时间"
         },
         "Seam ID": {
             "en_US": "Seam ID",
             "fr_FR": "ID de couture",
             "ja_JP": "シームID",
             "ru_RU": "ID шва",
-            "zh_CN": "缝线 ID"
-        },
-        "Select": {
-            "en_US": "Select",
-            "fr_FR": "Sélectionner",
-            "ja_JP": "選択",
-            "ru_RU": "Выбрать",
-            "zh_CN": "选择"
+            "zh_HANS": "缝线 ID"
         },
         "Select an active shader node to bake.": {
             "en_US": "Select an active shader node to bake.",
             "fr_FR": "Sélectionnez un nœud shader actif à baker.",
             "ja_JP": "ベイクするアクティブなシェーダーノードを選択してください。",
             "ru_RU": "Выберите активный шейдерный узел для запекания.",
-            "zh_CN": "请选择一个活动着色器节点进行烘焙。"
+            "zh_HANS": "请选择一个活动着色器节点进行烘焙。"
         },
         "Select high poly objects first.": {
             "en_US": "Select high poly objects first.",
             "fr_FR": "Sélectionnez d'abord les objets high poly.",
             "ja_JP": "先に高ポリオブジェクトを選択してください。",
             "ru_RU": "Сначала выберите high poly объекты.",
-            "zh_CN": "请先选择高模对象。"
+            "zh_HANS": "请先选择高模对象。"
         },
         "Select mesh objects to bake.": {
             "en_US": "Select mesh objects to bake.",
             "fr_FR": "Sélectionnez les objets maillage à baker.",
             "ja_JP": "ベイクするメッシュオブジェクトを選択してください。",
             "ru_RU": "Выберите объекты-меши для запекания.",
-            "zh_CN": "请选择要烘焙的网格物体。"
+            "zh_HANS": "请选择要烘焙的网格物体。"
         },
         "Selected node has no output sockets.": {
             "en_US": "Selected node has no output sockets.",
             "fr_FR": "Le nœud sélectionné n'a pas de sockets de sortie.",
             "ja_JP": "選択したノードには出力ソケットがありません。",
             "ru_RU": "У выбранного узла нет выходных сокетов.",
-            "zh_CN": "选中的节点没有输出插槽。"
+            "zh_HANS": "选中的节点没有输出插槽。"
         },
-        "Separate": {
-            "en_US": "Separate",
-            "fr_FR": "Séparer",
-            "ja_JP": "分离",
-            "ru_RU": "Разделить",
-            "zh_CN": "分离"
-        },
-        "Separator": {
-            "en_US": "Separator",
-            "fr_FR": "Séparateur",
-            "ja_JP": "区切り文字",
-            "ru_RU": "Разделитель",
-            "zh_CN": "分隔符"
+        "Selected result has no image to export.": {
+            "en_US": "Selected result has no image to export.",
+            "fr_FR": "Le resultat selectionne n'a pas d'image a exporter.",
+            "ja_JP": "選択した結果にエクスポート可能な画像がありません。",
+            "ru_RU": "У выбранного результата нет изображения для экспорта.",
+            "zh_HANS": "所选结果没有可导出的图像。"
         },
         "Sep": {
             "en_US": "Sep",
             "fr_FR": "Sép.",
             "ja_JP": "区切り",
             "ru_RU": "Разд.",
-            "zh_CN": "分隔"
+            "zh_HANS": "分隔"
+        },
+        "Separate": {
+            "en_US": "Separate",
+            "fr_FR": "Séparer",
+            "ja_JP": "分离",
+            "ru_RU": "Разделить",
+            "zh_HANS": "分离"
+        },
+        "Separator": {
+            "en_US": "Separator",
+            "fr_FR": "Séparateur",
+            "ja_JP": "区切り文字",
+            "ru_RU": "Разделитель",
+            "zh_HANS": "分隔符"
         },
         "Settings Suffix": {
             "en_US": " Settings",
             "fr_FR": " - paramètres",
             "ja_JP": "設定",
             "ru_RU": " — настройки",
-            "zh_CN": "设置"
+            "zh_HANS": "设置"
         },
         "Shadow": {
             "en_US": "Shadow",
             "fr_FR": "Ombre",
             "ja_JP": "影",
             "ru_RU": "Тень",
-            "zh_CN": "阴影"
+            "zh_HANS": "阴影"
         },
         "Sheen": {
             "en_US": "Sheen",
             "fr_FR": "Velours",
             "ja_JP": "シーン",
             "ru_RU": "Шелковистость",
-            "zh_CN": "绒面"
+            "zh_HANS": "绒面"
         },
         "Sheen Roughness": {
             "en_US": "Sheen Roughness",
             "fr_FR": "Rugosité du velours",
             "ja_JP": "シーンの粗さ",
             "ru_RU": "Шероховатость шелковистости",
-            "zh_CN": "绒面粗糙度"
+            "zh_HANS": "绒面粗糙度"
         },
         "Sheen Tint": {
             "en_US": "Sheen Tint",
             "fr_FR": "Teinte du velours",
             "ja_JP": "シーンの色味",
             "ru_RU": "Оттенок шелковистости",
-            "zh_CN": "绒面色调"
+            "zh_HANS": "绒面色调"
         },
         "Sheen Weight": {
             "en_US": "Sheen Weight",
             "fr_FR": "Poids du velours",
             "ja_JP": "シーンの強さ",
             "ru_RU": "Вес шелковистости",
-            "zh_CN": "绒面权重"
+            "zh_HANS": "绒面权重"
         },
         "Show real-time channel packing preview in viewport": {
             "en_US": "Show real-time channel packing preview in viewport",
             "fr_FR": "Afficher l'aperçu en temps réel du packing des canaux dans la vue",
             "ja_JP": "ビューポートでチャンネルパックのリアルタイムプレビューを表示",
             "ru_RU": "Показывать в окне просмотра предпросмотр упаковки каналов в реальном времени",
-            "zh_CN": "在视口中显示实时通道打包预览"
-        },
-        "Simple": {
-            "en_US": "Simple",
-            "fr_FR": "Simple",
-            "ja_JP": "简易",
-            "ru_RU": "Простой",
-            "zh_CN": "简单"
-        },
-        "Simple Jobs Setting": {
-            "en_US": "Simple Jobs Setting",
-            "fr_FR": "Paramètres de tâches simples",
-            "ja_JP": "简易ジョブ设定",
-            "ru_RU": "Простые настройки задач",
-            "zh_CN": "简单任务设置"
+            "zh_HANS": "在视口中显示实时通道打包预览"
         },
         "Single Object Bake": {
             "en_US": "Single Object Bake",
             "fr_FR": "Cuisson d'un seul objet",
             "ja_JP": "単一オブジェクトベイク",
             "ru_RU": "Запекание одного объекта",
-            "zh_CN": "单个物体烘焙"
+            "zh_HANS": "单个物体烘焙"
         },
         "Size": {
             "en_US": "Size",
             "fr_FR": "Taille",
             "ja_JP": "サイズ",
             "ru_RU": "Размер",
-            "zh_CN": "尺寸"
-        },
-        "Slope": {
-            "en_US": "Slope",
-            "fr_FR": "Pente",
-            "ja_JP": "傾斜",
-            "ru_RU": "Наклон",
-            "zh_CN": "斜率"
+            "zh_HANS": "尺寸"
         },
         "Smart Intelligence": {
             "en_US": "Smart Intelligence",
             "fr_FR": "Intelligence intelligente",
             "ja_JP": "スマート解析",
             "ru_RU": "Умный анализ",
-            "zh_CN": "智能分析"
+            "zh_HANS": "智能分析"
         },
         "Smart Match (High -> Low)": {
             "en_US": "Smart Match (High -> Low)",
             "fr_FR": "Correspondance intelligente (High -> Low)",
             "ja_JP": "スマート一致 (High -> Low)",
             "ru_RU": "Умное сопоставление (High -> Low)",
-            "zh_CN": "智能匹配（高模 -> 低模）"
-        },
-        "Smart Project": {
-            "en_US": "Smart Project",
-            "fr_FR": "Projection intelligente",
-            "ja_JP": "スマート投影",
-            "ru_RU": "Умное проецирование",
-            "zh_CN": "智能投影"
+            "zh_HANS": "智能匹配（高模 -> 低模）"
         },
         "Source": {
             "en_US": "Source",
             "fr_FR": "Source",
             "ja_JP": "ソース",
             "ru_RU": "Источник",
-            "zh_CN": "源"
+            "zh_HANS": "源"
         },
         "Space": {
             "en_US": "Space",
             "fr_FR": "Espace",
             "ja_JP": "空间",
             "ru_RU": "Пространство",
-            "zh_CN": "空间"
+            "zh_HANS": "空间"
         },
         "Specular": {
             "en_US": "Specular",
             "fr_FR": "Spéculaire",
             "ja_JP": "スペキュラー",
             "ru_RU": "Спекуляр",
-            "zh_CN": "镜面"
+            "zh_HANS": "镜面"
         },
         "Specular IOR Level": {
             "en_US": "Specular IOR Level",
             "fr_FR": "Niveau d'IOR spéculaire",
             "ja_JP": "スペキュラーIORレベル",
             "ru_RU": "Уровень IOR блика",
-            "zh_CN": "镜面 IOR 级别"
+            "zh_HANS": "镜面 IOR 级别"
         },
         "Specular Tint": {
             "en_US": "Specular Tint",
             "fr_FR": "Teinte spéculaire",
             "ja_JP": "スペキュラー色味",
             "ru_RU": "Оттенок блика",
-            "zh_CN": "镜面色调"
+            "zh_HANS": "镜面色调"
         },
         "Split Material Bake": {
             "en_US": "Split Material Bake",
             "fr_FR": "Cuisson par matériau séparé",
             "ja_JP": "マテリアル分割ベイク",
             "ru_RU": "Запекание с разделением по материалам",
-            "zh_CN": "拆分材质烘焙"
+            "zh_HANS": "拆分材质烘焙"
         },
         "Standard": {
             "en_US": "Standard",
             "fr_FR": "Standard",
             "ja_JP": "標準",
             "ru_RU": "Стандарт",
-            "zh_CN": "标准"
+            "zh_HANS": "标准"
         },
         "Standard PBR channels enabled.": {
             "en_US": "Standard PBR channels enabled.",
             "fr_FR": "Canaux PBR standard activés.",
             "ja_JP": "標準PBRチャンネルを有効化しました。",
             "ru_RU": "Стандартные PBR-каналы включены.",
-            "zh_CN": "标准 PBR 通道已启用。"
+            "zh_HANS": "标准 PBR 通道已启用。"
         },
         "Standard normal offset": {
             "en_US": "Standard normal offset",
             "fr_FR": "Décalage de normale standard",
             "ja_JP": "標準法線オフセット",
             "ru_RU": "Стандартное смещение нормали",
-            "zh_CN": "标准法线偏移"
+            "zh_HANS": "标准法线偏移"
         },
         "Start": {
             "en_US": "Start",
             "fr_FR": "Début",
             "ja_JP": "开始",
             "ru_RU": "Старт",
-            "zh_CN": "起始"
+            "zh_HANS": "起始"
         },
         "Start Index": {
             "en_US": "Start Index",
             "fr_FR": "Index de départ",
             "ja_JP": "开始インデックス",
             "ru_RU": "Нач. индекс",
-            "zh_CN": "起始索引"
+            "zh_HANS": "起始索引"
         },
         "Status": {
             "en_US": "Status",
             "fr_FR": "État",
             "ja_JP": "ステータス",
             "ru_RU": "Статус",
-            "zh_CN": "状态"
+            "zh_HANS": "状态"
         },
         "Subsurface": {
             "en_US": "Subsurface",
             "fr_FR": "Sous-surface",
             "ja_JP": "サブサーフェス",
             "ru_RU": "Подповерхность",
-            "zh_CN": "次表面"
+            "zh_HANS": "次表面"
         },
         "Subsurface Anisotropy": {
             "en_US": "Subsurface Anisotropy",
             "fr_FR": "Anisotropie de sous-surface",
             "ja_JP": "サブサーフェス異方性",
             "ru_RU": "Анизотропия подповерхности",
-            "zh_CN": "次表面各向异性"
+            "zh_HANS": "次表面各向异性"
         },
         "Subsurface Color": {
             "en_US": "Subsurface Color",
             "fr_FR": "Couleur de sous-surface",
             "ja_JP": "サブサーフェスカラー",
             "ru_RU": "Цвет подповерхности",
-            "zh_CN": "次表面颜色"
+            "zh_HANS": "次表面颜色"
         },
         "Subsurface Radius": {
             "en_US": "Subsurface Radius",
             "fr_FR": "Rayon de sous-surface",
             "ja_JP": "サブサーフェス半径",
             "ru_RU": "Радиус подповерхности",
-            "zh_CN": "次表面半径"
+            "zh_HANS": "次表面半径"
         },
         "Subsurface Weight": {
             "en_US": "Subsurface Weight",
             "fr_FR": "Poids de sous-surface",
             "ja_JP": "サブサーフェス強度",
             "ru_RU": "Вес подповерхности",
-            "zh_CN": "次表面权重"
+            "zh_HANS": "次表面权重"
         },
         "Suf": {
             "en_US": "Suf",
             "fr_FR": "Suf.",
             "ja_JP": "接尾辞",
             "ru_RU": "Суф",
-            "zh_CN": "后缀"
+            "zh_HANS": "后缀"
         },
         "Suffix": {
             "en_US": "Suffix",
             "fr_FR": "Suffixe",
             "ja_JP": "接尾辞",
             "ru_RU": "Суффикс",
-            "zh_CN": "后缀"
+            "zh_HANS": "后缀"
         },
         "Sync UDIM Tiles": {
             "en_US": "Sync UDIM Tiles",
             "fr_FR": "Synchroniser les tuiles UDIM",
             "ja_JP": "UDIMタイルを同期",
             "ru_RU": "Синхронизировать плитки UDIM",
-            "zh_CN": "同步 UDIM 瓦片"
+            "zh_HANS": "同步 UDIM 瓦片"
         },
         "TIFF": {
             "en_US": "TIFF",
             "fr_FR": "TIFF",
             "ja_JP": "TIFF",
             "ru_RU": "TIFF",
-            "zh_CN": "TIFF"
+            "zh_HANS": "TIFF"
         },
         "TIFF Codec": {
             "en_US": "TIFF Codec",
             "fr_FR": "Codec TIFF",
             "ja_JP": "TIFFコーデック",
             "ru_RU": "Кодек TIFF",
-            "zh_CN": "TIFF 编码"
+            "zh_HANS": "TIFF 编码"
         },
         "Targa": {
             "en_US": "Targa",
             "fr_FR": "Format Targa",
             "ja_JP": "Targa 形式",
             "ru_RU": "Формат Targa",
-            "zh_CN": "Targa 格式"
+            "zh_HANS": "Targa 格式"
         },
         "Targa Raw": {
             "en_US": "Targa Raw",
             "fr_FR": "Format Targa brut",
             "ja_JP": "Targa Raw 形式",
             "ru_RU": "Формат Targa Raw",
-            "zh_CN": "Targa 原始格式"
+            "zh_HANS": "Targa 原始格式"
         },
         "Target": {
             "en_US": "Target",
             "fr_FR": "Cible",
             "ja_JP": "ターゲット",
             "ru_RU": "Цель",
-            "zh_CN": "目标"
+            "zh_HANS": "目标"
         },
         "Target Density": {
             "en_US": "Target Density",
             "fr_FR": "Densité cible",
             "ja_JP": "目標密度",
             "ru_RU": "Целевая плотность",
-            "zh_CN": "目标像素密度"
+            "zh_HANS": "目标像素密度"
         },
         "Target UDIM Tile for this object": {
             "en_US": "Target UDIM Tile for this object",
             "fr_FR": "Tuile UDIM cible pour cet objet",
             "ja_JP": "このオブジェクトのターゲット UDIM タイル",
             "ru_RU": "Целевая плитка UDIM для этого объекта",
-            "zh_CN": "此物体的目标 UDIM 瓦片"
+            "zh_HANS": "此物体的目标 UDIM 瓦片"
         },
         "Target texel density in px/unit": {
             "en_US": "Target texel density in px/unit",
             "fr_FR": "Densité de texels cible en px/unité",
             "ja_JP": "px/単位での目標テクセル密度",
             "ru_RU": "Целевая плотность текселей в px/единицу",
-            "zh_CN": "目标像素密度 (像素/单位)"
+            "zh_HANS": "目标像素密度 (像素/单位)"
         },
         "Test Passed": {
             "en_US": "Test Passed",
             "fr_FR": "Test réussi",
             "ja_JP": "テスト成功",
             "ru_RU": "Тест пройден",
-            "zh_CN": "测试通过"
+            "zh_HANS": "测试通过"
         },
         "Texel": {
             "en_US": "Texel",
             "fr_FR": "Texel",
             "ja_JP": "テクセル",
             "ru_RU": "Тексель",
-            "zh_CN": "纹素"
+            "zh_HANS": "纹素"
         },
         "Texture set index": {
             "en_US": "Texture set index",
             "fr_FR": "Index jeu de textures",
             "ja_JP": "テクスチャセットインデックス",
             "ru_RU": "Индекс набора текстур",
-            "zh_CN": "贴图集索引"
-        },
-        "Thickness": {
-            "en_US": "Thickness",
-            "fr_FR": "Épaisseur",
-            "ja_JP": "厚み",
-            "ru_RU": "Толщина",
-            "zh_CN": "厚度"
+            "zh_HANS": "贴图集索引"
         },
         "Threshold": {
             "en_US": "Threshold",
             "fr_FR": "Seuil",
             "ja_JP": "しきい値",
             "ru_RU": "Порог",
-            "zh_CN": "阈值"
+            "zh_HANS": "阈值"
         },
         "Tile": {
             "en_US": "Tile",
             "fr_FR": "Tuile",
             "ja_JP": "タイル",
             "ru_RU": "Плитка",
-            "zh_CN": "瓦片"
+            "zh_HANS": "瓦片"
         },
         "Time": {
             "en_US": "Time",
             "fr_FR": "Temps",
             "ja_JP": "時間",
             "ru_RU": "Время",
-            "zh_CN": "时间"
+            "zh_HANS": "时间"
         },
         "To Disk": {
             "en_US": "To Disk",
             "fr_FR": "Sur disque",
             "ja_JP": "ディスクへ",
             "ru_RU": "На диск",
-            "zh_CN": "保存到磁盘"
+            "zh_HANS": "保存到磁盘"
         },
         "Toggle Preview": {
             "en_US": "Toggle Preview",
             "fr_FR": "Basculer l'aperçu",
             "ja_JP": "プレビュー切替",
             "ru_RU": "Переключить предпросмотр",
-            "zh_CN": "切换预览"
+            "zh_HANS": "切换预览"
         },
         "Total": {
             "en_US": "Total",
             "fr_FR": "Total",
             "ja_JP": "合計",
             "ru_RU": "Всего",
-            "zh_CN": "总计"
+            "zh_HANS": "总计"
         },
         "Tran": {
             "en_US": "Tran",
             "fr_FR": "Trans.",
             "ja_JP": "透過",
             "ru_RU": "Прозр.",
-            "zh_CN": "透射"
+            "zh_HANS": "透射"
         },
         "Transmission": {
             "en_US": "Transmission",
             "fr_FR": "Transmission",
             "ja_JP": "伝播",
             "ru_RU": "Пропускание",
-            "zh_CN": "透射"
+            "zh_HANS": "透射"
         },
         "Transmission Roughness": {
             "en_US": "Transmission Roughness",
             "fr_FR": "Rugosité de transmission",
             "ja_JP": "透過粗さ",
             "ru_RU": "Шероховатость пропускания",
-            "zh_CN": "透射粗糙度"
+            "zh_HANS": "透射粗糙度"
         },
         "Transmission Weight": {
             "en_US": "Transmission Weight",
             "fr_FR": "Poids de transmission",
             "ja_JP": "透過強度",
             "ru_RU": "Вес пропускания",
-            "zh_CN": "透射权重"
-        },
-        "UDIM Bake": {
-            "en_US": "UDIM Bake",
-            "fr_FR": "Cuisson UDIM",
-            "ja_JP": "UDIMベイク",
-            "ru_RU": "UDIM запекание",
-            "zh_CN": "UDIM 烘焙"
-        },
-        "UDIM Mode": {
-            "en_US": "UDIM Mode",
-            "fr_FR": "Mode UDIM",
-            "ja_JP": "UDIMモード",
-            "ru_RU": "Режим UDIM",
-            "zh_CN": "UDIM 模式"
+            "zh_HANS": "透射权重"
         },
         "UDIM": {
             "en_US": "UDIM",
             "fr_FR": "UDIM",
             "ja_JP": "UDIM",
             "ru_RU": "UDIM",
-            "zh_CN": "UDIM"
+            "zh_HANS": "UDIM"
+        },
+        "UDIM Bake": {
+            "en_US": "UDIM Bake",
+            "fr_FR": "Cuisson UDIM",
+            "ja_JP": "UDIMベイク",
+            "ru_RU": "UDIM запекание",
+            "zh_HANS": "UDIM 烘焙"
+        },
+        "UDIM Mode": {
+            "en_US": "UDIM Mode",
+            "fr_FR": "Mode UDIM",
+            "ja_JP": "UDIMモード",
+            "ru_RU": "Режим UDIM",
+            "zh_HANS": "UDIM 模式"
         },
         "UDIM Tile": {
             "en_US": "UDIM Tile",
             "fr_FR": "Tuile UDIM",
             "ja_JP": "UDIMタイル",
             "ru_RU": "UDIM плитка",
-            "zh_CN": "UDIM 瓦片"
+            "zh_HANS": "UDIM 瓦片"
         },
         "USD": {
             "en_US": "USD",
             "fr_FR": "USD",
             "ja_JP": "USD",
             "ru_RU": "USD",
-            "zh_CN": "USD"
+            "zh_HANS": "USD"
         },
         "UV": {
             "en_US": "UV",
             "fr_FR": "UV",
             "ja_JP": "UV",
             "ru_RU": "UV",
-            "zh_CN": "UV"
+            "zh_HANS": "UV"
         },
         "UV ID": {
             "en_US": "UV ID",
             "fr_FR": "UV ID",
             "ja_JP": "UV ID",
             "ru_RU": "UV ID",
-            "zh_CN": "UV ID"
+            "zh_HANS": "UV ID"
         },
         "UV Name": {
             "en_US": "UV Name",
             "fr_FR": "Nom de l'UV",
             "ja_JP": "UV 名",
             "ru_RU": "Имя UV",
-            "zh_CN": "UV 名称"
+            "zh_HANS": "UV 名称"
         },
         "Uniform": {
             "en_US": "Uniform",
             "fr_FR": "Uniforme",
             "ja_JP": "均一",
             "ru_RU": "Равномерно",
-            "zh_CN": "统一"
+            "zh_HANS": "统一"
         },
         "Uniform Extrude": {
             "en_US": "Uniform Extrude",
             "fr_FR": "Extrusion uniforme",
             "ja_JP": "均一押し出し",
             "ru_RU": "Равномерное выдавливание",
-            "zh_CN": "统一挤出"
+            "zh_HANS": "统一挤出"
         },
         "Up": {
             "en_US": "Up",
             "fr_FR": "Haut",
             "ja_JP": "上",
             "ru_RU": "Вверх",
-            "zh_CN": "上移"
+            "zh_HANS": "上移"
         },
         "Use Alpha": {
             "en_US": "Use Alpha",
             "fr_FR": "Utiliser Alpha",
             "ja_JP": "アルファを使用",
             "ru_RU": "Использовать Альфу",
-            "zh_CN": "使用透明通道"
+            "zh_HANS": "使用透明通道"
         },
         "Use Alpha channel": {
             "en_US": "Use Alpha channel",
             "fr_FR": "Utiliser le canal Alpha",
             "ja_JP": "アルファチャンネルを使用",
             "ru_RU": "Использовать Альфа-канал",
-            "zh_CN": "使用 Alpha 通道"
+            "zh_HANS": "使用 Alpha 通道"
         },
         "Use BSDF Baking (requires Principled BSDF)": {
             "en_US": "Use BSDF Baking (requires Principled BSDF)",
             "fr_FR": "Utiliser la cuisson BSDF (nécessite le BSDF Principled)",
             "ja_JP": "BSDFベイクを使用（プリンシプルBSDFが必要）",
             "ru_RU": "Использовать BSDF запекание (требуется Principled BSDF)",
-            "zh_CN": "使用 BSDF 烘焙（需要原理化 BSDF）"
+            "zh_HANS": "使用 BSDF 烘焙（需要原理化 BSDF）"
         },
         "Use Blue channel": {
             "en_US": "Use Blue channel",
             "fr_FR": "Utiliser le canal Bleu",
             "ja_JP": "ブルーチャンネルを使用",
             "ru_RU": "Использовать синий канал",
-            "zh_CN": "使用蓝色通道"
+            "zh_HANS": "使用蓝色通道"
         },
         "Use CPU": {
             "en_US": "Use CPU",
             "fr_FR": "Utiliser le CPU",
             "ja_JP": "CPUを使用",
             "ru_RU": "Использовать CPU",
-            "zh_CN": "使用 CPU"
+            "zh_HANS": "使用 CPU"
         },
         "Use Custom Map": {
             "en_US": "Use Custom Map",
             "fr_FR": "Utiliser carte perso",
             "ja_JP": "カスタムマップを使用",
             "ru_RU": "Исп. польз. карту",
-            "zh_CN": "使用自定义贴图"
+            "zh_HANS": "使用自定义贴图"
         },
         "Use Custom Standard": {
             "en_US": "Use Custom Standard",
             "fr_FR": "Utiliser le standard personnalisé",
             "ja_JP": "カスタム标准を使用",
             "ru_RU": "Использовать польз. стандарт",
-            "zh_CN": "使用自定义标准"
+            "zh_HANS": "使用自定义标准"
         },
         "Use DIRECTX Standard": {
             "en_US": "Use DIRECTX Standard",
             "fr_FR": "Utiliser le standard DirectX",
             "ja_JP": "DirectX标准を使用",
             "ru_RU": "Использовать стандарт DirectX",
-            "zh_CN": "使用 DirectX 标准"
+            "zh_HANS": "使用 DirectX 标准"
         },
         "Use Existing UVs": {
             "en_US": "Use Existing UVs",
             "fr_FR": "Utiliser les UV existants",
             "ja_JP": "既存のUVを使用",
             "ru_RU": "Использовать сущ. UV",
-            "zh_CN": "使用现有 UV"
+            "zh_HANS": "使用现有 UV"
         },
         "Use GPU": {
             "en_US": "Use GPU",
             "fr_FR": "Utiliser le GPU",
             "ja_JP": "GPUを使用",
             "ru_RU": "Использовать GPU",
-            "zh_CN": "使用 GPU"
+            "zh_HANS": "使用 GPU"
         },
         "Use Green channel": {
             "en_US": "Use Green channel",
             "fr_FR": "Utiliser le canal Vert",
             "ja_JP": "グリーンチャンネルを使用",
             "ru_RU": "Использовать зеленый канал",
-            "zh_CN": "使用绿色通道"
+            "zh_HANS": "使用绿色通道"
         },
         "Use Local Path": {
             "en_US": "Use Local Path",
             "fr_FR": "Utiliser le chemin local",
             "ja_JP": "ローカルパスを使用",
             "ru_RU": "Использовать локальный путь",
-            "zh_CN": "使用本地路径"
+            "zh_HANS": "使用本地路径"
         },
         "Use Map": {
             "en_US": "Use Map",
             "fr_FR": "Utiliser carte",
             "ja_JP": "マップを使用",
             "ru_RU": "Исп. карту",
-            "zh_CN": "使用贴图"
+            "zh_HANS": "使用贴图"
         },
         "Use OPENGL Standard": {
             "en_US": "Use OPENGL Standard",
             "fr_FR": "Utiliser le standard OpenGL",
             "ja_JP": "OpenGL标准を使用",
             "ru_RU": "Использовать стандарт OpenGL",
-            "zh_CN": "使用 OpenGL 标准"
+            "zh_HANS": "使用 OpenGL 标准"
         },
         "Use Pixel Size": {
             "en_US": "Use Pixel Size",
             "fr_FR": "Utiliser taille pixel",
             "ja_JP": "ピクセルサイズを使用",
             "ru_RU": "Исп. размер пикселя",
-            "zh_CN": "使用像素尺寸"
+            "zh_HANS": "使用像素尺寸"
         },
         "Use Red channel": {
             "en_US": "Use Red channel",
             "fr_FR": "Utiliser le canal Rouge",
             "ja_JP": "レッドチャンネルを使用",
             "ru_RU": "Использовать красный канал",
-            "zh_CN": "使用红色通道"
-        },
-        "Use Smart UV Project repack UV": {
-            "en_US": "Use Smart UV Project repack UV",
-            "fr_FR": "Utiliser Smart UV Project pour réempaqueter l'UV",
-            "ja_JP": "スマートUV投影を使用してUVを再パッキングする",
-            "ru_RU": "Использовать Smart UV Project для перепаковки UV",
-            "zh_CN": "使用智能 UV 投影重新打包 UV"
+            "zh_HANS": "使用红色通道"
         },
         "Use custom resolution for this tile": {
             "en_US": "Use custom resolution for this tile",
             "fr_FR": "Utiliser une résolution personnalisée pour cette tuile",
             "ja_JP": "このタイルにカスタム解像度を使用",
             "ru_RU": "Использовать пользовательское разрешение для этой плитки",
-            "zh_CN": "为此瓦片使用自定义分辨率"
+            "zh_HANS": "为此瓦片使用自定义分辨率"
         },
         "Use specific color space and depth for this channel instead of job defaults": {
             "en_US": "Use specific color space and depth for this channel instead of job defaults",
             "fr_FR": "Utiliser un espace colorimétrique et une profondeur spécifiques pour ce canal au lieu des valeurs par défaut du job",
             "ja_JP": "ジョブ既定値の代わりに、このチャンネル用の特定の色空間と深度を使用",
             "ru_RU": "Использовать для этого канала конкретные цветовое пространство и глубину вместо значений по умолчанию задачи",
-            "zh_CN": "为此通道使用特定的色彩空间和深度，而不是任务默认值"
+            "zh_HANS": "为此通道使用特定的色彩空间和深度，而不是任务默认值"
         },
         "Validation failed: {}": {
             "en_US": "Validation failed: {}",
             "fr_FR": "Validation échouée : {}",
             "ja_JP": "検証に失敗しました: {}",
             "ru_RU": "Проверка не удалась: {}",
-            "zh_CN": "验证失败: {}"
-        },
-        "Vertex Color": {
-            "en_US": "Vertex Color",
-            "fr_FR": "Couleur de sommet",
-            "ja_JP": "頂点カラー",
-            "ru_RU": "Цвет вершин",
-            "zh_CN": "顶点颜色"
+            "zh_HANS": "验证失败: {}"
         },
         "Visual Preset Gallery": {
             "en_US": "Visual Preset Gallery",
             "fr_FR": "Galerie visuelle de préréglages",
             "ja_JP": "ビジュアルプリセットギャラリー",
             "ru_RU": "Визуальная галерея пресетов",
-            "zh_CN": "可视化预设库"
+            "zh_HANS": "可视化预设库"
         },
         "Warning: Cage object missing for selective bake.": {
             "en_US": "Warning: Cage object missing for selective bake.",
             "fr_FR": "Avertissement : objet de cage manquant pour le bake sélectif.",
             "ja_JP": "警告: 選択ベイク用のケージオブジェクトがありません。",
             "ru_RU": "Предупреждение: отсутствует объект клетки для выборочного запекания.",
-            "zh_CN": "警告：选择性烘焙缺少罩体物体。"
+            "zh_HANS": "警告：选择性烘焙缺少罩体物体。"
         },
         "WebP": {
             "en_US": "WebP",
             "fr_FR": "Format WebP",
             "ja_JP": "WebP 形式",
             "ru_RU": "Формат WebP",
-            "zh_CN": "WebP 格式"
+            "zh_HANS": "WebP 格式"
         },
         "Width": {
             "en_US": "Width",
             "fr_FR": "Largeur",
             "ja_JP": "幅",
             "ru_RU": "Ширина",
-            "zh_CN": "宽度"
+            "zh_HANS": "宽度"
         },
         "Wireframe": {
             "en_US": "Wireframe",
             "fr_FR": "Fil de fer",
             "ja_JP": "ワイヤーフレーム",
             "ru_RU": "Каркас",
-            "zh_CN": "线框"
+            "zh_HANS": "线框"
         },
         "ZIP": {
             "en_US": "ZIP",
             "fr_FR": "ZIP",
             "ja_JP": "ZIP",
             "ru_RU": "ZIP",
-            "zh_CN": "ZIP"
+            "zh_HANS": "ZIP"
         },
         "ZIPS": {
             "en_US": "ZIPS",
             "fr_FR": "ZIPS",
             "ja_JP": "ZIPS",
             "ru_RU": "ZIPS",
-            "zh_CN": "ZIPS"
+            "zh_HANS": "ZIPS"
         },
         "sRGB": {
             "en_US": "sRGB",
             "fr_FR": "Espace sRGB",
             "ja_JP": "sRGB 色空間",
             "ru_RU": "Цветовое пространство sRGB",
-            "zh_CN": "sRGB 色彩空间"
+            "zh_HANS": "sRGB 色彩空间"
         }
     }
 }

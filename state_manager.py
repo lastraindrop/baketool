@@ -14,6 +14,10 @@ from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
+# Session files carry the PID so concurrent Blender instances do not
+# overwrite each other's crash records. Detection globs the shared prefix.
+SESSION_FILE_GLOB = "sbt_last_session*.json"
+
 
 class BakeStateManager:
     """Manages bake session state for crash recovery.
@@ -23,7 +27,7 @@ class BakeStateManager:
 
     Attributes:
         log_dir (Path): Directory where state logs are stored.
-        log_file (Path): Path to the current session log file.
+        log_file (Path): Path to this instance's session log file.
     """
 
     def __init__(self):
@@ -31,8 +35,25 @@ class BakeStateManager:
         import os
         temp_dir = bpy.app.tempdir or os.environ.get("TEMP", "/tmp")
         self.log_dir = Path(temp_dir)
-        self.log_file = self.log_dir / "sbt_last_session.json"
+        self.log_file = self.log_dir / f"sbt_last_session_{os.getpid()}.json"
         self._cached_data: Optional[Dict[str, Any]] = None
+
+    def _all_session_files(self):
+        """Return all session files in the temp dir, newest first.
+
+        Includes files written by other (possibly crashed) Blender
+        instances so crash detection works across processes.
+        """
+        try:
+            files = list(self.log_dir.glob(SESSION_FILE_GLOB))
+        except OSError:
+            return []
+        def safe_mtime(path):
+            try:
+                return path.stat().st_mtime
+            except OSError:
+                return 0.0
+        return sorted(files, key=safe_mtime, reverse=True)
 
     def start_session(self, total_steps: int, job_name: str) -> None:
         """Initialize a new bake session record.
@@ -96,30 +117,39 @@ class BakeStateManager:
     def finish_session(
         self, context: Optional[bpy.types.Context] = None, status: str = "Idle"
     ) -> None:
-        """End the session and remove the crash record file.
+        """End the session and remove this instance's crash record file.
+
+        Other instances' files are intentionally preserved so a parallel
+        session that crashes later can still be recovered.
 
         Args:
             context: Optional Blender context to trigger UI reset.
             status: Final status message for the UI.
         """
         self._cached_data = None
-        if self.log_file.exists():
-            try:
-                os.remove(self.log_file)
-            except (OSError, FileNotFoundError, PermissionError) as e:
-                logger.debug(f"Could not remove log file {self.log_file}: {e}")
+        self._remove_file(self.log_file)
 
         if context:
             self.reset_ui_state(context, status)
 
     def clear_state(self) -> None:
-        """Delete crash record file without touching scene UI state."""
+        """Delete all crash record files without touching scene UI state.
+
+        Removes records from every Blender instance (including stale files
+        left by crashed sessions) so the UI does not re-report old crashes.
+        """
         self._cached_data = None
-        if self.log_file.exists():
-            try:
-                os.remove(self.log_file)
-            except (OSError, FileNotFoundError, PermissionError) as e:
-                logger.debug(f"Could not clear state file {self.log_file}: {e}")
+        for path in self._all_session_files():
+            self._remove_file(path)
+
+    @staticmethod
+    def _remove_file(path: Path) -> None:
+        """Best-effort removal of a single state file."""
+        try:
+            if path.exists():
+                os.remove(path)
+        except (OSError, FileNotFoundError, PermissionError) as e:
+            logger.debug(f"Could not remove log file {path}: {e}")
 
     def log_error(self, error_msg: str) -> None:
         """Record an error state without removing the crash file.
@@ -155,27 +185,30 @@ class BakeStateManager:
             logger.error(f"BakeNexus Log Error: {e}")
 
     def read_log(self) -> Optional[Dict[str, Any]]:
-        """Read and parse the session log file.
+        """Read and parse the most recent session log file.
+
+        Falls back through files written by other instances so a fresh
+        Blender process can recover a crashed session's record.
 
         Returns:
-            Dictionary of session data, or None if file missing or invalid.
+            Dictionary of session data, or None if no valid file exists.
         """
         if self._cached_data is not None:
             return self._cached_data
 
-        if not self.log_file.exists():
-            return None
-        try:
-            with open(self.log_file, "r", encoding="utf-8") as f:
-                self._cached_data = json.load(f)
-                return self._cached_data
-        except (json.JSONDecodeError, OSError, IOError):
-            return None
+        for candidate in self._all_session_files():
+            try:
+                with open(candidate, "r", encoding="utf-8") as f:
+                    self._cached_data = json.load(f)
+                    return self._cached_data
+            except (json.JSONDecodeError, OSError, IOError):
+                continue
+        return None
 
     def has_crash_record(self) -> bool:
-        """Check if an unfinished session record exists on disk.
+        """Check if any unfinished session record exists on disk.
 
         Returns:
-            bool: True if log file exists.
+            bool: True if a session file (from any instance) exists.
         """
-        return self.log_file.exists()
+        return bool(self._all_session_files())

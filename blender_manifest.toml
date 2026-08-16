@@ -1,6 +1,6 @@
 schema_version = "1.0.0"
 
-id = "bakenexus"
+id = "baketool"
 version = "1.0.0"
 name = "BakeNexus"
 tagline = "Professional Texture Baking Pipeline for Blender"

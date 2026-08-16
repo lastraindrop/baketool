@@ -9,7 +9,7 @@ BakeNexus 是一个面向 Blender 的专业贴图烘焙插件套件。
 > 1. **开发背景 (Development Context)**: 本项目目前由 **lastraindrop** 一人利用业余时间维护。代码逻辑大量依赖 **vibecode (AI 辅助开发)** 完成。虽然通过了 150+ 自动化测试，但 AI 生成的逻辑在极端边缘场景或复杂生产环境下可能存在不可预知的行为。/This project is currently maintained by **lastraindrop** in spare time. While 150+ automated tests pass, AI-generated code may have unpredictable behavior in edge cases.
 >
 > 2. **稳定性状态 (Stability Status)**: BakeNexus 尚处于**早期验证阶段 (Experimental Prototype)**。它在"实验室环境"下表现良好，但严重缺乏大规模用户实战验证。/BakeNexus is in **early verification stage**. It performs well in lab environment but lacks large-scale production validation.
-
+>
 > 3. **核心警告 (Core Warning)**: **极有可能出现"测试全过，实战报错"的情况**。它目前还远远达不到工业级的稳定性。/**"All tests pass, production fails" is very likely.** It is far from production-grade stability.
 >
 > 4. **使用建议 (Usage Recommendation)**: **在将其应用于正式生产前，请务必对 .blend 场景进行手工备份。** 开发者不承担因插件故障导致的任何数据丢失责任。/**Backup your .blend scenes before production use.** Developer assumes no liability for data loss.

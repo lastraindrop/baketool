@@ -391,18 +391,6 @@ CHANNEL_BAKE_INFO = {
         "def_mode": "BW",
     },
     # --- Mesh / Topology ---
-    "height": {
-        "bake_pass": "DISPLACEMENT",
-        "cat": CAT_MESH,
-        "def_cs": "Non-Color",
-        "def_mode": "BW",
-    },
-    "vertex": {
-        "bake_pass": "EMIT",
-        "cat": CAT_MESH,
-        "def_cs": "sRGB",
-        "def_mode": "RGB",
-    },
     "bevel": {
         "bake_pass": "EMIT",
         "cat": CAT_MESH,
@@ -433,18 +421,6 @@ CHANNEL_BAKE_INFO = {
         "def_cs": "Non-Color",
         "def_mode": "RGB",
     },
-    "slope": {
-        "bake_pass": "EMIT",
-        "cat": CAT_MESH,
-        "def_cs": "Non-Color",
-        "def_mode": "BW",
-    },
-    "thickness": {
-        "bake_pass": "EMIT",
-        "cat": CAT_MESH,
-        "def_cs": "Non-Color",
-        "def_mode": "BW",
-    },
     "ID_mat": {
         "bake_pass": "EMIT",
         "cat": CAT_MESH,
@@ -468,18 +444,6 @@ CHANNEL_BAKE_INFO = {
         "cat": CAT_MESH,
         "def_cs": "Non-Color",
         "def_mode": "RGB",
-    },
-    "select": {
-        "bake_pass": "EMIT",
-        "cat": CAT_MESH,
-        "def_cs": "Non-Color",
-        "def_mode": "BW",
-    },
-    "curvature": {
-        "bake_pass": "EMIT",
-        "cat": CAT_MESH,
-        "def_cs": "Non-Color",
-        "def_mode": "BW",
     },
     # --- Extension / Conversion ---
     "pbr_conv_base": {
@@ -715,20 +679,19 @@ BAKE_CHANNEL_INFO = {
         {"id": "env", "name": "Environment", "defaults": {"suffix": "_env"}},
     ],
     "MESH": [
-        {"id": "vertex", "name": "Vertex Color", "defaults": {"suffix": "_vertex"}},
+        # NOTE: vertex / curvature / slope / thickness / select were removed
+        # in 1.0.0: they had no generation path in the bake engine and
+        # silently produced empty (black) images. See ROADMAP for re-adding
+        # them with real implementations.
         {"id": "bevel", "name": "Bevel", "defaults": {"suffix": "_bv"}},
-        {"id": "curvature", "name": "Curvature", "defaults": {"suffix": "_curv"}},
+        {"id": "bevnor", "name": "Bevel Normal", "defaults": {"suffix": "_bn"}},
         {"id": "UV", "name": "UV", "defaults": {"suffix": "_UV"}},
         {"id": "wireframe", "name": "Wireframe", "defaults": {"suffix": "_wf"}},
-        {"id": "bevnor", "name": "Bevel Normal", "defaults": {"suffix": "_bn"}},
         {"id": "position", "name": "Position", "defaults": {"suffix": "_pos"}},
-        {"id": "slope", "name": "Slope", "defaults": {"suffix": "_slope"}},
-        {"id": "thickness", "name": "Thickness", "defaults": {"suffix": "_thick"}},
         {"id": "ID_mat", "name": "Material ID", "defaults": {"suffix": "_idmat"}},
         {"id": "ID_ele", "name": "Element ID", "defaults": {"suffix": "_idele"}},
         {"id": "ID_UVI", "name": "UV ID", "defaults": {"suffix": "_idUVI"}},
         {"id": "ID_seam", "name": "Seam ID", "defaults": {"suffix": "_idseam"}},
-        {"id": "select", "name": "Select", "defaults": {"suffix": "_select"}},
     ],
     "EXTENSION": [
         {
@@ -821,14 +784,6 @@ CHANNEL_UI_LAYOUT = {
             ("mesh_settings.radius", "Rad/Dist"),
         ],
     },
-    "curvature": {
-        "type": "PROPS",
-        "props": [
-            ("mesh_settings.samples", "Samples"),
-            ("mesh_settings.radius", "Radius"),
-            ("mesh_settings.contrast", "Contrast"),
-        ],
-    },
     "wireframe": {
         "type": "PROPS",
         "props": [
@@ -837,20 +792,6 @@ CHANNEL_UI_LAYOUT = {
         ],
     },
     "position": {"type": "PROPS", "props": [("mesh_settings.invert_g", "Invert G")]},
-    "slope": {
-        "type": "PROPS",
-        "props": [
-            ("mesh_settings.direction", "Direction"),
-            ("mesh_settings.invert", "Invert"),
-        ],
-    },
-    "thickness": {
-        "type": "PROPS",
-        "props": [
-            ("mesh_settings.distance", "Distance"),
-            ("mesh_settings.contrast", "Contrast"),
-        ],
-    },
     "ID_mat": _ID_COUNT_PROPS,
     "ID_ele": _ID_COUNT_PROPS,
     "ID_UVI": _ID_COUNT_PROPS,
@@ -959,14 +900,11 @@ DATA_BAKE_FORCE_SINGLE_SAMPLE = frozenset(
         "normal",
         "position",
         "UV",
-        "height",
         "wireframe",
         "ID_mat",
         "ID_ele",
         "ID_UVI",
         "ID_seam",
-        "select",
-        "curvature",
     }
 )
 
@@ -978,7 +916,6 @@ CHANNEL_MESH_TYPE_MAP = {
     "ao": "AO",
     "bevel": "BEVEL",
     "bevnor": "BEVEL",
-    "slope": "SLOPE",
 }
 
 # --- UI & System Messages ---
