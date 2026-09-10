@@ -18,6 +18,8 @@
 - 确认模块级可变状态已封装（`_RegistryState` / `_preview_collections`）。
 - 确认 `cleanup.py` operator 前缀统一为 `baketool.`。
 - 确认所有临时场景设置修改通过 `SceneSettingsContext` 管理。
+- 确认无孤儿 operator（`bl_idname` 已声明但无任何 UI/菜单/快捷键引用）——此类 operator 会注册进 Blender 却永远不可达。
+- 确认无"已声明、未接线"的死链功能（函数与 UI 存在但调用链断裂，如预设缩略图加载曾从未被调用）。
 - 确认无命名冲突变量（`l`、`O`、`I`）。
 
 ## 2. 仓库整洁度
@@ -94,6 +96,7 @@ python automation/multi_version_test.py --verification
 正式发布前建议人工跑完以下场景：
 
 - 安装 ZIP 并启用插件（在语言设为简体中文的界面下重复一次，抽查中文翻译是否生效——词典使用 `zh_HANS` locale）
+- 预设库缩略图正常显示：在偏好设置指向含 `.png` 缩略图的预设库后，顶部图库应显示图标而非纯文字
 - 新建 Job 并执行单对象基础烘焙
 - Selected-to-Active 烘焙
 - 自定义图生成与通道打包

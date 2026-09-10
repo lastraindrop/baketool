@@ -482,30 +482,6 @@ class BAKETOOL_OT_RefreshUDIMLocations(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class BAKETOOL_OT_TogglePreview(bpy.types.Operator):
-    """Toggle real-time viewport preview for the active bake job."""
-
-    bl_idname = "baketool.toggle_preview"
-    bl_label = "Toggle Preview"
-    bl_options = {"REGISTER", "UNDO"}
-
-    def execute(self, context: bpy.types.Context) -> Set[str]:
-        job = get_active_job_or_report(self, context)
-        if job is None:
-            return {"CANCELLED"}
-        s = job.setting
-
-        if not [o for o in s.bake_objects if o.bakeobject]:
-            self.report({"WARNING"}, "No objects to preview")
-            return {"CANCELLED"}
-
-        # Toggling use_preview triggers the update_preview callback
-        # which handles apply/remove + redraw via property.py
-        s.use_preview = not s.use_preview
-
-        return {"FINISHED"}
-
-
 class BAKETOOL_OT_AnalyzeCage(bpy.types.Operator):
     """Analyze cage overlap by raycasting high-poly onto low-poly."""
 

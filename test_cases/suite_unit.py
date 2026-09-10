@@ -610,11 +610,6 @@ class SuiteUnit(unittest.TestCase):
         c2 = math_utils.generate_optimized_colors(5, seed=42)
         np.testing.assert_array_equal(c1, c2)
 
-    def test_texel_density_calculator_basic(self):
-        """Verify basic texel density calculation logic exists."""
-        self.assertTrue(hasattr(math_utils, "TexelDensityCalculator"))
-        self.assertTrue(hasattr(math_utils.TexelDensityCalculator, "get_mesh_density"))
-
     # --- Expanded Component Lifecycle Tests ---
     def test_context_manager_exception_restores_state(self):
         """Verify that BakeContextManager performs cleanup even if an exception occurs."""

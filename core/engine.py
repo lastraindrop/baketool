@@ -1134,7 +1134,7 @@ class BakePassExecutor:
             compat.set_bake_type(scene, bake_type)
 
             params = {
-                "type": compat.get_bake_operator_type(bake_type),
+                "type": bake_type,
                 "margin": setting.margin,
                 "use_clear": setting.use_clear_image,
                 "target": compat.get_bake_target(),

@@ -841,7 +841,6 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
             sub.operator("baketool.analyze_cage", text="Analyze Overlap", icon="MOD_PHYSICS")
 
         r = sub.row(align=True)
-        r.prop(s, "texel_density", text="Texel")
         r.prop(s, "auto_switch_vertex_paint", text="Auto-VP", toggle=True)
 
     def draw_others(self, context: bpy.types.Context, layout: bpy.types.UILayout, bj: Any, s: Any) -> None:

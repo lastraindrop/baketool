@@ -2903,13 +2903,6 @@
             "ru_RU": "Цель",
             "zh_HANS": "目标"
         },
-        "Target Density": {
-            "en_US": "Target Density",
-            "fr_FR": "Densité cible",
-            "ja_JP": "目標密度",
-            "ru_RU": "Целевая плотность",
-            "zh_HANS": "目标像素密度"
-        },
         "Target UDIM Tile for this object": {
             "en_US": "Target UDIM Tile for this object",
             "fr_FR": "Tuile UDIM cible pour cet objet",
@@ -2917,26 +2910,12 @@
             "ru_RU": "Целевая плитка UDIM для этого объекта",
             "zh_HANS": "此物体的目标 UDIM 瓦片"
         },
-        "Target texel density in px/unit": {
-            "en_US": "Target texel density in px/unit",
-            "fr_FR": "Densité de texels cible en px/unité",
-            "ja_JP": "px/単位での目標テクセル密度",
-            "ru_RU": "Целевая плотность текселей в px/единицу",
-            "zh_HANS": "目标像素密度 (像素/单位)"
-        },
         "Test Passed": {
             "en_US": "Test Passed",
             "fr_FR": "Test réussi",
             "ja_JP": "テスト成功",
             "ru_RU": "Тест пройден",
             "zh_HANS": "测试通过"
-        },
-        "Texel": {
-            "en_US": "Texel",
-            "fr_FR": "Texel",
-            "ja_JP": "テクセル",
-            "ru_RU": "Тексель",
-            "zh_HANS": "纹素"
         },
         "Texture set index": {
             "en_US": "Texture set index",

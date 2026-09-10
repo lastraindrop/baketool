@@ -31,9 +31,7 @@ def _resolve_child_path(base_dir: Path, *parts: str) -> Optional[Path]:
     return target
 
 
-def _resolve_color_space_name(
-    image: bpy.types.Image, space: str
-) -> str:
+def _resolve_color_space_name(space: str) -> str:
     """Map addon enum keys to Blender color-space identifiers."""
     if not space:
         return "sRGB"
@@ -205,7 +203,7 @@ def set_image(
 
     if not full:
         try:
-            image.colorspace_settings.name = _resolve_color_space_name(image, space)
+            image.colorspace_settings.name = _resolve_color_space_name(space)
         except (AttributeError, RuntimeError):
             pass
 
@@ -415,7 +413,6 @@ def save_image(
     file_format: str = "PNG",
     motion: bool = False,
     frame: int = 0,
-    reload: bool = False,
     fillnum: int = 4,
     save: bool = True,
     separator: str = "_",
@@ -435,7 +432,6 @@ def save_image(
         file_format: Output format.
         motion: If animation frame.
         frame: Frame index.
-        reload: Reload image after save.
         fillnum: Frame padding digits.
         save: Actually perform save.
         separator: Animation separator string.
@@ -504,13 +500,5 @@ def save_image(
     except (OSError, RuntimeError, AttributeError) as e:
         logger.error(f"Save failed: {e}")
         return None
-
-
-    if not motion and reload:
-        try:
-            image.source = "FILE"
-            image.reload()
-        except (RuntimeError, AttributeError):
-            pass
 
     return abs_path

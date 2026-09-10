@@ -24,7 +24,7 @@ BakeNexus 采用 **"配置-验证-执行-还原"** 的四段式架构，确保�
 - 新增模块必须同步写入 `core/__init__.py` 和 `__all__`，并通过 register/unregister 循环与 facade 导入检查。
 
 ### 1.3 BakeContextManager 原子上下文 (Atomic Context Manager)
-`BakeContextManager` (`core/engine.py:932`) 负责在烘焙期间临时修改渲染引擎、采样数、输出格式、色彩空间等多组场景设置，结束后必须完整还原。采用 `ExitStack.pop_all()` 原子模式避免部分失败导致的场景泄露：
+`BakeContextManager` (`core/engine.py`) 负责在烘焙期间临时修改渲染引擎、采样数、输出格式、色彩空间等多组场景设置，结束后必须完整还原。采用 `ExitStack.pop_all()` 原子模式避免部分失败导致的场景泄露：
 
 ```python
 # engine.py:6 — module-level import, 避免 __enter__ 内的 NameError
@@ -60,10 +60,9 @@ def bake(objects=None, use_selection=True, context=None):
 
 # 正确模式 — core/engine.py
 def apply_denoise(self, context, image, reuse_scene=None):
-    override = context.copy()
-    override["scene"] = tmp_scene
-    with context.temp_override(**override):
-        bpy.ops.render.render()
+    ...
+    with context.temp_override(scene=tmp_scene):
+        bpy.ops.render.render(scene=tmp_scene.name)
 ```
 
 **规则**：任何访问 `bpy.context`、`context.screen`、`context.scene` 的函数都应优先使用参数注入的 context，仅在参数为 `None` 时回退全局。
@@ -85,9 +84,9 @@ for hp_obj in high_polys:
 ### 1.6 临时节点隔离 (Temporary Node Isolation)
 `NodeGraphHandler` (`core/node_manager.py`) 在烘焙时为材质动态创建 Texture 和 Emission 节点用于生成烘焙纹理，烘焙完成后必须精确移除这些临时节点，不得误删或残留。采用 `is_bt_temp` 自定义属性标记所有临时节点：
 
-- 会话节点（`_prepare_session_nodes`, line 164-165）：为每个材质创建的基础 `ShaderNodeTexImage` 和 `ShaderNodeEmission` 均标记 `n["is_bt_temp"] = True`。
-- 逻辑节点（`_add_temp_node`, line 371）：每次通过辅助方法创建的临时节点同样标记。
-- 源查找过滤（`_find_socket_source`, line 404-410）：在寻找用户材质中已有的 `ShaderNodeEmission` 作为烘焙来源时，显式排除 `is_bt_temp` 标记的会话节点，防止新的临时节点被误判为用户材质节点从而导致黑图输出。
+- 会话节点（`_prepare_session_nodes`）：为每个材质创建的基础 `ShaderNodeTexImage` 和 `ShaderNodeEmission` 均标记 `n["is_bt_temp"] = True`。
+- 逻辑节点（`_add_node`）：每次通过辅助方法创建的临时节点同样标记。
+- 源查找过滤（`_find_socket_source`）：在寻找用户材质中已有的 `ShaderNodeEmission` 作为烘焙来源时，显式排除 `is_bt_temp` 标记的会话节点，防止新的临时节点被误判为用户材质节点从而导致黑图输出。
 
 此标记机制与 `cleanup()` 中的 `BT_TEMP_` 前缀 datablock 扫描形成双层隔离：节点层面通过自定义属性过滤，数据块层面通过命名前缀回收。
 
@@ -112,9 +111,8 @@ for hp_obj in high_polys:
 | `set_bake_type(scene, bake_type)` | 安全设置烘焙类型，自动处理 `NORMAL` vs `NORMALS` 映射 |
 | `get_compositor_tree(scene)` | 返回合成器节点树，适配 B5.0 `compositing_node_group` |
 | `get_bake_settings(scene)` | 返回烘焙设置结构体，兼容 3.3–5.0+ |
-| `get_bake_operator_type(bake_type)` | 映射引擎内部类型到 operator.type 参数 |
 | `get_bake_target()` | 返回 `bpy.ops.object.bake` 的 target 参数 |
-| `is_blender_5()` / `is_blender_3()` | 版本检测快捷方式 |
+| `is_blender_5()` / `is_blender_4()` / `is_blender_3()` | 版本检测快捷方式 |
 
 **规则**：任何 `bpy.ops.object.bake` 调用的 `target` 参数必须经过 `compat.get_bake_target()`，禁止硬编码 `"IMAGE_TEXTURES"`。
 

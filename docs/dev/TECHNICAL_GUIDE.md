@@ -334,3 +334,29 @@ for _fmt, _cfg in FORMAT_SETTINGS.items():
 - **`test_manifest_id_matches_addon_directory` / `test_release_zip_includes_audit_dependencies`**（`suite_extension_validation`）：分别防止扩展 ID 与打包目录名漂移（B-01）、打包内容与随包审计依赖断裂（B-04）。
 - **`translations.py` 双 locale 注册**：JSON 单一事实源使用 `zh_HANS`（Blender 4.2+），注册期自动派生 `zh_CN` 别名兼容 ≤4.1 legacy 源码安装——新旧版本共用一份词典，不产生数据分叉。
 - **词典治理**：以 `dev_tools/extract_translations.py --sync --prune` 收敛死键（19 个旧品牌/已删功能/已删通道键）并补齐 6 个缺失键的多语言，落盘 468 词条、0 空值；此后词典维护必须走该工具而非手工编辑。
+
+### 9.8 发布候选清理轮的工程产物 (2026-09-10)
+
+本轮（净 -153 行）修复了两类用户可感知缺陷并移除全部已确认的死代码，其方法学沉淀如下。
+
+#### 9.8.1 "声明↔接线"可达性失配：缩略图链路案例
+
+§5.4 处理的是**数据层**的声明-引擎失配（通道四层结构）。本轮在**功能接线层**发现了同族缺陷：
+
+- **症状**：Visual Preset Gallery 的图标恒为空，图库静默降级为纯文字列表。
+- **根因**：`thumbnail_manager.load_preset_thumbnails()` 是全库唯一调用 `pcoll.load()` 的函数，但**没有任何调用方**——`get_library_preset_items()` 只创建空 preview collection 后直接查询图标。功能"已声明（函数存在、UI 存在）、未接线（调用链断裂）"。
+- **修复**：枚举回调接线调用 `load_preset_thumbnails()`，并将其改为**幂等加载**（`pcoll.get()` 命中即跳过）。幂等是硬性要求：动态枚举回调在每次 UI 重绘都会触发，而 Blender previews API 对重复加载同名条目会抛错。
+- **同族教训归集**：B-03（通道列出但引擎无路径）、缩略图（函数/UI 存在但调用链断裂）、孤儿 operator（`bl_idname` 声明但无任何 UI/菜单/快捷键引用，如已删除的 `TogglePreview`）本质相同——**静态检查"定义之间存在 harmony"无法发现"声明与使用之间的失配"**。
+
+#### 9.8.2 死代码判定标准与审计方法
+
+本轮移除死代码时采用的双重判定，后续清理应沿用：
+
+1. **零引用判定**：符号在运行时源码（`.`/`core`/`automation`）与 `test_cases` 中均无引用。注意甄别三类合法例外：①有 UI/引擎消费路径但暂无 UI 入口的预留字段（如 `mesh_settings.contrast`，有注释保护，不得误删）；②RNA 无继承导致的属性重复（如 `BakeImageSettings`）；③历史记录文档（CHANGELOG）中的提及。
+2. **测试引用同步**：删除符号时必须同步处理测试（存在性断言、Mock 字段、builder 方法），否则测试套件红掉或留下"测试只验证存在性"的假覆盖。
+3. **词典同步**：删除任何 UI 字符串/RNA 名称后，运行翻译审计移除对应死键（本轮 468 → 465），维持"0 死键"不变量。
+4. **验证闭环**：静态审计（死符号 0 残留、孤儿 operator 0、i18n 0 缺失、register/unregister 对称）+ 全版本矩阵实测。本轮为 5 版本 160 项 0 失败 0 错误。
+
+#### 9.8.3 UI 去重：数据驱动布局与通用绘制的边界
+
+`CHANNEL_UI_LAYOUT` 声明的是**每通道专属**参数；所有通道**共享**的属性（如 Naming 行的 prefix/suffix）由 `draw_active_channel_properties` 统一绘制。本轮缺陷（Normal 通道前后缀出现两次）即"专属布局里重复声明了共享属性"。规则：**往 `CHANNEL_UI_LAYOUT` 加条目前，先确认该属性未被通用绘制路径覆盖**。

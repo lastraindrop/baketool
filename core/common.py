@@ -210,7 +210,7 @@ def manage_objects_logic(
 
     Args:
         s: BakeJobSetting with bake_objects collection.
-        action: Operation to perform (SET, ADD, REMOVE, CLEAR, SET_ACTIVE, SMART_SET).
+        action: Operation to perform (ADD, REMOVE, CLEAR, SET_ACTIVE, SMART_SET).
         sel: Selected objects for the operation.
         act: Active object (for SELECT_ACTIVE mode). Defaults to None.
     """
@@ -223,15 +223,7 @@ def manage_objects_logic(
             new.bakeobject = o
             new.udim_tile = detect_object_udim_tile(o)
 
-    if action == "SET":
-        s.bake_objects.clear()
-        targets = sel
-        if s.bake_mode == "SELECT_ACTIVE" and act and act in targets:
-            s.active_object = act
-            targets = [o for o in targets if o != act]
-        for o in targets:
-            add(o)
-    elif action == "ADD":
+    if action == "ADD":
         for o in sel:
             if s.bake_mode == "SELECT_ACTIVE" and o == s.active_object:
                 continue

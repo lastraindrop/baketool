@@ -17,11 +17,6 @@ BAKE_MAPPING = {
 }
 
 
-def get_bake_operator_type(bake_type: str) -> str:
-    """Return the bake type enum expected by bpy.ops.object.bake."""
-    return bake_type
-
-
 def is_blender_5() -> bool:
     """Check if the current Blender version is 5.0 or newer.
 
@@ -47,18 +42,6 @@ def is_blender_3() -> bool:
         bool: True if 3.0.0 <= Blender version < 4.0.0.
     """
     return (3, 0, 0) <= bpy.app.version < (4, 0, 0)
-
-
-def is_extension() -> bool:
-    """Check if the addon is running as a Blender Extension.
-
-    Extensions typically have a package name prefixed with 'bl_ext'.
-
-    Returns:
-        bool: True if running as an extension.
-    """
-    pkg = __package__.split(".")[0] if "." in __package__ else __package__
-    return pkg.startswith("bl_ext")
 
 
 def get_bake_settings(scene: bpy.types.Scene) -> object:
@@ -176,16 +159,6 @@ def set_bake_type(scene: bpy.types.Scene, bake_type: str) -> bool:
     except (AttributeError, RuntimeError) as e:
         logger.warning(f"Unexpected error setting bake type: {e}")
     return False
-
-
-def get_version_string() -> str:
-    """Get a human-readable Blender version string.
-
-    Returns:
-        str: Formatted version (e.g., '4.2.1').
-    """
-    v = bpy.app.version
-    return f"{v[0]}.{v[1]}.{v[2]}"
 
 
 def get_bake_target() -> str:

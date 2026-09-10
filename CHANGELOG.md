@@ -2,6 +2,26 @@
 
 本文件记录 BakeNexus 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
+## 1.0.0 - 2026-09-10
+### 发布候选清理：死链修复与死代码移除 / Release-Candidate Cleanup: Dead-Wire Fixes & Dead-Code Removal
+
+#### 功能性修复 / Functional Fixes
+- **预设库缩略图链路接通**：`thumbnail_manager.load_preset_thumbnails()` 是唯一调用 `pcoll.load` 的函数，但此前从未被任何代码调用，导致 Visual Preset Gallery 的 `get_icon_id()` 恒返回 0（图库静默降级为纯文字）。现已由 `property.get_library_preset_items()` 接线调用，并将加载改为幂等（已加载条目跳过）——动态枚举回调在每次重绘都会触发，重复加载同名条目会被 Blender previews API 拒绝。
+- **Normal 通道 UI 去重**：`CHANNEL_UI_LAYOUT["normal"]` 中的 `prefix/suffix` 布局项与 `draw_active_channel_properties` 对所有通道统一绘制的 Naming 行重复，导致 Normal 通道的前后缀输入框出现两次；已从布局配置移除。
+
+#### 死代码移除 / Dead-Code Removal（净 -153 行）
+- `BAKETOOL_OT_TogglePreview` operator：22 个 operator 中唯一无任何 UI/菜单/快捷键引用者（UI 直接绑定 `use_preview` 属性）。
+- `manage_objects_logic` 的 `"SET"` 分支：无调用方。
+- Texel 死链整链移除：`texel_density` RNA 属性（引擎从未读取）、UI 字段、`TexelDensityCalculator`、对应存在性测试与 Mock 字段——用户不再能看到一个无任何效果的参数。
+- `compat.is_extension()` / `compat.get_version_string()` / 恒等函数 `compat.get_bake_operator_type()`（engine.py 调用点直接使用 `bake_type`）。
+- `save_image` 的 `reload` 形参（无调用方传入）与 `_resolve_color_space_name` 未使用的 `image` 形参。
+- 翻译词典同步清除 3 个死键（`Texel` / `Target Density` / 其描述），468 → 465 词条。
+
+#### 验证 / Verification
+- 5 版本（3.3.21 / 3.6.23 / 4.2.14 / 4.5.3 / 5.0.1）160 项测试：0 失败、0 错误（3.3/3.6 各 5 项 tomllib 缺失的预期跳过）。
+- 静态审计：已删符号 0 残留、孤儿 operator 0、i18n 全部 pgettext 字面量覆盖且 0 空值、register/unregister 12/12 对称、全项目 `py_compile` 0 错误。
+- 旧预设兼容无损：`PropertyIO.from_dict` 本就优雅跳过未知键。
+
 ## 1.0.0 - 2026-08-17
 ### 发布收尾：一致性固化与防护性测试 / Wrap-up: Consistency Hardening & Regression Guards
 

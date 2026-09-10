@@ -193,10 +193,6 @@ class JobBuilder:
         self.setting.auto_cage_margin = margin
         return self
 
-    def target_density(self, density):
-        self.setting.texel_density = density
-        return self
-
     def enable_channel(self, channel_id):
         for c in self.setting.channels:
             if c.id == channel_id:
@@ -363,7 +359,6 @@ class MockSetting:
         self.auto_cage_mode = "UNIFORM"
         self.auto_cage_margin = 0.1
         self.extrusion = 0.01
-        self.texel_density = 10.24
         self.auto_switch_vertex_paint = False
         # Map category toggles
         self.use_light_map = False

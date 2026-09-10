@@ -741,8 +741,6 @@ CHANNEL_UI_LAYOUT = {
         "props": [
             ("normal_settings.type", "Standard", "NONE"),
             ("normal_settings.object_space", "Object Space", "NONE"),
-            ("prefix", "Prefix", "NONE"),
-            ("suffix", "Suffix", "NONE"),
         ],
     },
     "diff": _LIGHT_PATH_TOGGLES,

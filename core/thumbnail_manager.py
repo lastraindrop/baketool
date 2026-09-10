@@ -3,6 +3,8 @@ import bpy
 import logging
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
+
 _preview_collections = {}
 
 _HAS_PREVIEWS = hasattr(bpy.utils, "previews")
@@ -28,10 +30,11 @@ def clear_preview_collection(name="main"):
 
 
 def load_preset_thumbnails(directory):
-    """Load preset thumbnails from a directory."""
-    import logging
+    """Load preset thumbnails from a directory (idempotent).
 
-    logger = logging.getLogger(__name__)
+    Already-loaded entries are skipped so the function is safe to call
+    from dynamic enum item callbacks that fire on every redraw.
+    """
     directory = Path(directory)
 
     if not directory.exists() or not directory.is_dir():
@@ -45,7 +48,8 @@ def load_preset_thumbnails(directory):
 
     for f in directory.glob("*.png"):
         try:
-            pcoll.load(f.stem, str(f.resolve()), "IMAGE")
+            if pcoll.get(f.stem) is None:
+                pcoll.load(f.stem, str(f.resolve()), "IMAGE")
         except (OSError, RuntimeError, AttributeError) as e:
             logger.warning(f"Failed to load preset icon {f.name}: {e}")
 

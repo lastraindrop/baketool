@@ -604,14 +604,6 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     # Quality settings
     id_seed: props.IntProperty(name="Random Seed", default=0, min=0)
 
-    # Texel Density
-    texel_density: props.FloatProperty(
-        name="Target Density",
-        default=10.24,
-        min=0.01,
-        description="Target texel density in px/unit",
-    )
-
 
 class BakeJob(bpy.types.PropertyGroup):
     name: props.StringProperty(name="Job Name", default="New Job")
@@ -699,7 +691,8 @@ def get_library_preset_items(self, context):
 
     from .core import thumbnail_manager
 
-    thumbnail_manager.get_preview_collection("presets")
+    # Load matching .png thumbnails (idempotent) so the gallery shows icons
+    thumbnail_manager.load_preset_thumbnails(library_path)
 
     found_items = []
     # Find all .json files

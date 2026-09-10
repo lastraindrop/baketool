@@ -54,9 +54,20 @@
 - [x] **文档一致化**：USER_MANUAL（通道清单/状态文件名/清理入口）、ECOSYSTEM_GUIDE（dev_tools 分发策略修正）、RELEASE_CHECKLIST（id==目录名与 zh 抽查项）、TECHNICAL_GUIDE（新增 §5.4 通道管线与引擎可达性、§9.7 本轮产物）、ROADMAP/task.md/CHANGELOG 同步。
 - [x] **验证**：5 版本 161 项测试 0 失败 0 错误（3.3/3.6 各 4 项 tomllib 预期跳过）；发布 ZIP（67 文件，根目录==id、dev_tools 随包、zh_HANS 生效、无 pycache 泄漏）全项通过；全项目 `py_compile` 0 错误。
 
+### 9. 发布候选最终清理 (2026-09-10) ✅
+- [x] **P1 修复**：预设库缩略图链路接通（`load_preset_thumbnails` 从未被调用 → 图标恒为 0 的静默降级；现由 `get_library_preset_items` 接线并幂等化）；Normal 通道 Prefix/Suffix 双重绘制度除（`CHANNEL_UI_LAYOUT` 与通用 Naming 行重复）。
+- [x] **P2 死代码移除（净 -153 行）**：死 operator `BAKETOOL_OT_TogglePreview`、`manage_objects_logic` 死分支 `"SET"`、Texel 死链（RNA/UI/`TexelDensityCalculator`/测试/Mock 五处）、`compat.is_extension`/`get_version_string`/恒等函数 `get_bake_operator_type`、`save_image` 未用 `reload` 形参、`_resolve_color_space_name` 未用 `image` 形参。
+- [x] **词典治理**：同步清除 3 个死键（Texel/Target Density/描述），468 → 465 词条。
+- [x] **文档同步**：CHANGELOG/ROADMAP/task.md 记录本轮；DEVELOPER_GUIDE 移除已删 API 并修正过期示例；TECHNICAL_GUIDE 新增 §9.8（声明↔接线可达性）；RELEASE_CHECKLIST 新增孤儿 operator 与缩略图烟测项。
+- [x] **验证**：5 版本 160 项测试 0 失败 0 错误；静态审计（死符号 0 残留、孤儿 operator 0、i18n 0 缺失 0 空值、注册对称 12/12）全过；发布 ZIP 重新生成并验证。
+
 ## [v1.1.x] 后续排队功能
 - [ ] **通道实装补齐（外部审计立项，最高优先）**：Vertex Color / Curvature / Slope / Thickness / Select 重实装并挂回通道列表（走 TECHNICAL_GUIDE §5.4.5 检查单）；Normal X/Y/Z 轴向分量实装或删除属性，二选一。
-- [ ] **崩溃记录归属细化**：会话记录结合 blend 文件名哈希，恢复 UI 仅提示本场景的崩溃记录。
+- [ ] **崩溃记录归属细化**：会话记录结合 blend 文件名哈希，恢复 UI 仅提示本场景的崩溃记录；同时消除 `update_crash_cache` 的双重执行（独立注册于 load_post 且被 `load_default_preset` 尾部显式调用）。
+- [ ] **UDIM 检测逻辑合并（DRY）**：`udim_utils.detect_object_udim_tile`（主导 tile）与 `uv_manager.detect_object_udim_tiles`（全部 tile）共享 ~25 行相同扫描内核，应提取共享实现；测试经 `uv_manager` 隐式 re-export 导入前者的脆弱链路一并修正。
+- [ ] **选择状态恢复统一（DRY）**：`ModelExporter._restore_state`、`UVLayoutManager._apply_smart_uv` finally、`cage_analyzer` 三处"DESELECT→重选→恢复 active"重复实现提取公共 helper；`ExportResult`/`ExportAllResults` 的 filepath_raw/file_format 保存-恢复块同样去重。
+- [ ] **core 层 operator 归属**：`BAKETOOL_OT_EmergencyCleanup` 是 core/ 中唯一的 bpy Operator（其余 21 个全在 ops.py），应迁至 ops.py 使 core 保持无表现层依赖，`__init__.get_classes` 的 cleanup 特例随之移除。
+- [ ] **风格一致性收尾**：engine.py 两处函数体内延迟导入 `log_error` 统一至顶部导入；engine.py/`__init__.py` 残留中文注释统一为英文；`RuntimeBakeObject` docstring 拼写修正；`RunDevTests` 移除无意义的 UNDO 选项。
 - [ ] Phase 5: 函数拆分（`BakeStepRunner.run` 129 行、`BakePassExecutor._run_blender_bake_pipeline`）。
 - [ ] Phase 6: CI 集成（`isort` + `ruff` + `mypy` incremental）。
 - [ ] 类型覆盖率目标 50%+（`core/common.py` + `core/engine.py`）。
