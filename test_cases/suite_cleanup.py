@@ -11,7 +11,7 @@ if addon_dir not in sys.path:
     sys.path.append(addon_dir)
 
 import baketool
-from baketool.test_cases.helpers import cleanup_scene, DataLeakChecker
+from baketool.test_cases.helpers import cleanup_scene
 
 class SuiteCleanup(unittest.TestCase):
     def setUp(self):

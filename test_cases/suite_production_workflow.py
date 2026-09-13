@@ -260,8 +260,7 @@ class SuiteProductionWorkflow(unittest.TestCase):
             mgr = BakeStateManager()
             mgr.finish_session()
 
-        # 写入格式不正确的日志文件，验证读取时不会崩溃
-        import json
+        # Write a malformed log file and verify reads stay safe.
         mgr._write({'invalid': 'data', 'status': 'CORRUPTED'})
         self.assertTrue(mgr.has_crash_record())
         try:

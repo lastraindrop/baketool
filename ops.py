@@ -66,7 +66,7 @@ class BAKETOOL_OT_RunDevTests(bpy.types.Operator):
 
     bl_idname = "baketool.run_dev_tests"
     bl_label = "Run Development Tests"
-    bl_options = {"REGISTER", "UNDO"}
+    bl_options = {"REGISTER"}
 
     _SUBPROCESS_TIMEOUT_SECONDS = 1800
 
@@ -253,7 +253,10 @@ class BAKETOOL_OT_BakeOperator(bpy.types.Operator, BakeModalOperator):
                 if mgr.has_crash_record():
                     data = mgr.read_log()
                     if data:
-                        start_idx = data.get("current_queue_idx", 0)
+                        start_idx = min(
+                            max(int(data.get("current_queue_idx", 0)), 0),
+                            len(self.bake_queue) - 1,
+                        )
 
         except (RuntimeError, ValueError) as e:
             err_msg = UI_MESSAGES.get(
@@ -280,7 +283,10 @@ class BAKETOOL_OT_QuickBake(bpy.types.Operator, BakeModalOperator):
     @classmethod
     def poll(cls, context: bpy.types.Context) -> bool:
         """Grey out the context-menu entry when no mesh is selected."""
-        return any(o.type == "MESH" for o in context.selected_objects)
+        return (
+            any(o.type == "MESH" for o in context.selected_objects)
+            and not context.scene.is_baking
+        )
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
         """Support non-interactive execution.
@@ -651,6 +657,7 @@ class BAKETOOL_OT_DeleteAllResults(bpy.types.Operator):
         images = [r.image for r in results if r.image]
 
         results.clear()
+        context.scene.baked_image_results_index = 0
 
         for img in images:
             if img.users == 0:

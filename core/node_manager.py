@@ -42,8 +42,9 @@ def bake_node_to_image(
         logger.warning("bake_node_to_image: Invalid material or node")
         return None
 
-    img = set_image(f"{material.name}_{node.name}", settings.res_x, settings.res_y)
-    img_existed_before = img is not None and bpy.data.images.get(img.name) is not None
+    img_name = f"{material.name}_{node.name}"
+    img_existed_before = bpy.data.images.get(img_name) is not None
+    img = set_image(img_name, settings.res_x, settings.res_y)
 
     from .common import SceneSettingsContext
 
@@ -62,11 +63,10 @@ def bake_node_to_image(
                         None,
                     )
                     if out:
-                        emi = h._add_node(
-                            material,
-                            "ShaderNodeEmission",
-                            location=(out.location.x - 200, out.location.y),
-                        )
+                        tex = h.session_nodes[material]["tex"]
+                        emi = h.session_nodes[material]["emi"]
+                        tex.image = img
+                        tree.nodes.active = tex
                         tree.links.new(node.outputs[0], emi.inputs[0])
                         tree.links.new(emi.outputs[0], out.inputs[0])
 
@@ -136,13 +136,16 @@ class NodeGraphHandler:
         Args:
             materials: List of materials to manage during baking.
         """
-        self.materials = [
-            m for m in materials if m and hasattr(m, "use_nodes") and m.use_nodes
-        ]
+        self.materials = list(
+            dict.fromkeys(
+                m for m in materials if m and hasattr(m, "use_nodes") and m.use_nodes
+            )
+        )
         self.session_nodes = {}
         self.temp_logic_nodes = {}
         self.temp_attributes = []
         self.original_links = {}
+        self.original_active_nodes = {}
 
     def __enter__(self):
         for mat in self.materials:
@@ -151,6 +154,7 @@ class NodeGraphHandler:
             for link in tree.links:
                 links_data.append((link.from_socket, link.to_socket))
             self.original_links[mat] = links_data
+            self.original_active_nodes[mat] = tree.nodes.active
 
         self._prepare_session_nodes()
         return self
@@ -220,6 +224,10 @@ class NodeGraphHandler:
                 except (ReferenceError, KeyError, AttributeError, RuntimeError):
                     # Individual link failure shouldn't stop others
                     pass
+            try:
+                tree.nodes.active = self.original_active_nodes.get(mat)
+            except (ReferenceError, RuntimeError):
+                pass
 
         # 3. Clean up temp attributes
         for obj, attr in self.temp_attributes:
@@ -317,6 +325,14 @@ class NodeGraphHandler:
 
             tex_n.image = image
             tree.nodes.active = tex_n
+
+            # Each pass starts from the user's output connection. Otherwise an
+            # earlier EMIT pass leaks its temporary shader into native passes.
+            for link in list(out_n.inputs[0].links):
+                tree.links.remove(link)
+            for from_sock, to_sock in self.original_links.get(mat, []):
+                if to_sock == out_n.inputs[0]:
+                    tree.links.new(from_sock, to_sock)
 
             needs_emit = (
                 bake_pass == "EMIT"
@@ -458,6 +474,7 @@ class NodeGraphHandler:
             n.samples = ms.samples if ms else 16
             n.inputs["Distance"].default_value = ms.distance if ms else 1.0
             n.inside = ms.inside if ms else False
+            n.only_local = ms.local_only if ms else False
             return n.outputs["Color"]
         elif mtype == "POS":
             return self._add_node(mat, "ShaderNodeNewGeometry").outputs["Position"]

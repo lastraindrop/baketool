@@ -141,7 +141,6 @@ def draw_active_channel_properties(
     if channel.override_defaults:
         sub = col.box()
         sub.prop(channel, "custom_cs", text="Space")
-        sub.prop(channel, "custom_mode", text="Export Mode")
 
     box.separator()
 
@@ -817,6 +816,8 @@ class BAKE_PT_BakePanel(bpy.types.Panel):
         r.prop(s, "bake_motion", text="Animation", icon="RENDER_ANIMATION", toggle=True)
         if s.bake_motion:
             sub = col.box()
+            r = sub.row(align=True)
+            r.prop(s, "bake_motion_use_custom", text="Custom", toggle=True)
             r = sub.row(align=True)
             r.prop(s, "bake_motion_start", text="Start")
             r.prop(s, "bake_motion_last", text="Frames")

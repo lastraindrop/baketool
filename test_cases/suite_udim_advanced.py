@@ -1,7 +1,6 @@
 
 """UDIM tile detection and packing tests."""
 import unittest
-import bpy
 import os
 import sys
 import numpy as np

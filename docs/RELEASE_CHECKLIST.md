@@ -130,6 +130,19 @@ python automation/build_release_zip.py
 
 这样可以稳定排除 `.venv/`、`test_output/`、`docs/legacy/` 等本地或验证期内容；发布包会保留 `automation/cli_runner.py`、`automation/headless_bake.py`、`test_cases/` **以及 `dev_tools/`**（`suite_localization` 的直接依赖，缺失会导致打包后的 Run Safety Audit 报导入错误），以支持 Debug 模式下的 `Run Safety Audit` 与文档中的 headless CLI。此收录关系由 `suite_extension_validation.test_release_zip_includes_audit_dependencies` 固化为回归测试。
 
+**解压包级验证（强制，2026-09-11 起）**：发布质量以解压后的 ZIP 为准，不以源码目录为准——两者可能因打包规则漂移而不一致。生成 ZIP 后必须：
+
+```bash
+# 1. 官方元数据校验
+blender --background --factory-startup --command extension validate dist/baketool-<版本>.zip
+
+# 2. 解压后在隔离目录运行全套 Safety Audit（必须 0 失败 0 错误）
+blender -b --factory-startup --python-exit-code 1 \
+  --python <解压目录>/baketool/automation/cli_runner.py -- --suite all
+```
+
+源码目录全绿 + 解压包 159/162（如曾有）这类结果都不得放行；两项验证均为硬性门槛。
+
 ## 9. 发布说明
 
 对外发布说明至少应包含：

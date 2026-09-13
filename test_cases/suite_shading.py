@@ -55,7 +55,6 @@ class SuiteShading(unittest.TestCase):
     def test_remove_preview_cleans_up_temp_material(self):
         """Verify that remove_preview deletes the temporary material if it's unused."""
         ms = MockSetting()
-        mat_count_before = len(bpy.data.materials)
         shading.apply_preview(self.obj, ms)
         # The preview material name is BT_Packing_Preview (PREVIEW_MAT_NAME)
         self.assertIn(shading.PREVIEW_MAT_NAME, bpy.data.materials)
@@ -70,9 +69,16 @@ class SuiteShading(unittest.TestCase):
         ms = MockSetting()
         shading.apply_preview(self.obj, ms)
         initial_preview = self.obj.data.materials[0].name
+        source_nodes = [n.bl_idname for n in self.obj.active_material.node_tree.nodes]
 
         shading.apply_preview(self.obj, ms)
         self.assertEqual(self.obj.data.materials[0].name, initial_preview)
+        rebuilt_nodes = [n.bl_idname for n in self.obj.active_material.node_tree.nodes]
+        self.assertEqual(
+            source_nodes,
+            rebuilt_nodes,
+            "Repeat apply rebuilt the preview from itself and lost source logic",
+        )
 
     def test_apply_preview_no_material_graceful(self):
         """Verify objects without materials are handled safely."""

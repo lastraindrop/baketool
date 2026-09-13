@@ -139,7 +139,6 @@ class SuiteCodeReviewFixes(unittest.TestCase):
 
     def test_manifest_version_matches_bl_info(self):
         """Verify blender_manifest.toml version matches bl_info version."""
-        import os
         from pathlib import Path
         test_file = Path(__file__).resolve()
         manifest_path = test_file.parent.parent / "blender_manifest.toml"

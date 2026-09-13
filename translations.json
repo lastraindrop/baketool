@@ -243,13 +243,6 @@
             "ru_RU": "Аддон отключён!",
             "zh_HANS": "插件已禁用！"
         },
-        "All bake settings are valid and ready.": {
-            "en_US": "All bake settings are valid and ready.",
-            "fr_FR": "Tous les paramètres de bake sont valides et prêts.",
-            "ja_JP": "すべてのベイク設定は有効で準備完了です。",
-            "ru_RU": "Все параметры запекания корректны и готовы.",
-            "zh_HANS": "所有烘焙设置均有效且已就绪。"
-        },
         "Alpha": {
             "en_US": "Alpha",
             "fr_FR": "Canal alpha",
@@ -564,13 +557,6 @@
             "ja_JP": "BakeNexus のプロパティが初期化されていません。",
             "ru_RU": "Свойства BakeNexus не инициализированы.",
             "zh_HANS": "BakeNexus 属性尚未初始化。"
-        },
-        "BakeNexus v1.0.0 optimized for Blender 5.0 rendering pipeline.": {
-            "en_US": "BakeNexus v1.0.0 optimized for Blender 5.0 rendering pipeline.",
-            "fr_FR": "BakeNexus v1.0.0 optimisé pour le pipeline de rendu de Blender 5.0.",
-            "ja_JP": "BakeNexus v1.0.0 は Blender 5.0 のレンダーパイプライン向けに最適化されています。",
-            "ru_RU": "BakeNexus v1.0.0 оптимизирован для конвейера рендеринга Blender 5.0.",
-            "zh_HANS": "BakeNexus v1.0.0 已针对 Blender 5.0 渲染管线进行优化。"
         },
         "Baked Image Results": {
             "en_US": "Baked Image Results",
@@ -1258,13 +1244,6 @@
             "ru_RU": "Экспорт сетки",
             "zh_HANS": "导出网格"
         },
-        "Export Mode": {
-            "en_US": "Export Mode",
-            "fr_FR": "Mode d'exportation",
-            "ja_JP": "エクスポートモード",
-            "ru_RU": "Режим экспорта",
-            "zh_HANS": "导出模式"
-        },
         "Export Model": {
             "en_US": "Export Model",
             "fr_FR": "Exporter le modèle",
@@ -1894,13 +1873,6 @@
             "ja_JP": "エクスポートする画像がありません",
             "ru_RU": "Нет изображения для экспорта",
             "zh_HANS": "没有要导出的图像"
-        },
-        "No objects to preview": {
-            "en_US": "No objects to preview",
-            "fr_FR": "Aucun objet à prévisualiser",
-            "ja_JP": "プレビューするオブジェクトがありません",
-            "ru_RU": "Нет объектов для предпросмотра",
-            "zh_HANS": "没有可预览的对象"
         },
         "No result selected": {
             "en_US": "No result selected",
@@ -2952,13 +2924,6 @@
             "ru_RU": "На диск",
             "zh_HANS": "保存到磁盘"
         },
-        "Toggle Preview": {
-            "en_US": "Toggle Preview",
-            "fr_FR": "Basculer l'aperçu",
-            "ja_JP": "プレビュー切替",
-            "ru_RU": "Переключить предпросмотр",
-            "zh_HANS": "切换预览"
-        },
         "Total": {
             "en_US": "Total",
             "fr_FR": "Total",
@@ -3042,13 +3007,6 @@
             "ja_JP": "UV ID",
             "ru_RU": "UV ID",
             "zh_HANS": "UV ID"
-        },
-        "UV Name": {
-            "en_US": "UV Name",
-            "fr_FR": "Nom de l'UV",
-            "ja_JP": "UV 名",
-            "ru_RU": "Имя UV",
-            "zh_HANS": "UV 名称"
         },
         "Uniform": {
             "en_US": "Uniform",
@@ -3197,26 +3155,12 @@
             "ru_RU": "Использовать для этого канала конкретные цветовое пространство и глубину вместо значений по умолчанию задачи",
             "zh_HANS": "为此通道使用特定的色彩空间和深度，而不是任务默认值"
         },
-        "Validation failed: {}": {
-            "en_US": "Validation failed: {}",
-            "fr_FR": "Validation échouée : {}",
-            "ja_JP": "検証に失敗しました: {}",
-            "ru_RU": "Проверка не удалась: {}",
-            "zh_HANS": "验证失败: {}"
-        },
         "Visual Preset Gallery": {
             "en_US": "Visual Preset Gallery",
             "fr_FR": "Galerie visuelle de préréglages",
             "ja_JP": "ビジュアルプリセットギャラリー",
             "ru_RU": "Визуальная галерея пресетов",
             "zh_HANS": "可视化预设库"
-        },
-        "Warning: Cage object missing for selective bake.": {
-            "en_US": "Warning: Cage object missing for selective bake.",
-            "fr_FR": "Avertissement : objet de cage manquant pour le bake sélectif.",
-            "ja_JP": "警告: 選択ベイク用のケージオブジェクトがありません。",
-            "ru_RU": "Предупреждение: отсутствует объект клетки для выборочного запекания.",
-            "zh_HANS": "警告：选择性烘焙缺少罩体物体。"
         },
         "WebP": {
             "en_US": "WebP",

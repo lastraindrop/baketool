@@ -279,5 +279,28 @@ class SuitePresetAndState(unittest.TestCase):
         # res_x is IntProperty, setattr with string should fail and increment stats['error']
         self.assertGreater(io.stats['error'], 0)
 
+    def test_preset_keeps_extension_channel_and_empty_collections(self):
+        """Snapshot loading must preserve extension settings and clear empty lists."""
+        builder = JobBuilder("ExtensionPreset")
+        setting = builder.setting
+        setting.use_extension_map = True
+        channel = next(c for c in setting.channels if c.id == "node_group")
+        channel.enabled = True
+        channel.extension_settings.node_group = "TestNodeGroup"
+
+        data = PropertyIO().to_dict(builder.job)
+        bpy.context.scene.BakeJobs.jobs.clear()
+        restored = bpy.context.scene.BakeJobs.jobs.add()
+        PropertyIO().from_dict(restored, data)
+        restored_channel = next(
+            c for c in restored.setting.channels if c.id == "node_group"
+        )
+        self.assertTrue(restored_channel.enabled)
+        self.assertEqual(restored_channel.extension_settings.node_group, "TestNodeGroup")
+
+        restored.custom_bake_channels.add()
+        PropertyIO().from_dict(restored, data)
+        self.assertEqual(len(restored.custom_bake_channels), 0)
+
 if __name__ == '__main__':
     unittest.main()

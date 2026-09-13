@@ -78,6 +78,7 @@ class BakeModalOperator:
         self.current_step_idx: int = 0
         self.total_steps: int = 0
         self.sequence_tracking: Dict[Any, Any] = {}
+        self.failed_steps: int = 0
         self.waiting_confirmation: bool = False
 
     def init_modal(self, context: bpy.types.Context, start_idx: int = 0) -> Set[str]:
@@ -93,6 +94,7 @@ class BakeModalOperator:
         self.total_steps = len(self.bake_queue)
         self.current_step_idx = start_idx
         self.sequence_tracking = {}
+        self.failed_steps = 0
 
         context.scene.is_baking = True
         context.scene.bake_progress = (self.current_step_idx / max(1, self.total_steps)) * 100.0
@@ -142,6 +144,7 @@ class BakeModalOperator:
                 self._process_single_step(context, step)
 
             except (AttributeError, IndexError, RuntimeError, TypeError, ValueError) as e:
+                self.failed_steps += 1
                 self._handle_step_error(context, e)
 
             self.current_step_idx += 1
@@ -156,11 +159,8 @@ class BakeModalOperator:
         return {'RUNNING_MODAL'}
 
     def _process_single_step(self, context, step):
-        job, task, f_info = step.job, step.task, step.frame_info
+        task, f_info = step.task, step.frame_info
         context.scene.bake_status = f"[{self.current_step_idx+1}/{self.total_steps}] {task.base_name}"
-
-        if f_info:
-            context.scene.frame_set(f_info['frame'])
 
         runner = BakeStepRunner(context)
         results = runner.run(step, self.state_mgr, self.current_step_idx)
@@ -209,7 +209,11 @@ class BakeModalOperator:
 
     def finish(self, context: bpy.types.Context) -> None:
         """Complete the bake session, save sequence data, and optionally save-and-quit."""
-        self._cleanup_state(context, "Finished")
+        status = (
+            "Finished" if not self.failed_steps
+            else f"Finished ({self.failed_steps} step errors)"
+        )
+        self._cleanup_state(context, status)
         # Reload sequences if any
         for img, info in self.sequence_tracking.items():
             try:
@@ -227,6 +231,7 @@ class BakeModalOperator:
                     "saving all changes and exiting Blender. "
                     "Any unsaved changes in other areas will also be saved."
                 )
+                saved = False
                 if not bpy.data.filepath:
                     logger.error(
                         "BakeNexus: save_and_quit cancelled - blend file not saved on disk."
@@ -234,9 +239,11 @@ class BakeModalOperator:
                 else:
                     try:
                         bpy.ops.wm.save_mainfile()
+                        saved = True
                     except (RuntimeError, AttributeError) as e:
                         logger.error(f"BakeNexus: save_mainfile failed before quit: {e}")
-                bpy.ops.wm.quit_blender()
+                if saved:
+                    bpy.ops.wm.quit_blender()
 
     def cancel(self, context: bpy.types.Context) -> None:
         """Cancel the bake session and clean up state."""

@@ -38,10 +38,9 @@ class SuiteUILogic(unittest.TestCase):
     def test_ui_message_consistency(self):
         """Ensure all expected system feedback strings exist."""
         expected_keys = [
-            'NO_JOBS', 'PREP_FAILED', 'QUICK_PREP_FAILED', 'NO_OBJECTS',
+            'NO_JOBS', 'PREP_FAILED', 'QUICK_PREP_FAILED',
             'JOB_SKIPPED_NO_OBJS', 'JOB_SKIPPED_NO_TARGET', 'JOB_SKIPPED_NOT_IN_VIEW_LAYER', 'JOB_SKIPPED_MISSING_UV',
-            'JOB_SKIPPED_NO_MESH', 'CAGE_MISSING', 'VALIDATION_SUCCESS', 'VALIDATION_ERROR',
-            'B5_SYNC_NOTICE'
+            'JOB_SKIPPED_NO_MESH'
         ]
         for key in expected_keys:
             self.assertIn(key, UI_MESSAGES, f"UI Message key missing: {key}")

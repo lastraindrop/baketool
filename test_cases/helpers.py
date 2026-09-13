@@ -375,7 +375,6 @@ class MockSetting:
         self.use_alpha = True
         self.use_float32 = False
         # Auto-UV
-        self.auto_uv_name = "Smart_UV"
         self.auto_uv_angle = 1.15192
         self.auto_uv_margin = 0.001
         # Note: apply_to_scene intentionally left out — see

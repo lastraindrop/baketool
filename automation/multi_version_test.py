@@ -306,11 +306,11 @@ def write_summary_reports(
                     failure_list = details.get('failures', [])
                     error_list = details.get('errors', [])
                     if failure_list:
-                        handle.write(f"  Failures:\n")
+                        handle.write("  Failures:\n")
                         for f in failure_list[:10]:
                             handle.write(f"    {f[:200]}\n")
                     if error_list:
-                        handle.write(f"  Errors:\n")
+                        handle.write("  Errors:\n")
                         for e in error_list[:10]:
                             handle.write(f"    {e[:200]}\n")
 
@@ -322,7 +322,7 @@ def write_summary_reports(
                 # Include last few lines of stdout for context
                 stdout_tail = item.get('stdout_tail', [])
                 if stdout_tail:
-                    handle.write(f"  Last Output:\n")
+                    handle.write("  Last Output:\n")
                     for line in stdout_tail[-3:]:
                         handle.write(f"    {line}\n")
         handle.write("\n" + "=" * 60 + "\n")
@@ -498,7 +498,7 @@ def main():
         json_output_path=args.json,
     )
 
-    print(f"\n>>> Reports saved:")
+    print("\n>>> Reports saved:")
     print(f"    Text: {report_path.resolve()}")
     print(f"    JSON: {json_path.resolve()}")
     print("=" * 80 + "\n")

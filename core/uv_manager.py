@@ -124,7 +124,15 @@ class UVLayoutManager:
             objects: List of mesh objects to manage UV layers for.
             settings: BakeJob setting object with UV/bake mode configuration.
         """
-        self.objects = objects
+        seen_meshes = set()
+        self.objects = []
+        for obj in objects:
+            if obj.type != "MESH":
+                continue
+            mesh_id = obj.data.as_pointer()
+            if mesh_id not in seen_meshes:
+                self.objects.append(obj)
+                seen_meshes.add(mesh_id)
         self.settings = settings
         self.context = context
         self.original_states = {}
@@ -133,12 +141,16 @@ class UVLayoutManager:
         self.objects_to_skip = set()
 
     def __enter__(self):
-        self._record_and_setup_layers()
-        if self.objects_to_skip:
-            names = ", ".join(sorted(obj.name for obj in self.objects_to_skip))
-            raise RuntimeError(f"Cannot create temporary UV layer for: {names}")
-        self._process_layout()
-        return self
+        try:
+            self._record_and_setup_layers()
+            if self.objects_to_skip:
+                names = ", ".join(sorted(obj.name for obj in self.objects_to_skip))
+                raise RuntimeError(f"Cannot create temporary UV layer for: {names}")
+            self._process_layout()
+            return self
+        except (AttributeError, RuntimeError, TypeError, ValueError):
+            self._restore_state()
+            raise
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._restore_state()
@@ -160,7 +172,6 @@ class UVLayoutManager:
                 self.objects_to_skip.add(obj)
                 continue
 
-            src_uv = obj.data.uv_layers.active
             new_uv = obj.data.uv_layers.new(name=self.temp_layer_name)
             if new_uv:
                 new_uv.active = True

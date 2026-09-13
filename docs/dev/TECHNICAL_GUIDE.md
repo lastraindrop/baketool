@@ -42,7 +42,7 @@ BakeNexus 支持从 Blender 3.3 LTS 到 5.0+ 的所有主流版本：
 - **GPU 资源管理**：B5.0 移除了 `image.gl_free()`。系统在 `BakeModalOperator` 的 GC 管道中自动检测并安全跳过，同时保留 `buffers_free()` 以释放内存。
 
 ### 3.2 动态枚举 (Dynamic Enums)
-Blender 4.2+ 对 `EnumProperty` 的回调函数要求更严格。我们通过返回完整的 5 元组（含 ID 整数）来确保 UI 列表在所有版本中的渲染与索引稳定性。
+Blender 4.2+ 对 `EnumProperty` 的回调函数要求更严格。我们通过返回完整的 5 元组（含 ID 整数）来确保 UI 列表在所有版本中的渲染与索引稳定性。1.0.0 审计轮进一步把编号契约收紧为"全局唯一 + 恒含 NONE + 与已启用集合无关"，完整规则与失效案例见 §10.3。
 
 ---
 
@@ -360,3 +360,126 @@ for _fmt, _cfg in FORMAT_SETTINGS.items():
 #### 9.8.3 UI 去重：数据驱动布局与通用绘制的边界
 
 `CHANNEL_UI_LAYOUT` 声明的是**每通道专属**参数；所有通道**共享**的属性（如 Naming 行的 prefix/suffix）由 `draw_active_channel_properties` 统一绘制。本轮缺陷（Normal 通道前后缀出现两次）即"专属布局里重复声明了共享属性"。规则：**往 `CHANNEL_UI_LAYOUT` 加条目前，先确认该属性未被通用绘制路径覆盖**。
+
+---
+
+## 10. 发布前独立审计修复轮 (2026-09-11)
+
+本节完整记录 1.0.0 发布前的独立审计轮：审计如何发现既有 162 项测试没有覆盖的缺陷、修复遵循了哪些新契约、参数一致化与动态对齐如何被强制，以及为避免同类错误而固化的检查单。完整诊断明细（30 组，含逐项文件行号与运行证据）见 `docs/RELEASE_AUDIT_2026-09-11.md`；本节聚焦可复用的工程结论。
+
+### 10.1 审计方法：为什么"测试全绿"仍然藏有阻断缺陷
+
+审计采用三级证据分级，避免把推测当结论：
+
+1. **R（运行复现）**：在独立 `--factory-startup` 后台进程中复现。控制流类问题（如"保存失败仍退出"）用模块级替身拦截 `bpy.ops.wm.quit_blender` 等调用，不冒充真实实验。
+2. **S（源码确认）**：有明确赋值/遗漏/调用链证据，但不宣称做过生产场景验证。
+3. **V（待场景验证）**：缺口存在，但需交互环境或真实崩溃才能确认完整表现。
+
+这轮审计的核心教训与 §5.4（B-03）同源但更深一层：**既有测试断言的大多是"声明之间的 harmony"（通道表一致、函数不抛异常、文件存在），而不是"输出与承诺的 harmony"（像素正确、编码正确、失败如实报告）**。典型弱断言案例（均已修复）：
+
+| 弱断言 | 实际掩盖的缺陷 | 修复后的契约断言 |
+|---|---|---|
+| 动画测试只检查两个文件名存在 | API/headless 从不切换场景帧，所有帧在同一帧位烘焙 | runner 统一 `frame_set`；E2E 日志出现 Fra:1→Fra:2 |
+| API 测试断言"返回 bool" | 通道全失败也返回 False 满足断言 | 失败必须抛错或计数；探测 `CANCELLED → False` |
+| 降噪测试比较随机数组与 byte 图回读 | 量化本身就能制造"像素改变"假阳性；后台假处理 | float 基线 + 后台必须逐位不变（显式跳过契约） |
+| 预设测试只比分辨率/采样 | 扩展通道的 node_group 与 enabled 往返即丢 | 非默认字段 + 空集合/空指针全量往返断言 |
+| 通道映射存在即通过 | Element/UV/Seam ID 的 BMesh 实现一执行就 TypeError | 实际执行 + 输出内容断言 |
+
+**推论**：测试数量的增长不等于可信度增长。替换一个弱断言的价值高于新增十个存在性检查；允许测试数下降但可信度上升。
+
+### 10.2 三条核心契约（本轮确立）
+
+#### 契约一：失败契约——"成功"必须表示"实际完成要求的烘焙与保存"
+
+- `bpy.ops.object.bake()` 的返回集合**必须**包含 `FINISHED`，否则视为该通道失败（清理新建图像并返回 None）。
+- 外部保存失败（`save_image` 返回 None）**必须抛错**，不允许继续生成"成功"结果条目。
+- 模态操作符对步骤异常**计数**并在结束时如实显示 `Finished (N step errors)`，同时按错误状态收尾会话记录。
+- 导出失败（目标 addon 缺失）返回 False，**禁止**打印 "Exported:" 成功日志。
+- 结果元数据如实记录实际执行参数：强制单采样通道记录 `samples=1` 而非 job 设置值。
+
+#### 契约二：资源所有权——禁止按名字认领用户数据
+
+- 插件创建的图像与烘焙结果对象打上自定义属性 `is_bt_result = True`；`set_image` / `apply_baked_result` **只复用带标记的自有 datablock**。用户恰好同名的对象/图像绝不被替换、清空、缩放或删除。
+- 复用时契约不匹配（TILED↔普通、float↔byte）即销毁重建，而不是迁就地改参数。
+- 临时资源清理（降噪场景、相机、UV 层、节点）限定为**本次创建**的引用，禁止按前缀全局扫描"看起来像我的"数据。
+
+#### 契约三：入口一致性——所有执行入口共用同一条准备与执行链
+
+- Quick Bake 的 runtime proxy 构建后**必须**过 `JobPreparer.validate_job`，与普通烘焙同规则（对象存在、View Layer、UV、目标合法性）。
+- 动画帧切换（`frame_set`）属于 `BakeStepRunner.run()`，不属于任何 UI operator——面板、Quick Bake、API、headless CLI 四入口行为天然一致。
+- Auto Smart UV 启用时，"无 UV"不再是拒绝理由（UV 会由流程生成）；SELECT_ACTIVE 的低模目标与高模源一并纳入 UV 管理。
+
+### 10.3 参数一致化与动态对齐：规则、案例与测试
+
+#### 10.3.1 动态枚举稳定契约（`get_channel_source_items`）
+
+来源类动态枚举（自定义通道来源、通道打包 R/G/B/A）遵循以下硬性规则：
+
+1. **恒含 `NONE`**：列表首项固定为 `("NONE", "None", ..., 0)`。候选为空不能省略它，否则"清除选择"无法表达，且 RNA 保存值无法回退。
+2. **编号全局唯一且与启用集合无关**：内置通道使用 `i + 1`（i 为完整通道集合索引），自定义通道使用 `len(channels) + 1 + i`。编号**绝不**基于"当前已启用的通道数"这类可变基数。
+   - *失效案例（修复前）*：自定义项以"已启用数"为偏移。用户选择 `BT_CUSTOM_Custom`（编号 3）后再启用一个普通通道，编号 3 被另一个通道占用，原选择静默变成非法值，RNA 读回空串并打印 `current value '3' matches no enum` 警告。
+3. **RNA 警告即契约破裂信号**：任何 `matches no enum in ...` 运行时警告都视为缺陷，不是噪音。
+4. 既有规则沿用：回调返回 5 元组；`items` 为函数的 EnumProperty 默认值必须用整数。
+
+#### 10.3.2 UI 控件准入规则："可设置但不生效"= 缺陷
+
+每个暴露给用户的控件都必须有明确的引擎消费路径。无消费者的控件**删除**（而非保留"供以后使用"），因为它会持续产生"我设置过为什么没效果"的用户困惑与误诊断：
+
+| 已处理案例 | 处置 |
+|---|---|
+| `BakeChannel.custom_mode`（通道级 Export Mode） | 保存链只消费 job 级 color_mode → **删除 RNA + UI** |
+| `BakeJobSetting.auto_uv_name`（Smart UV 层名） | 引擎使用固定临时层名 → **删除 RNA** |
+| `BakeNormalSettings.type / X / Y / Z` | **接线**：OPENGL/DIRECTX → `normal_r/g/b`（Y 轴约定），CUSTOM → 显式三分量 |
+| `BakeMeshSettings.local_only`（AO Only Local） | **接线**：写入 Ambient Occlusion 节点 `only_local` |
+| `bake_motion_use_custom` | **接线 UI**：动画区暴露 Custom 开关， Start/Frames 仅在开启时生效（此前引擎读该字段但 UI 无法切换，等于 UI 与引擎各说各话） |
+| `mesh_settings.contrast/direction/invert` | **保留**：为 v1.1 通道重实装预留，有注释保护（合法例外，见 §9.8.2） |
+
+判定顺序：先问"引擎在哪一行读它"——读不到就删除；能读到但 UI 不可达就补 UI；两者都不是才考虑预留并注释保护。
+
+#### 10.3.3 执行对齐的四个强制点
+
+1. **bake 设置目标统一**：`SceneSettingsContext("bake", ...)` 的取目标逻辑**必须**复用 `compat.get_bake_settings(scene)`，禁止在 common 里重写版本分支。
+   - *失效案例（A08）*：common 自己判断 `is_blender_5()` 才使用 `scene.render.bake`，导致 Blender 4.x 的 `use_pass_direct/indirect/color` 开关被静默丢弃——上下文进入/退出"看起来正常"，但属性从未写进真正的目标。修复后 4.2 复现：上下文内 `use_pass_direct` 实际为 False。
+2. **图像落盘统一走 `save_render`**：格式、位深、颜色模式、质量、编解码由 `scene.render.image_settings`（经 `SceneSettingsContext("image")` 临时接管）驱动。`image.save()` 与场景设置脱钩，是"界面设置真实生效"的反例（A10：请求 16-bit 落盘 8-bit、请求 BW 落盘 RGBA）。验证必须到**文件头级**（PNG IHDR 的 bit depth / color type），交叉改变 buffer 类型与请求参数，单一组合的"碰巧一致"不算证据。
+3. **通道间输出链接恢复**：`setup_for_pass()` 每个 pass 开始时先移除 Material Output 的当前输入链接，并从 `original_links` 回填用户原始连接——否则前一个 EMIT pass 的临时 Emission 会泄漏进后续原生 pass（A06：EMIT → COMBINED 后输出源仍是 `ShaderNodeEmission`）。
+4. **预览与烘焙互斥**：`use_preview` 开启时，`BakeStepRunner.run()` 在进入烘焙上下文前对任务对象执行 `remove_preview()`；`apply_preview()` 对"当前材质已是预览"的对象直接早退——从预览自身重建会摧毁首次捕获的源节点逻辑（A23）。
+
+#### 10.3.4 预设往返与加载顺序
+
+`PropertyIO.from_dict` 的顺序敏感点（A20 案例：扩展通道的 `node_group` 与 `enabled` 往返即丢）：
+
+1. **迁移仅限旧键**：`PRESET_MIGRATION_MAP` 的改写只在键**不是**当前层合法字段时执行。此前 `extension_settings.node_group`（当前合法键）被误当旧键 `node_group` 迁移到不存在的路径上，数据直接丢弃。
+2. **先集合后标量**：加载排序把 CollectionProperty 排在最前。原因：`use_light_map` 等开关的 update 回调会按声明**重建**通道集合——先加载开关再加载通道，通道的 enabled/配置会被回调销毁。
+3. **空集合与空指针必须可写回**：序列化始终输出集合（含空列表）；加载时仅当新值是合法 list 才 clear+重建。否则"导入一个没有 custom channels 的预设"无法清空目标上已有的旧数据。
+4. **先验证类型再 clear**：对错误类型的值先 clear 等于先破坏现有配置再失败。
+
+回归固化：`suite_preset.test_preset_keeps_extension_channel_and_empty_collections`（扩展通道 enabled + node_group 往返、空集合清空语义）。
+
+#### 10.3.5 一致性验证闭环（本轮新增/加强的测试）
+
+| 测试 | 固化的契约 |
+|---|---|
+| `suite_context_lifecycle.test_uv_manager_rolls_back_partial_setup_failure` | `UVLayoutManager.__enter__` 中途失败必须自回滚（Python 不会为进入失败的管理器调用 `__exit__`） |
+| `suite_preset.test_preset_keeps_extension_channel_and_empty_collections` | §10.3.4 的迁移边界与空集合语义 |
+| `suite_shading.test_apply_preview_skips_if_already_preview`（加强） | 幂等 = 源节点逻辑存活，而非仅材质名不变 |
+| `suite_unit.test_apply_denoise_pixels_modified`（重写） | float 基线；后台模式逐位不变（显式跳过契约） |
+| `suite_ui_logic.test_ui_message_consistency`（收紧） | 消息表只允许有接线消费者的键存在（5 个死键已删） |
+
+另有若干契约（同名数据保护、PNG 文件头、节点烘焙像素、后台不退出等）当前由审计探测脚本验证，**尚未固化为套件**——这是 v1.1 测试扩展的优先项，避免本轮探测能力随临时脚本流失。
+
+### 10.4 已知限制（v1.1 明示保留项）
+
+以下问题在审计中确认、经评估后**有意保留**至 v1.1，且已在文档中明示，不构成静默宣称：
+
+1. **UDIM 边界与逐 tile 后处理（A17 余项）**：floor 边界使 [0,1] UV 误判出多 tile；numpy custom/PBR/打包不逐 tile 处理；`api.get_udim_tiles` 只收集主导 tile 与命名不符。
+2. **多对象自动应用/导出范围（A18）**：COMBINE/UDIM/SPLIT 模式下 Apply/Export 仅覆盖 `task.active_obj`——这些组合下应关闭 Apply/Export。
+3. **Proximity 笼体语义（A19 余项）**：最近点距离均值，非逐顶点自适应；非均匀缩放法线未做逆转置校验。
+4. **崩溃恢复跨进程归属（A25 余项）**：`bpy.app.tempdir` 按实例隔离时跨进程发现天然失效；共享目录时无 blend 归属区分；真实强杀续跑未在本机验证。
+5. **交互式降噪的像素级验证（A12 余项）**：后台已显式跳过；交互路径依赖 Viewer 回读，需真实 GUI 会话做像素级确认。
+
+### 10.5 本轮验证结果（基线快照）
+
+- 5 版本矩阵（3.3.21 / 3.6.23 / 4.2.14 / 4.5.3 / 5.0.1）：162 项，0 失败 0 错误（3.3/3.6 各 5 项预期跳过）。
+- 发布 ZIP（`build_release_zip.py` 随包）官方 extension validate 通过；**解压后**独立运行全套 Safety Audit 162/162——发布质量以解压包为准，不以源码目录为准。
+- 行为复现：节点红常量 `max_red=1.0`；PNG 文件头与请求一致（8/16-bit × RGB/BW 全组合）；预设 `node_group`/`enabled` 保真；同名用户对象 `mesh_replaced=false`；4.2 `use_pass_direct` 上下文内实际生效；后台 `quit_called=false`；临时 UV/节点/相机计数清理前后相等。
+- 静态：全仓 `ruff --select F,E9` 0 项；翻译词典 0 缺失 0 过期；全部 `.py` `py_compile` 通过；运行时代码净增约 90 行（均为失败检查与回滚所需），未新增模块或抽象层。

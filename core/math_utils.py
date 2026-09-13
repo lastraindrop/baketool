@@ -242,7 +242,7 @@ def _setup_island_id_bmesh(obj, id_type, attr_name, start_color, manual_start, s
         island_count = len(islands)
         palette = generate_optimized_colors(island_count, start_color, manual_start, seed)
 
-        corner_count = len(bm.loops)
+        corner_count = len(obj.data.loops)
         loop_colors = np.zeros((corner_count, 4), dtype=np.float32)
 
         for island_idx, island_faces in enumerate(islands):

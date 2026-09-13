@@ -111,24 +111,33 @@ def robust_image_editor_context(context: bpy.types.Context, image: bpy.types.Ima
         yield False
     else:
         old_type = area.type
+        old_image = None
         try:
             if old_type != "IMAGE_EDITOR":
                 area.type = "IMAGE_EDITOR"
+            old_image = area.spaces.active.image
             area.spaces.active.image = image
             region = next((r for r in area.regions if r.type == "WINDOW"), None)
-
-            with context.temp_override(
+            override = context.temp_override(
                 window=window,
                 area=area,
                 region=region,
                 screen=screen,
                 space_data=area.spaces.active,
-            ):
-                yield True
+            )
         except (AttributeError, RuntimeError) as e:
             logger.error(f"Context switch failed: {e}")
+            if area.type != old_type:
+                area.type = old_type
             yield False
+            return
+
+        try:
+            with override:
+                yield True
         finally:
+            if area.type == "IMAGE_EDITOR":
+                area.spaces.active.image = old_image
             if area.type != old_type:
                 area.type = old_type
 
@@ -201,11 +210,10 @@ def set_image(
     else:
         image.use_fake_user = False
 
-    if not full:
-        try:
-            image.colorspace_settings.name = _resolve_color_space_name(space)
-        except (AttributeError, RuntimeError):
-            pass
+    try:
+        image.colorspace_settings.name = _resolve_color_space_name(space)
+    except (AttributeError, RuntimeError):
+        pass
 
     if alpha:
         image.alpha_mode = "STRAIGHT"
@@ -252,7 +260,9 @@ def _get_or_create_image_base(
     image = bpy.data.images.get(name)
 
     if image:
-        if (image.source == "TILED") != use_udim:
+        if not image.get("is_bt_result", False):
+            image = None
+        elif (image.source == "TILED") != use_udim or image.is_float != full:
             bpy.data.images.remove(image)
             image = None
 
@@ -269,6 +279,7 @@ def _get_or_create_image_base(
             float_buffer=full,
             tiled=use_udim,
         )
+        image["is_bt_result"] = True
         if use_udim and hasattr(image, "tiles") and len(image.tiles) == 0:
             image.tiles.new(1001)
             image.update()
@@ -462,7 +473,6 @@ def save_image(
         return None
 
     ext = ".png"
-    from ..constants import FORMAT_SETTINGS
     if file_format in FORMAT_SETTINGS:
         ext = FORMAT_SETTINGS[file_format]["extensions"][0]
 
@@ -496,7 +506,7 @@ def save_image(
         }):
             image.filepath_raw = abs_path
             image.file_format = file_format
-            image.save()
+            image.save_render(abs_path, scene=bpy.context.scene)
     except (OSError, RuntimeError, AttributeError) as e:
         logger.error(f"Save failed: {e}")
         return None

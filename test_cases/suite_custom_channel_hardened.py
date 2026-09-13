@@ -5,7 +5,6 @@ import bpy
 import numpy as np
 from .helpers import cleanup_scene, create_test_object, JobBuilder
 from ..core.engine import BakePassExecutor, BakeTask
-from ..core import image_manager
 
 class SuiteCustomChannelHardened(unittest.TestCase):
     def setUp(self):

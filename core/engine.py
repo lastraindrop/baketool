@@ -14,6 +14,7 @@ from .common import (
     SceneSettingsContext,
     ValidationResult,
     apply_baked_result,
+    log_error,
 )
 from .image_manager import set_image, save_image
 from .math_utils import (
@@ -21,12 +22,14 @@ from .math_utils import (
     process_pbr_numpy,
     setup_mesh_attribute,
     pack_channels_numpy,
+    calculate_cage_proximity,
 )
 from .uv_manager import (
     get_active_uv_udim_tiles,
     UDIMPacker,
     UVLayoutManager,
 )
+from .shading import remove_preview
 from .bake_types import BakeStep, BakeTask
 from .udim_utils import detect_object_udim_tile
 from .node_manager import NodeGraphHandler
@@ -43,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 # --- Runtime Proxies (For Quick Bake) ---
 class RuntimeBakeObject:
-    """Runtime proxy for BakeBakeObject without modifying scene data."""
+    """Runtime proxy for BakeObject without modifying scene data."""
 
     def __init__(self, obj: bpy.types.Object, tile: int = 1001):
         """Initialize runtime bake object proxy.
@@ -132,6 +135,10 @@ class BakePostProcessor:
         if not image:
             return
 
+        if bpy.app.background:
+            logger.warning("BakeNexus: Denoise is unavailable in background mode.")
+            return
+
         # Blender 3.6 has known crashes with denoise compositor
         # Skip denoise on this version to prevent access violation
         if compat.is_blender_3():
@@ -145,6 +152,9 @@ class BakePostProcessor:
         is_temp = reuse_scene is None
         try:
             tmp_scene.render.engine = "CYCLES"
+            tmp_scene.render.resolution_x = image.size[0]
+            tmp_scene.render.resolution_y = image.size[1]
+            tmp_scene.render.resolution_percentage = 100
             # Use version-safe compositor tree accessor
             tree = compat.get_compositor_tree(tmp_scene)
 
@@ -198,7 +208,8 @@ class BakePostProcessor:
                 )
 
             if viewer_img:
-                # 兼容性修复：避免删除 Viewer 节点导致的用户残留错误
+                # Compatibility: avoid stale user references caused by
+                # removing the Viewer node.
                 if (
                     viewer_img.size[0] == image.size[0]
                     and viewer_img.size[1] == image.size[1]
@@ -217,22 +228,21 @@ class BakePostProcessor:
         finally:
             # Important: Only remove if we created it locally
             if is_temp:
-                # 强力清理所有 BT_Denoise_Temp 前缀的辅助场景
-                for s in list(bpy.data.scenes):
-                    if s.name.startswith(SYSTEM_NAMES["DENOISE_SCENE"]):
-                        try:
-                            # 1. 解除节点引用的像素数据
-                            if s.use_nodes:
-                                for attr in ["node_tree", "compositing_node_group"]:
-                                    tree = getattr(s, attr, None)
-                                    if tree and hasattr(tree, "nodes"):
-                                        tree.nodes.clear()
-
-                            # 2. 彻底删除。不要 user_clear()，否则 Blender 的
-                            # ID remap 用户计数可能出现负数噪声。
-                            bpy.data.scenes.remove(s, do_unlink=True)
-                        except (ReferenceError, RuntimeError) as e:
-                            logger.debug(f"Failed to remove temp scene '{s.name}': {e}")
+                try:
+                    if tmp_scene.use_nodes:
+                        for attr in ["node_tree", "compositing_node_group"]:
+                            tree = getattr(tmp_scene, attr, None)
+                            if tree and hasattr(tree, "nodes"):
+                                tree.nodes.clear()
+                    camera = tmp_scene.camera
+                    if camera and camera.name.startswith(SYSTEM_NAMES["DENOISE_CAMERA"]):
+                        camera_data = camera.data
+                        bpy.data.objects.remove(camera, do_unlink=True)
+                        if camera_data and camera_data.users == 0:
+                            bpy.data.cameras.remove(camera_data, do_unlink=True)
+                    bpy.data.scenes.remove(tmp_scene, do_unlink=True)
+                except (ReferenceError, RuntimeError) as e:
+                    logger.debug(f"Failed to remove temp scene '{tmp_scene.name}': {e}")
 
 
 class BakeStepRunner:
@@ -275,17 +285,28 @@ class BakeStepRunner:
             step.frame_info,
         )
         scene = self.scene
+        if f_info:
+            scene.frame_set(f_info["frame"])
 
         results: List[Dict[str, Any]] = []
         baked_images: Dict[str, bpy.types.Image] = {}
         array_cache: Dict[bpy.types.Image, np.ndarray] = {}
+
+        uv_objects = list(task.objects)
+        if task.active_obj and task.active_obj not in uv_objects:
+            uv_objects.append(task.active_obj)
+
+        if job.setting.use_preview:
+            # The shared preview material must never become a bake input.
+            for o in uv_objects:
+                remove_preview(o)
 
         with ExitStack() as stack:
             stack.enter_context(BakeContextManager(self.context, job.setting))
             stack.enter_context(
                 safe_context_override(self.context, task.active_obj, task.objects)
             )
-            stack.enter_context(UVLayoutManager(task.objects, job.setting, self.context))
+            stack.enter_context(UVLayoutManager(uv_objects, job.setting, self.context))
 
             udim_tiles = BakePassExecutor.get_udim_configuration(
                 job.setting, task.objects
@@ -302,7 +323,12 @@ class BakeStepRunner:
                 def cleanup_denoise_scene(s):
                     if s and s.name in bpy.data.scenes:
                         try:
-                            # HI-07: Use do_unlink=True for aggressive cleanup
+                            camera = s.camera
+                            if camera and camera.name.startswith(SYSTEM_NAMES["DENOISE_CAMERA"]):
+                                camera_data = camera.data
+                                bpy.data.objects.remove(camera, do_unlink=True)
+                                if camera_data and camera_data.users == 0:
+                                    bpy.data.cameras.remove(camera_data, do_unlink=True)
                             bpy.data.scenes.remove(s, do_unlink=True)
                         except (ReferenceError, RuntimeError):
                             pass
@@ -365,7 +391,11 @@ class BakeStepRunner:
                             "meta": {
                                 "res_x": img.size[0],
                                 "res_y": img.size[1],
-                                "samples": int(job.setting.sample),
+                                "samples": (
+                                    1
+                                    if c["id"] in DATA_BAKE_FORCE_SINGLE_SAMPLE
+                                    else int(job.setting.sample)
+                                ),
                                 "duration": total_duration,
                                 "bake_time": bake_duration,
                                 "save_time": save_duration,
@@ -378,7 +408,7 @@ class BakeStepRunner:
             if job.setting.use_packing:
                 scene.bake_status = f"Packing Channels... - {task.base_name}"
                 packed_res = self._handle_channel_packing(
-                    job.setting, task, baked_images, f_info, array_cache
+                    job.setting, task, baked_images, f_info, array_cache, udim_tiles
                 )
                 if packed_res:
                     results.append(packed_res)
@@ -418,13 +448,16 @@ class BakeStepRunner:
                 exr_code=s.exr_code,
                 tiff_codec=s.tiff_codec,
             )
+            if not path:
+                raise RuntimeError(f"Failed to save baked image '{img.name}'.")
         else:
             img.pack()
         return path
 
     def _handle_channel_packing(
         self, s: Any, task: BakeTask, baked_images: Dict[str, bpy.types.Image],
-        f_info: Optional[Dict], array_cache: Dict
+        f_info: Optional[Dict], array_cache: Dict,
+        udim_tiles: Optional[List[int]] = None,
     ) -> Optional[Dict]:
         """Internal helper to pack multiple channels into one image.
 
@@ -452,7 +485,8 @@ class BakeStepRunner:
         start_time = time.time()
         pack_name = f"{task.base_name}{s.pack_suffix}"
         pack_img = set_image(
-            pack_name, s.res_x, s.res_y, alpha=True, space="Non-Color", setting=s
+            pack_name, s.res_x, s.res_y, alpha=True, space="Non-Color",
+            use_udim=(s.bake_mode == "UDIM"), udim_tiles=udim_tiles, setting=s
         )
 
         if pack_channels_numpy(pack_img, pack_map, array_cache):
@@ -573,8 +607,6 @@ class TaskBuilder:
                     logger.warning(
                         f"BakeNexus: Object '{obj.name}' has no materials. Skipping."
                     )
-                    from .common import log_error
-
                     log_error(
                         context, f"Object '{obj.name}' skipped: No materials assigned."
                     )
@@ -732,7 +764,7 @@ class JobPreparer:
             )
 
         if s.bake_mode == "SELECT_ACTIVE":
-            if missing_uvs := check_objects_uv([s.active_object]):
+            if not s.use_auto_uv and (missing_uvs := check_objects_uv([s.active_object])):
                 return ValidationResult(
                     False,
                     UI_MESSAGES["JOB_SKIPPED_MISSING_UV"].format(
@@ -741,7 +773,7 @@ class JobPreparer:
                     job.name,
                 )
         else:
-            if missing_uvs := check_objects_uv(objs):
+            if not s.use_auto_uv and (missing_uvs := check_objects_uv(objs)):
                 return ValidationResult(
                     False,
                     UI_MESSAGES["JOB_SKIPPED_MISSING_UV"].format(
@@ -831,6 +863,13 @@ class JobPreparer:
             reference_job.setting, bake_objs, active_object
         )
         runtime_job = RuntimeJobProxy(reference_job, runtime_setting)
+
+        result = JobPreparer.validate_job(
+            runtime_job, context.scene, context.view_layer
+        )
+        if not result.success:
+            logger.warning(result.message)
+            return []
 
         # Build Tasks
         tasks = TaskBuilder.build(context, runtime_setting, bake_objs, active_object)
@@ -1035,7 +1074,8 @@ class BakePassExecutor:
     def _create_target_image(cls, setting, task, c_config, udim_tiles):
         prop = c_config["prop"]
         target_cs, is_float = cls._get_color_settings(setting, prop, c_config)
-        img_name = f"{c_config['prefix']}{task.base_name}{c_config['suffix']}"
+        custom_name = f"_{c_config['name']}" if c_config["id"] == "CUSTOM" else ""
+        img_name = f"{c_config['prefix']}{task.base_name}{custom_name}{c_config['suffix']}"
         cleanup_on_failure = bpy.data.images.get(img_name) is None
 
         tile_resolutions = {}
@@ -1141,14 +1181,26 @@ class BakePassExecutor:
             }
 
             if bake_type == "NORMAL":
+                normal_settings = prop.normal_settings
                 params["normal_space"] = (
-                    "OBJECT" if prop.normal_settings.object_space else "TANGENT"
+                    "OBJECT" if normal_settings.object_space else "TANGENT"
                 )
+                if normal_settings.type == "DIRECTX":
+                    params["normal_g"] = "NEG_Y"
+                elif normal_settings.type == "CUSTOM":
+                    params.update(
+                        {
+                            "normal_r": normal_settings.X,
+                            "normal_g": normal_settings.Y,
+                            "normal_b": normal_settings.Z,
+                        }
+                    )
 
             if setting.bake_mode == "SELECT_ACTIVE":
                 params.update(
                     {
                         "use_selected_to_active": True,
+                        "use_cage": bool(setting.cage_object),
                         "cage_object": setting.cage_object.name
                         if setting.cage_object
                         else "",
@@ -1162,18 +1214,18 @@ class BakePassExecutor:
                 setting, prop, bake_type
             )
             with SceneSettingsContext("bake", bake_settings, scene=scene):
-                bpy.ops.object.bake(**params)
+                result = bpy.ops.object.bake(**params)
+            if "FINISHED" not in result:
+                log_error(context, f"Bake Error {chan_id}: Blender cancelled the bake.")
+                return False
             return True
         except (RuntimeError, AttributeError, TypeError, ValueError) as e:
-            from .common import log_error
             log_error(context, f"Bake Error {chan_id}: {e}", include_traceback=True)
             return False
 
     @staticmethod
     def _resolve_cage_extrusion(task, setting):
         if setting.auto_cage_mode == "PROXIMITY" and not setting.cage_object:
-            from .math_utils import calculate_cage_proximity
-
             exts = calculate_cage_proximity(
                 task.active_obj, task.objects, setting.auto_cage_margin
             )
@@ -1460,9 +1512,8 @@ class ModelExporter:
             context.view_layer.objects.active = export_obj
 
             abs_filepath = str(file_path_base.resolve())
-            ModelExporter._execute_format_export(abs_filepath, setting)
-
-            logger.info(f"Exported: {setting.export_format} -> {abs_filepath}")
+            if ModelExporter._execute_format_export(abs_filepath, setting):
+                logger.info(f"Exported: {setting.export_format} -> {abs_filepath}")
         except (RuntimeError, IOError) as e:
             logger.exception(f"Export Error: {e}")
         finally:
@@ -1503,7 +1554,7 @@ class ModelExporter:
         return obj, False
 
     @staticmethod
-    def _execute_format_export(abs_filepath: str, setting: Any) -> None:
+    def _execute_format_export(abs_filepath: str, setting: Any) -> bool:
         fmt = setting.export_format
         use_tex = getattr(setting, "export_textures_with_model", True)
 
@@ -1517,30 +1568,32 @@ class ModelExporter:
                     embed_textures=use_tex,
                     mesh_smooth_type="FACE",
                 )
-            else:
-                logger.error("BakeNexus: FBX Export failed - Addon 'io_scene_fbx' is disabled.")
-        elif fmt == "GLB":
+                return True
+            logger.error("BakeNexus: FBX Export failed - Addon 'io_scene_fbx' is disabled.")
+            return False
+        if fmt == "GLB":
             if hasattr(bpy.ops.export_scene, "gltf"):
                 bpy.ops.export_scene.gltf(
                     filepath=f"{abs_filepath}.glb",
                     use_selection=True,
                     export_format="GLB",
                 )
-            else:
-                logger.error("BakeNexus: GLB Export failed - Addon 'io_scene_gltf2' is disabled.")
-        elif fmt == "USD":
+                return True
+            logger.error("BakeNexus: GLB Export failed - Addon 'io_scene_gltf2' is disabled.")
+            return False
+        if fmt == "USD":
             if hasattr(bpy.ops.wm, "usd_export"):
                 usd_params = {
                     "filepath": f"{abs_filepath}.usd",
                     "export_materials": use_tex,
                     "export_textures": use_tex,
                 }
-                # selected_objects_only was added in Blender 4.2+
-                if hasattr(bpy.ops.wm.usd_export, "selected_objects_only"):
+                if "selected_objects_only" in bpy.ops.wm.usd_export.get_rna_type().properties:
                     usd_params["selected_objects_only"] = True
                 bpy.ops.wm.usd_export(**usd_params)
-            else:
-                logger.error("BakeNexus: USD Export failed - Not supported in this Blender build or addon disabled.")
+                return True
+            logger.error("BakeNexus: USD Export failed - Not supported in this Blender build or addon disabled.")
+        return False
 
     @staticmethod
     def _restore_state(context, prev_sel, prev_act, hide_states):

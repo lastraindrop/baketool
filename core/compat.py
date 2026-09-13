@@ -6,7 +6,7 @@ and ensure robust operation across Blender 3.6 to 5.0+.
 
 import bpy
 import logging
-from typing import Any, Optional
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 

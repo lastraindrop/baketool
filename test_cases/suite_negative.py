@@ -4,8 +4,7 @@ import unittest
 from unittest import mock
 import bpy
 import os
-import tempfile
-from .helpers import cleanup_scene, create_test_object, JobBuilder, ensure_cycles, MockSetting
+from .helpers import cleanup_scene, create_test_object, JobBuilder, ensure_cycles
 from ..core import node_manager
 
 class SuiteNegative(unittest.TestCase):
@@ -126,7 +125,7 @@ class SuiteNegative(unittest.TestCase):
 
         try:
             # Fix: NodeGraphHandler expects materials, not objects
-            with node_manager.NodeGraphHandler([mat]) as h:
+            with node_manager.NodeGraphHandler([mat]):
                 # Force some changes
                 links.clear()
                 raise RuntimeError("Abort mid-process")

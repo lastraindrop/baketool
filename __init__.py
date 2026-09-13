@@ -174,7 +174,7 @@ def register():
         description="Currently selected index in the baked image results list",
     )
 
-    # Progress and Status / 进度与状态反馈
+    # Progress and Status
     bpy.types.Scene.is_baking = props.BoolProperty(name="Is Baking", default=False)
     bpy.types.Scene.bake_progress = props.FloatProperty(
         name="Progress", default=0.0, min=0.0, max=100.0, subtype="PERCENTAGE"
@@ -182,7 +182,7 @@ def register():
     bpy.types.Scene.bake_status = props.StringProperty(name="Status", default="Idle")
     bpy.types.Scene.bake_error_log = props.StringProperty(name="Error Log", default="")
 
-    # 测试反馈 / Test Feedback
+    # Test Feedback
     bpy.types.Scene.last_test_info = props.StringProperty(
         name="Last Test Info", default=""
     )
@@ -210,7 +210,7 @@ def register():
         except Exception as e:
             logger.error(f"Failed to register handler {handler_cls.__name__}: {e}")
 
-    # 制作 keymap // Create keymap
+    # Create keymap
     wm = bpy.context.window_manager
     kc = wm.keyconfigs.addon
     if kc:
@@ -218,7 +218,7 @@ def register():
         kmi = km.keymap_items.new("wm.call_panel", "B", "PRESS", ctrl=True, shift=True)
         kmi.properties.name = "BAKE_PT_BakePanel"
         registry.addon_keymaps.append((km, kmi))
-    # 制作翻译 // Create translations
+    # Create translations
     # Register all loaded languages using the package name as the context/domain
     bpy.app.translations.register(__name__, translations.translation_dict)
 

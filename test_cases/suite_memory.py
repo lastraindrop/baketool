@@ -11,7 +11,6 @@ from .helpers import (
     create_test_object,
     JobBuilder,
     ensure_cycles,
-    MockSetting,
     DataLeakChecker,
 )
 from ..core import image_manager
@@ -153,7 +152,6 @@ class SuiteMemory(unittest.TestCase):
     def test_leak_checker_detects_real_leaks(self):
         """Verify DataLeakChecker can detect actual leaks."""
         checker = DataLeakChecker()
-        initial = len(bpy.data.images)
 
         for i in range(3):
             image_manager.set_image(f"LeakTest_{i}", 32, 32)
@@ -258,7 +256,7 @@ class SuiteMemoryIntegration(unittest.TestCase):
 
     def test_repeated_bake_without_apply(self):
         """Verify repeated bakes without applying don't accumulate memory."""
-        obj = create_test_object("RepeatBakeTest")
+        create_test_object("RepeatBakeTest")
 
         initial = len(bpy.data.images)
 

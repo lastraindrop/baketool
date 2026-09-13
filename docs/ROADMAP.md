@@ -75,19 +75,34 @@
 - **词典治理**：同步清除 3 个死键，468 → 465 词条、0 空值。
 - **验证**：5 版本 160 项测试 0 失败 0 错误；静态审计（死符号/孤儿 operator/i18n/注册对称性）全过。方法学沉淀见 `TECHNICAL_GUIDE.md` §9.8。
 
+## 7.5 已完成发布前独立审计修复 (2026-09-11) ✅
+- **独立审计立项与执行**：以"输出是否真实正确、失败是否如实报告、用户数据是否受保护、多入口是否同规则"为主线做针对性运行复现，产出 30 组诊断（`docs/RELEASE_AUDIT_2026-09-11.md`），并按四批计划全部实施修复。
+- **数据保护（P0）**：`save_and_quit` 仅在保存确认成功后退出；图像/结果对象仅复用带 `is_bt_result` 标记的自有 datablock，同名用户数据不再被替换或删除；崩溃续跑索引钳制。
+- **输出正确性（P1）**：`bpy.ops.object.bake()` 非 FINISHED 视为失败、保存失败抛错、模态结束状态如实显示错误计数；节点烘焙绑定目标图（红色常量实测输出红色）；ID 图 `len(bm.loops)` 崩溃修复；`save_render` 统一编码（PNG 位深/颜色模式实测写入文件头）；通道间材质输出每 pass 从用户原始链接恢复；4.x `use_pass_*` 统一走 `compat.get_bake_settings()` 真实生效；Normal Standard/X/Y/Z 与 AO Only Local 接线；降噪后台明确跳过、临时场景按图像尺寸渲染且仅清理自有资源。
+- **入口与状态一致性（P1）**：Quick Bake 复用 `validate_job`；Auto Smart UV 不再因无 UV 误拒；SELECT_ACTIVE 目标纳入 UV 管理；`frame_set` 移入 `BakeStepRunner`（API/headless/模态三入口帧一致）；UV 管理器进入失败自回滚 + 按 mesh 去重；预设迁移仅限旧键、集合始终序列化、加载先集合后标量；动态枚举恒含 NONE 且编号全局稳定；custom 通道图像名含通道名、alpha 默认 1.0；预览与烘焙互斥（烘焙前自动还原预览材质）、重复应用不再破坏源节点；UDIM 打包透传 TILED。
+- **发布与质量门槛**：`build_release_zip.py` 随包（解压 ZIP 独立 Safety Audit 162/162）；CI 加 `--python-exit-code 1`、artifact 隔离、全报告遍历 + `total>0` 校验；缩略图显式导入 previews 修正误判降级；图像编辑器 contextmanager 不再吞调用体异常；词典 0 缺失 0 过期（457 键）；运行时与测试 Ruff `F,E9` 全清。
+- **测试契约收紧**：降噪测试改为 float 基线并区分后台跳过契约；预览幂等测试校验源节点存活；新增 UV 回滚与预设保真回归；删除无引擎消费的 `custom_mode`/`auto_uv_name` RNA 与 5 个死 `UI_MESSAGES` 键；动画 UI 暴露 Custom 帧范围开关。
+- **验证**：5 版本（3.3.21/3.6.23/4.2.14/4.5.3/5.0.1）162 项测试 0 失败 0 错误；行为复现（节点红常量、PNG 文件头、预设保真、同名对象保护、4.x pass 开关、后台不退出、无临时 UV/节点/相机残留）全部通过；发布 ZIP（68 文件）官方 validate 通过。明细见 `CHANGELOG.md` 2026-09-11 条目与审计报告 §14。
+
 ## 8. 短期计划 (v1.1.x) - 生产力增强
 - **通道实装补齐（2026-08-16 外部审计立项，最高优先）**：v1.0.0 从 `BAKE_CHANNEL_INFO["MESH"]` 移除了 `Vertex Color / Curvature / Slope / Thickness / Select` 五个无引擎实现的通道（静默产出黑图）以及不可达的 `height` 元数据；v1.1 需为其补齐真实生成路径（节点逻辑或 BMesh 分析）后重新挂出。`mesh_settings` 的 `contrast/direction/invert` RNA 字段已按 v1.1 预留（`property.py` 有注释保护），重实装无需预设迁移。实施时必须走 `TECHNICAL_GUIDE.md` §5.4.5 检查单——`test_channel_pipeline_alignment` 会强制引擎路径同步落地。
-- **Normal 轴向分量决策**：`BakeNormalSettings` 的 X/Y/Z 分量属性与预设迁移映射仍在，但引擎从未读取（`normal_r/g/b` 参数未传入 bake operator）。v1.1 决定实装（含 CUSTOM 模式）或删除属性，不允许继续处于"可保存、不生效"状态。
-- **崩溃记录归属细化**：会话文件已按 PID 隔离，但恢复 UI 只展示最新记录；结合 blend 文件名哈希区分"本场景的崩溃"与"其他场景的崩溃"，避免误报。同时消除 `update_crash_cache` 双重执行（独立注册 load_post 且被 `load_default_preset` 显式调用）。
-- **UDIM 检测合并（DRY）**：`udim_utils.detect_object_udim_tile` 与 `uv_manager.detect_object_udim_tiles` 共享约 25 行相同扫描内核，提取共享实现；修正测试经 `uv_manager` 隐式 re-export 的脆弱导入链。
-- **选择状态恢复统一（DRY）**：`ModelExporter._restore_state` / `UVLayoutManager._apply_smart_uv` / `cage_analyzer` 三处重复实现提取公共 helper；`ExportResult` / `ExportAllResults` 的图像元数据保存-恢复块去重。
+- **UDIM 完整性收口（2026-09-11 审计 A17 余项）**：①合并 `udim_utils.detect_object_udim_tile`（主导 tile）与 `uv_manager.detect_object_udim_tiles`（全部 tile）的扫描内核并修正 UV 边界归属（当前 [0,1] 平面会被 floor 边界误判出 4 个 tile）；②numpy custom/PBR/打包后处理当前不逐 tile 处理——未支持组合必须显式拒绝或隐藏，完成逐 tile 实现前不得宣称支持；③统一 `api.get_udim_tiles` 语义（名称暗示全量、实现只收集主导 tile）。
+- **多对象自动应用/导出范围收缩（A18）**：`COMBINE_OBJECT`/`UDIM`/`SPLIT_MATERIAL` 模式下"自动应用烘焙结果"与"导出模型"目前仅处理 `task.active_obj`，SPLIT 的结果对象也未按面裁剪聚合。v1.1 需要么按任务对象列表完整实现，要么在 UI 上对不支持组合明确禁用这两个开关——不允许"开关可点、行为只覆盖部分对象"。
+- **崩溃记录归属细化（A25 余项）**：会话文件已按 PID 隔离，但恢复 UI 只展示最新记录、跨进程/跨场景归属未验证；结合 blend 文件名哈希区分"本场景的崩溃"与"其他场景的崩溃"，并消除 `update_crash_cache` 双重执行（独立注册 load_post 且被 `load_default_preset` 显式调用）。恢复前还需通过真实强杀 Blender 的续跑验证。
+- **Proximity 笼体语义明示（A19 余项）**：当前实现是"最近点距离的顶点均值"而非逐顶点自适应笼体；非均匀缩放下 `cage_analyzer` 法线变换未做逆转置校验。v1.1 决定实装逐顶点笼体或在 UI/文档明示当前语义。
+- **UDIM 检测合并（DRY）**：同上 UDIM 收口第①项；修正测试经 `uv_manager` 隐式 re-export 的脆弱导入链。
+- **选择状态恢复统一（DRY）**：`ModelExporter._restore_state` / `UVLayoutManager._apply_smart_uv` / `cage_analyzer` 三处重复实现提取公共 helper；`ExportResult` / `ExportAllResults` 的图像元数据保存-恢复块去重（批量导出另需复用 `save_image` 的完整编码规则）。
 - **core 层 operator 迁移**：`BAKETOOL_OT_EmergencyCleanup` 迁至 `ops.py`，core/ 恢复无表现层依赖，`__init__.get_classes` 的 cleanup 特例随之移除。
-- **风格一致性收尾**：engine.py 顶部导入统一（两处函数体内延迟导入 `log_error`）、残留中文注释统一英文、`RuntimeBakeObject` docstring 拼写、`RunDevTests` 去除无意义 UNDO。
+- **Phase 5: 函数拆分**：`BakeStepRunner.run`、`BakePassExecutor._run_blender_bake_pipeline`（机械搬移，无行为改变；发布窗口期不做）。
 - **架构拆分（CM.1，后续）**：在 `core/bake_types.py` 共享 `BakeStep` / `BakeTask` 契约的前提下，将 `core/engine.py` 的 `ModelExporter` 提取至 `exporter.py`，并将 `TaskBuilder` / `JobPreparer` 提取至 `job_prep.py`；`engine.py` 保持 facade 重导出，避免破坏现有 API。
 - **i18n 全量覆盖**：`ops.py` self.report 与 `ui.py` 面板标签走 `pgettext` 或 `UI_MESSAGES`。
 - **继续 DRY 清理**：`draw_collapsible_header()` UI 辅助函数（4 处重复）、`report_cancel` 装饰器（26 处重复模式）。
-- **剩余风格债务清理**：继续推进 Phase 5（函数拆分）和 Phase 6（CI 集成：`isort` + `ruff`）。
-- **类型覆盖率提升**：目标 50%+，重点覆盖 `core/common.py` 和 `core/engine.py`。
+- **CI 云端全矩阵验证**：2026-09-11 轮修改了 workflow（`--python-exit-code`、artifact 隔离、全报告校验），本地 5 版本已通过；推送后需确认 GitHub Actions 12 版本矩阵全绿后归档报告。
+- **Phase 6: CI 集成（`isort` + `ruff` + `mypy` incremental）**。
+- **类型覆盖率提升**：重点覆盖 `core/common.py` 和 `core/engine.py`（以输出正确性为先，不做配额驱动）。
+- **异步烘焙进度条改进** / **自动 UDIM 分页优化** / **更智能的导出文件重命名规则**。
+- **参数 schema 化**：将 `property.py`、`constants.py`、UI 布局和执行读取路径纳入可自动审计的统一协议（v1.0.0 的 `test_channel_pipeline_alignment` 是第一个机器化子集）。
+- **动态枚举专项测试扩展**：覆盖默认值回退、旧预设迁移和跨版本注册（稳定编号契约见 `TECHNICAL_GUIDE.md` §10.3）。
 
 ### 8.1 维护前置完成项 (2026-07-12)
 - `core/bake_types.py` 已承载 `BakeStep` / `BakeTask`；在提取 `TaskBuilder` / `JobPreparer` 前必须继续以此为共享契约，禁止让 `job_prep.py` 回导 `engine.py`。

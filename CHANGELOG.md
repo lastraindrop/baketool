@@ -2,6 +2,55 @@
 
 本文件记录 BakeNexus 在正式发布前的主要版本变化。/This file records major version changes before official release.
 
+## 1.0.0 - 2026-09-11
+### 发布前独立审计修复：数据保护、输出正确性与入口一致性 / Pre-release Independent Audit Fixes: Data Protection, Output Correctness & Entry Consistency
+
+依据 `docs/RELEASE_AUDIT_2026-09-11.md`（30 组诊断）实施第一至第四批修复。
+
+#### 数据保护 / Data Protection
+- **保存失败不再退出 Blender**：`save_and_quit` 在 blend 未保存或 `save_mainfile()` 失败时不再调用 `quit_blender()`（A01）。
+- **同名用户数据保护**：图像与烘焙结果对象仅复用带 `is_bt_result` 标记的自有 datablock；用户同名对象/图像不再被替换、清空或删除（A02）。
+- **恢复索引钳制**：崩溃续跑的 `current_queue_idx` 限制在重建队列范围内，避免越界跳步。
+
+#### 输出正确性 / Output Correctness
+- **假成功消除**：`bpy.ops.object.bake()` 返回非 `FINISHED` 视为失败；外部保存失败抛错不再产生"成功"结果条目；模态结束后状态如实显示 `Finished (N step errors)`；导出失败不再打印 Exported 日志（A03/A30）。
+- **节点烘焙修复**：目标图像绑定并激活临时 Texture 节点，红色常量节点实际输出红色；图像所有权在创建前判定（A05）。
+- **ID 图崩溃修复**：`ID_ele` / `ID_UVI` / `ID_seam` 的 `len(bm.loops)` TypeError 修复（A04）。
+- **图像保存真实编码**：`save_image` 改用 `save_render`，PNG 位深与 RGB/BW 颜色模式实际写入文件头；通道顺序不再污染材质输出（每个 pass 从用户原始输出连接开始）；float/色彩空间契约在复用时强制兑现，不匹配即重建（A06/A10/A11）。
+- **4.x 光照 pass 开关生效**：`SceneSettingsContext("bake")` 统一走 `compat.get_bake_settings()`，`use_pass_*` 在 Blender 4.x 实际生效（A08）。
+- **Normal 标准与 AO 参数接线**：OPENGL/DIRECTX/CUSTOM 映射到 `normal_r/g/b`；AO 的 Only Local 写入 `only_local`；移除无消费者的通道 Export Mode 控件（A09）。
+- **降噪诚实化**：后台模式明确跳过（不再静默假装处理）；临时场景按图像尺寸渲染；清理限定本次创建的场景并连带删除自有相机；临时图未按分辨率渲染的问题修复（A12）。
+
+#### 入口与状态一致性 / Entry & State Consistency
+- **Quick Bake 复用验证**：runtime proxy 经 `validate_job` 校验后再构建队列，与普通烘焙同规则；Auto Smart UV 启用时不再因"无 UV"误拒；SELECT_ACTIVE 的目标低模一并纳入 UV 管理（A14）。
+- **动画帧统一**：`frame_set` 移入 `BakeStepRunner.run`，API/headless/modual 三入口都真实切换场景帧（A15）。
+- **UV 回滚**：`UVLayoutManager.__enter__` 失败自动还原已建临时层；按 mesh 数据去重，共享 mesh 不再重复创建（A13）。
+- **预设往返保真**：迁移仅作用于确属旧键的字段；集合始终序列化、加载先集合后标量；空集合/空指针可清空（A20）。
+- **动态枚举稳定**：来源枚举恒含 NONE、编号全局唯一且跨通道启用状态稳定（A21）。
+- **Custom 通道命名**：图像名包含自定义通道名，不同 custom 不再互相覆盖；新增 custom 通道 alpha 默认 1.0（A22）。
+- **预览安全化**：重复应用不再从预览自身重建而丢失源逻辑；烘焙前自动还原预览材质，预览不再污染烘焙输入（A23）。
+- **UDIM 打包透传**：UDIM 模式下打包结果以 TILED 图像输出（A17 局部）。
+- **模态与导出细节**：Quick Bake poll 增加 is_baking 守卫；Delete All 重置索引；强制单采样通道的结果元数据如实记录 samples=1（A16/A30）。
+
+#### 资源与发布 / Resources & Release
+- **降噪/临时资源**：临时场景清理不再误删其他同前缀场景（A12/A29 局部）。
+- **图像编辑器上下文**：`robust_image_editor_context` 不再吞掉调用体异常，并恢复编辑器原图像引用（A28）。
+- **缩略图降级修正**：显式导入 `bpy.utils.previews`，移除基于"4.2 移除 API"错误前提的占位降级（A27）。
+- **发布包自检闭环**：`build_release_zip.py` 随包分发，解压 ZIP 后 Run Safety Audit 162/162 通过（A24）。
+- **CI 加固**：Blender 步骤加 `--python-exit-code 1`；artifact 不再互相覆盖；汇总校验遍历全部报告且要求 total>0（A26）。
+- **词典与静态检查**：清除 3 个过期翻译键（0 缺失 0 过期）；运行时文件 Ruff F/E9 全清（A25/A24 局部）。
+
+#### 新增回归测试 / New Regression Tests
+- `test_uv_manager_rolls_back_partial_setup_failure`（UV 进入失败回滚）
+- `test_preset_keeps_extension_channel_and_empty_collections`（扩展通道与空集合往返）
+- 预览幂等测试加强为校验源节点存活；降噪测试改为 float 基线并区分后台跳过契约。
+
+#### 验证 / Verification
+- 5 版本（3.3.21 / 3.6.23 / 4.2.14 / 4.5.3 / 5.0.1）：162 项测试，0 失败 0 错误（3.3/3.6 各 5 项预期跳过）。
+- 行为复现确认：节点红色常量输出正确、PNG 文件头与设置一致、预设扩展字段保真、同名对象不受影响、4.x pass 开关生效、后台不退出、无临时 UV/节点/相机残留。
+- 发布 ZIP（70 文件，含两份审查报告归档）通过官方 extension validate；解压后独立运行全套测试 162/162。
+- 已知保留项（记录于审计报告）：UDIM 边界检测与逐 tile 后处理、崩溃记录跨进程归属、COMBINE/SPLIT 自动应用范围——均为文档明示的 v1.1 范围，不在本次静默承诺。
+
 ## 1.0.0 - 2026-09-10
 ### 发布候选清理：死链修复与死代码移除 / Release-Candidate Cleanup: Dead-Wire Fixes & Dead-Code Removal
 

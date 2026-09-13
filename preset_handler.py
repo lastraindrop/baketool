@@ -147,8 +147,7 @@ class PropertyIO:
                 continue
 
             if isinstance(prop, bpy.types.CollectionProperty):
-                if value and len(value) > 0:
-                    data[key] = [self.to_dict(item) for item in value]
+                data[key] = [self.to_dict(item) for item in value]
 
             elif isinstance(prop, bpy.types.PointerProperty):
                 if value is None:
@@ -185,9 +184,10 @@ class PropertyIO:
         if not data or not prop_group:
             return
 
+        valid_keys = set(p.identifier for p in prop_group.bl_rna.properties)
         processed_data = data.copy()
         for old_key, new_path in PRESET_MIGRATION_MAP.items():
-            if old_key in data:
+            if old_key in data and old_key not in valid_keys:
                 val = processed_data.pop(old_key)
 
                 if isinstance(val, bool):
@@ -197,9 +197,13 @@ class PropertyIO:
 
                 self._set_nested_attr(prop_group, new_path, val)
 
-        valid_keys = set(p.identifier for p in prop_group.bl_rna.properties)
-
-        for key, val in processed_data.items():
+        items = list(processed_data.items())
+        items.sort(
+            key=lambda item: isinstance(
+                prop_group.bl_rna.properties[item[0]], bpy.types.CollectionProperty
+            ) if item[0] in valid_keys else False
+        )
+        for key, val in items:
             if key not in valid_keys:
                 self.stats['skipped_match'] += 1
                 continue
@@ -212,11 +216,9 @@ class PropertyIO:
             try:
                 if isinstance(prop_def, bpy.types.CollectionProperty):
                     target_collection = getattr(prop_group, key)
-
-                    if clear_collection:
-                        target_collection.clear()
-
                     if isinstance(val, list):
+                        if clear_collection:
+                            target_collection.clear()
                         for item_data in val:
                             new_item = target_collection.add()
                             self.from_dict(new_item, item_data, clear_collection)

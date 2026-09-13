@@ -162,6 +162,11 @@ def apply_preview(obj, setting):
     if obj is None or obj.type != 'MESH':
         return
 
+    # Idempotency: rebuilding from the preview itself would destroy the
+    # source node logic captured on the first apply.
+    if obj.active_material and obj.active_material.name == PREVIEW_MAT_NAME:
+        return
+
     if not obj.get("_bt_orig_mat_name"):
         if obj.active_material:
             obj["_bt_orig_mat_name"] = obj.active_material.name
@@ -232,6 +237,8 @@ def apply_baked_result(
     # 1. Reuse existing baked object if possible to save memory
     target_name = f"{task_base_name}_Baked"
     new_obj = bpy.data.objects.get(target_name)
+    if new_obj and not new_obj.get("is_bt_result", False):
+        new_obj = None
 
     if new_obj:
         old_data = new_obj.data
@@ -254,6 +261,8 @@ def apply_baked_result(
         for c in new_obj.users_collection:
             c.objects.unlink(new_obj)
         col.objects.link(new_obj)
+
+    new_obj["is_bt_result"] = True
 
     first_val = next(iter(task_images.values()))
     if isinstance(first_val, dict):

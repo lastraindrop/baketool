@@ -297,6 +297,8 @@ def manage_channels_logic(
             for c in s.channels:
                 if c.id in {"color", "combine", "normal"}:
                     c.enabled = True
+        elif success and target == "job_custom_channel":
+            item.a_settings.default_value = 1.0
     else:
         success, _ = manage_collection_item(coll, action_type, idx, parent, attr)
 
@@ -405,8 +407,6 @@ class SceneSettingsContext:
             settings: Dict of property names to values.
             scene: Target scene. Uses bpy.context.scene if None.
         """
-        import bpy
-
         self.category = category
         self.settings = settings
         self.scene = scene
@@ -437,10 +437,7 @@ class SceneSettingsContext:
             return scene.view_settings
         if self.category == "bake":
             from . import compat
-
-            if compat.is_blender_5() and hasattr(scene.render, "bake"):
-                return scene.render.bake
-            return scene.render
+            return compat.get_bake_settings(scene)
         return None
 
     def __enter__(self):

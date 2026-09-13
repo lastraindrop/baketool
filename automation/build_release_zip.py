@@ -45,6 +45,7 @@ RECURSIVE_DIRS = {
 AUTOMATION_FILES = [
     "automation/__init__.py",
     "automation/cli_runner.py",
+    "automation/build_release_zip.py",
     "automation/headless_bake.py",
     "automation/multi_version_test.py",
 ]
@@ -54,6 +55,8 @@ DOC_FILES = [
     "docs/ROADMAP.md",
     "docs/RELEASE_CHECKLIST.md",
     "docs/task.md",
+    "docs/PRE_RELEASE_REVIEW.md",
+    "docs/RELEASE_AUDIT_2026-09-11.md",
     "docs/dev/DEVELOPER_GUIDE.md",
     "docs/dev/AUTOMATION_REFERENCE.md",
     "docs/dev/ECOSYSTEM_GUIDE.md",

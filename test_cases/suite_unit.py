@@ -218,7 +218,7 @@ class SuiteUnit(unittest.TestCase):
             and "color_depth" in target.__annotations__
         )
         self.assertTrue(
-            has_depth, f"BakeJobSetting missing 'color_depth' in annotations or members"
+            has_depth, "BakeJobSetting missing 'color_depth' in annotations or members"
         )
 
         # 2. Dynamic Enum Check (Hardened v1.0.0-p2)
@@ -474,31 +474,38 @@ class SuiteUnit(unittest.TestCase):
                 mat.use_nodes = True
                 with NodeGraphHandler([mat]) as h:
                     try:
-                        res = h._create_extension_logic(mat, sock_name, None)
+                        h._create_extension_logic(mat, sock_name, None)
                     except Exception as e:
                         self.fail(f"Extension logic '{sock_name}' crashed: {e}")
 
     def test_apply_denoise_pixels_modified(self):
-        """Verify the denoise processor modifies image pixels."""
+        """Denoise alters float pixels interactively; background must skip untouched."""
         from ..core.engine import BakePostProcessor
 
         img = image_manager.set_image(
-            "TestDenoise", 16, 16, basiccolor=(0.1, 0.4, 0.2, 1.0)
+            "TestDenoise", 16, 16, full=True, basiccolor=(0.1, 0.4, 0.2, 1.0)
         )
-        # inject noise
-        arr = np.random.rand(16 * 16 * 4).astype(np.float32)
-        arr[3::4] = 1.0  # fixed alpha
+        arr = np.random.default_rng(7).random(16 * 16 * 4, dtype=np.float32)
+        arr[3::4] = 1.0
         img.pixels.foreach_set(arr)
 
-        try:
-            BakePostProcessor.apply_denoise(bpy.context, img)
-            new_arr = np.empty(16 * 16 * 4, dtype=np.float32)
-            img.pixels.foreach_get(new_arr)
-            self.assertFalse(
-                np.array_equal(arr, new_arr), "Denoise did not modify pixels"
+        baseline = np.empty(16 * 16 * 4, dtype=np.float32)
+        img.pixels.foreach_get(baseline)
+
+        BakePostProcessor.apply_denoise(bpy.context, img)
+        new_arr = np.empty(16 * 16 * 4, dtype=np.float32)
+        img.pixels.foreach_get(new_arr)
+
+        if bpy.app.background:
+            # No reliable compositor/viewer pipeline headless: denoise must
+            # skip explicitly instead of pretending to process pixels.
+            np.testing.assert_array_equal(
+                baseline, new_arr, "Background denoise must not modify pixels"
             )
-        except Exception as e:
-            self.fail(f"Denoise crashed: {e}")
+        else:
+            self.assertFalse(
+                np.array_equal(baseline, new_arr), "Denoise did not modify pixels"
+            )
 
     def test_emergency_cleanup_removes_temp_nodes(self):
         """Verify EmergencyCleanup removes tagged temporary nodes."""
@@ -635,7 +642,7 @@ class SuiteUnit(unittest.TestCase):
         links.new(bsdf.outputs[0], out.inputs[0])
 
         count = len(links)
-        with NodeGraphHandler([mat]) as h:
+        with NodeGraphHandler([mat]):
             links.clear()
         self.assertEqual(
             len(links), count, "Links not restored after NodeGraphHandler exit"
@@ -646,7 +653,7 @@ class SuiteUnit(unittest.TestCase):
         obj = create_test_object("UVManagerObj")
         cnt = len(obj.data.uv_layers)
         ms = MockSetting(use_auto_uv=False)
-        with uv_manager.UVLayoutManager([obj], ms) as m:
+        with uv_manager.UVLayoutManager([obj], ms):
             # __enter__ calls _record_and_setup_layers which adds the temp layer
             self.assertEqual(len(obj.data.uv_layers), cnt + 1)
         self.assertEqual(len(obj.data.uv_layers), cnt, "Temp UV layer not removed")

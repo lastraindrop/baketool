@@ -96,11 +96,11 @@ def get_channel_source_items(self, context):
     try:
         setting = job.setting
 
-        items = []
+        items = [("NONE", "None", "No source", "NONE", 0)]
         for i, c in enumerate(setting.channels):
             if c.enabled:
                 items.append(
-                    (c.id, c.name, f"Use {c.name} result as source", "NONE", i)
+                    (c.id, c.name, f"Use {c.name} result as source", "NONE", i + 1)
                 )
 
         # Prevent self-reference
@@ -110,7 +110,7 @@ def get_channel_source_items(self, context):
                 current_custom_name = chan.name
                 break
 
-        base_len = len(items)
+        base_len = len(setting.channels) + 1
         for i, c in enumerate(job.custom_bake_channels):
             # Self-reference filter
             if current_custom_name and c.name == current_custom_name:
@@ -127,11 +127,7 @@ def get_channel_source_items(self, context):
                 )
             )
 
-        return (
-            items
-            if items
-            else [("NONE", "None", "No enabled channels available", "NONE", 0)]
-        )
+        return items
     except (AttributeError, RuntimeError, TypeError) as e:
         logger.debug(f"Error getting channel sources: {e}")
         return [("NONE", "None", "No enabled channels available", "NONE", 0)]
@@ -387,7 +383,6 @@ class BakeChannel(bpy.types.PropertyGroup):
     custom_cs: props.EnumProperty(
         items=COLOR_SPACES, name="Color Space", default="SRGB"
     )
-    custom_mode: props.EnumProperty(items=COLOR_MODES, name="Color Mode", default="RGB")
 
     rough_inv: props.BoolProperty(name="Invert")
 
@@ -574,7 +569,6 @@ class BakeJobSetting(bpy.types.PropertyGroup):
     use_custom_map: props.BoolProperty(default=False, name="Use Custom Map")
 
     use_auto_uv: props.BoolProperty(name="Auto Smart UV", default=False)
-    auto_uv_name: props.StringProperty(name="UV Name", default="Smart_UV")
     auto_uv_angle: props.FloatProperty(
         name="Angle Limit",
         default=1.15192,

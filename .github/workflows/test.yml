@@ -65,7 +65,7 @@ jobs:
         run: |
           export DISPLAY=:99
           pip install numpy || true
-          $BLENDER_DIR/blender -b --python automation/cli_runner.py -- --json test_report.json --suite all
+          $BLENDER_DIR/blender -b --python-exit-code 1 --python automation/cli_runner.py -- --json test_report.json --suite all
 
       - name: Upload Report
         if: always()
@@ -91,7 +91,6 @@ jobs:
         with:
           pattern: test-report-*
           path: reports
-          merge-multiple: true
 
       - name: Check Results
         run: |
@@ -101,14 +100,15 @@ jobs:
           if not os.path.exists(reports_dir):
               print('No reports directory found')
               sys.exit(1)
-          report_files = [f for f in os.listdir(reports_dir) if f.endswith('.json')]
+          report_files = []
+          for root, _, files in os.walk(reports_dir):
+              report_files.extend(os.path.join(root, f) for f in files if f.endswith('.json'))
           if not report_files:
               print('No JSON report files found')
               sys.exit(1)
           exit_code = 0
           for rf in sorted(report_files):
-              path = os.path.join(reports_dir, rf)
-              with open(path) as fh:
+              with open(rf) as fh:
                   data = json.load(fh)
               s = data.get('summary', {})
               total = s.get('total', 0)
@@ -118,7 +118,7 @@ jobs:
               skipped = s.get('skipped', 0)
               status = 'PASS' if fails == 0 and errors == 0 else 'FAIL'
               print(f'[{status}] {rf}: {passed}/{total} passed ({fails} fails, {errors} errors, {skipped} skipped)')
-              if fails > 0 or errors > 0:
+              if total == 0 or fails > 0 or errors > 0:
                   exit_code = 1
           sys.exit(exit_code)
           "

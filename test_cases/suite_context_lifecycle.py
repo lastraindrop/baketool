@@ -14,6 +14,7 @@ from baketool.test_cases.helpers import cleanup_scene, create_test_object, MockS
 from baketool.core.engine import BakeContextManager
 from baketool.core.node_manager import NodeGraphHandler
 from baketool.core.common import safe_context_override
+from baketool.core.uv_manager import UVLayoutManager
 
 class SuiteContextLifecycle(unittest.TestCase):
     def setUp(self):
@@ -68,6 +69,20 @@ class SuiteContextLifecycle(unittest.TestCase):
             with safe_context_override(bpy.context, obj2, [obj1, obj2]):
                 self.assertEqual(bpy.context.active_object, obj2)
             self.assertEqual(bpy.context.active_object, obj1)
+
+    def test_uv_manager_rolls_back_partial_setup_failure(self):
+        """A later UV-limit failure must not leave earlier temp layers behind."""
+        obj1 = create_test_object("UV_OK")
+        obj2 = create_test_object("UV_Full")
+        while len(obj2.data.uv_layers) < 8:
+            obj2.data.uv_layers.new()
+        original_count = len(obj1.data.uv_layers)
+
+        with self.assertRaises(RuntimeError):
+            with UVLayoutManager([obj1, obj2], MockSetting()):
+                pass
+
+        self.assertEqual(len(obj1.data.uv_layers), original_count)
 
 if __name__ == '__main__':
     unittest.main()

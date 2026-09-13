@@ -3,12 +3,16 @@ import bpy
 import logging
 from pathlib import Path
 
+try:
+    import bpy.utils.previews
+except ImportError:
+    _HAS_PREVIEWS = False
+else:
+    _HAS_PREVIEWS = True
+
 logger = logging.getLogger(__name__)
 
 _preview_collections = {}
-
-_HAS_PREVIEWS = hasattr(bpy.utils, "previews")
-
 
 def get_preview_collection(name="main"):
     """Get or create a preview collection."""
