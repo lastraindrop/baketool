@@ -82,7 +82,7 @@
 - **入口与状态一致性（P1）**：Quick Bake 复用 `validate_job`；Auto Smart UV 不再因无 UV 误拒；SELECT_ACTIVE 目标纳入 UV 管理；`frame_set` 移入 `BakeStepRunner`（API/headless/模态三入口帧一致）；UV 管理器进入失败自回滚 + 按 mesh 去重；预设迁移仅限旧键、集合始终序列化、加载先集合后标量；动态枚举恒含 NONE 且编号全局稳定；custom 通道图像名含通道名、alpha 默认 1.0；预览与烘焙互斥（烘焙前自动还原预览材质）、重复应用不再破坏源节点；UDIM 打包透传 TILED。
 - **发布与质量门槛**：`build_release_zip.py` 随包（解压 ZIP 独立 Safety Audit 162/162）；CI 加 `--python-exit-code 1`、artifact 隔离、全报告遍历 + `total>0` 校验；缩略图显式导入 previews 修正误判降级；图像编辑器 contextmanager 不再吞调用体异常；词典 0 缺失 0 过期（457 键）；运行时与测试 Ruff `F,E9` 全清。
 - **测试契约收紧**：降噪测试改为 float 基线并区分后台跳过契约；预览幂等测试校验源节点存活；新增 UV 回滚与预设保真回归；删除无引擎消费的 `custom_mode`/`auto_uv_name` RNA 与 5 个死 `UI_MESSAGES` 键；动画 UI 暴露 Custom 帧范围开关。
-- **验证**：5 版本（3.3.21/3.6.23/4.2.14/4.5.3/5.0.1）162 项测试 0 失败 0 错误；行为复现（节点红常量、PNG 文件头、预设保真、同名对象保护、4.x pass 开关、后台不退出、无临时 UV/节点/相机残留）全部通过；发布 ZIP（68 文件）官方 validate 通过。明细见 `CHANGELOG.md` 2026-09-11 条目与审计报告 §14。
+- **验证**：5 版本（3.3.21/3.6.23/4.2.14/4.5.3/5.0.1）162 项测试 0 失败 0 错误；行为复现（节点红常量、PNG 文件头、预设保真、同名对象保护、4.x pass 开关、后台不退出、无临时 UV/节点/相机残留）全部通过；发布 ZIP（70 文件，含两份审查报告归档）官方 validate 通过，解压后独立 Safety Audit 162/162。GitHub Actions 12 版本矩阵 + lint + verify 全绿（run 34752622071），本轮 workflow 加固（artifact 隔离、全报告遍历 + `total>0`）在云端实测生效。明细见 `CHANGELOG.md` 2026-09-11 条目与审计报告 §14。
 
 ## 8. 短期计划 (v1.1.x) - 生产力增强
 - **通道实装补齐（2026-08-16 外部审计立项，最高优先）**：v1.0.0 从 `BAKE_CHANNEL_INFO["MESH"]` 移除了 `Vertex Color / Curvature / Slope / Thickness / Select` 五个无引擎实现的通道（静默产出黑图）以及不可达的 `height` 元数据；v1.1 需为其补齐真实生成路径（节点逻辑或 BMesh 分析）后重新挂出。`mesh_settings` 的 `contrast/direction/invert` RNA 字段已按 v1.1 预留（`property.py` 有注释保护），重实装无需预设迁移。实施时必须走 `TECHNICAL_GUIDE.md` §5.4.5 检查单——`test_channel_pipeline_alignment` 会强制引擎路径同步落地。
@@ -97,7 +97,6 @@
 - **架构拆分（CM.1，后续）**：在 `core/bake_types.py` 共享 `BakeStep` / `BakeTask` 契约的前提下，将 `core/engine.py` 的 `ModelExporter` 提取至 `exporter.py`，并将 `TaskBuilder` / `JobPreparer` 提取至 `job_prep.py`；`engine.py` 保持 facade 重导出，避免破坏现有 API。
 - **i18n 全量覆盖**：`ops.py` self.report 与 `ui.py` 面板标签走 `pgettext` 或 `UI_MESSAGES`。
 - **继续 DRY 清理**：`draw_collapsible_header()` UI 辅助函数（4 处重复）、`report_cancel` 装饰器（26 处重复模式）。
-- **CI 云端全矩阵验证**：2026-09-11 轮修改了 workflow（`--python-exit-code`、artifact 隔离、全报告校验），本地 5 版本已通过；推送后需确认 GitHub Actions 12 版本矩阵全绿后归档报告。
 - **Phase 6: CI 集成（`isort` + `ruff` + `mypy` incremental）**。
 - **类型覆盖率提升**：重点覆盖 `core/common.py` 和 `core/engine.py`（以输出正确性为先，不做配额驱动）。
 - **异步烘焙进度条改进** / **自动 UDIM 分页优化** / **更智能的导出文件重命名规则**。

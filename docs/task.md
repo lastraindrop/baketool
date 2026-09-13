@@ -79,7 +79,7 @@
 - [ ] **UDIM 检测逻辑合并（DRY）**：与 UDIM 收口第①项合并执行；修正测试隐式 re-export 导入链。
 - [ ] **选择状态恢复统一（DRY）**：三处选择恢复提取 helper；单图/批量导出保存-恢复块去重并复用 `save_image` 编码规则。
 - [ ] **core 层 operator 归属**：`BAKETOOL_OT_EmergencyCleanup` 迁至 ops.py，`get_classes` cleanup 特例移除。
-- [ ] **CI 云端全矩阵验证**：workflow 加固后推送，确认 12 版本 Actions 全绿。
+- [x] **CI 云端全矩阵验证**：workflow 加固后推送，GitHub Actions 12 版本矩阵 + lint + verify 全绿（run 34752622071）。
 - [ ] Phase 5: 函数拆分（`BakeStepRunner.run`、`BakePassExecutor._run_blender_bake_pipeline`；机械搬移）。
 - [ ] Phase 6: CI 集成（`isort` + `ruff` + `mypy` incremental）。
 - [ ] 类型覆盖率提升（`core/common.py` + `core/engine.py`，以输出正确性为先）。
